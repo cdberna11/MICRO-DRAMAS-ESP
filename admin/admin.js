@@ -15,9 +15,425 @@ const API_ADMIN_DRAMAS = "/api/admin/dramas";
 document.addEventListener(
     "DOMContentLoaded",
     () => {
+
+        inicializarFormularioNuevoDrama();
+
         cargarDramasAdministrativos();
+
     }
 );
+
+
+/* =========================================================
+   FORMULARIO NUEVO MICRODRAMA
+   ========================================================= */
+
+function inicializarFormularioNuevoDrama() {
+
+    const botonNuevo =
+        document.getElementById("boton-nuevo");
+
+    const formularioContenedor =
+        document.getElementById("formulario-nuevo");
+
+    const formulario =
+        document.getElementById("form-nuevo-drama");
+
+    const botonCancelar =
+        document.getElementById("boton-cancelar");
+
+
+    if (
+        !botonNuevo ||
+        !formularioContenedor ||
+        !formulario ||
+        !botonCancelar
+    ) {
+
+        console.error(
+            "No se pudieron inicializar los controles del formulario de nuevo microdrama."
+        );
+
+        return;
+    }
+
+
+    /* -----------------------------------------------------
+       ABRIR FORMULARIO
+       ----------------------------------------------------- */
+
+    botonNuevo.addEventListener(
+        "click",
+        () => {
+
+            formularioContenedor.hidden = false;
+
+            botonNuevo.disabled = true;
+
+
+            const campoTitulo =
+                document.getElementById("title");
+
+
+            if (campoTitulo) {
+
+                campoTitulo.focus();
+
+            }
+        }
+    );
+
+
+    /* -----------------------------------------------------
+       CANCELAR
+       ----------------------------------------------------- */
+
+    botonCancelar.addEventListener(
+        "click",
+        () => {
+
+            cerrarFormularioNuevoDrama();
+
+        }
+    );
+
+
+    /* -----------------------------------------------------
+       GUARDAR
+       ----------------------------------------------------- */
+
+    formulario.addEventListener(
+        "submit",
+        async (evento) => {
+
+            evento.preventDefault();
+
+            await guardarNuevoDrama(
+                formulario,
+                botonNuevo
+            );
+
+        }
+    );
+}
+
+
+/* =========================================================
+   CERRAR FORMULARIO NUEVO MICRODRAMA
+   ========================================================= */
+
+function cerrarFormularioNuevoDrama() {
+
+    const formularioContenedor =
+        document.getElementById("formulario-nuevo");
+
+    const formulario =
+        document.getElementById("form-nuevo-drama");
+
+    const botonNuevo =
+        document.getElementById("boton-nuevo");
+
+
+    if (formulario) {
+
+        formulario.reset();
+
+    }
+
+
+    const orden =
+        document.getElementById("sort_order");
+
+
+    if (orden) {
+
+        orden.value = "1";
+
+    }
+
+
+    if (formularioContenedor) {
+
+        formularioContenedor.hidden = true;
+
+    }
+
+
+    if (botonNuevo) {
+
+        botonNuevo.disabled = false;
+
+    }
+}
+
+
+/* =========================================================
+   GUARDAR NUEVO MICRODRAMA
+   ========================================================= */
+
+async function guardarNuevoDrama(
+    formulario,
+    botonNuevo
+) {
+
+    const botonGuardar =
+        document.getElementById("boton-guardar");
+
+
+    if (!botonGuardar) {
+
+        console.error(
+            "No se encontró el botón Guardar microdrama."
+        );
+
+        return;
+    }
+
+
+    /* -----------------------------------------------------
+       VALIDACIÓN HTML
+       ----------------------------------------------------- */
+
+    if (!formulario.checkValidity()) {
+
+        formulario.reportValidity();
+
+        return;
+    }
+
+
+    /* -----------------------------------------------------
+       OBTENER DATOS
+       ----------------------------------------------------- */
+
+    const datosFormulario =
+        new FormData(formulario);
+
+
+    const datos = {
+
+        title:
+            String(
+                datosFormulario.get("title") || ""
+            ).trim(),
+
+        slug:
+            String(
+                datosFormulario.get("slug") || ""
+            ).trim(),
+
+        platform:
+            String(
+                datosFormulario.get("platform") || ""
+            ).trim(),
+
+        description:
+            String(
+                datosFormulario.get("description") || ""
+            ).trim(),
+
+        video_description:
+            String(
+                datosFormulario.get("video_description") || ""
+            ).trim(),
+
+        cover_url:
+            String(
+                datosFormulario.get("cover_url") || ""
+            ).trim(),
+
+        video_url:
+            String(
+                datosFormulario.get("video_url") || ""
+            ).trim(),
+
+        embed_url:
+            String(
+                datosFormulario.get("embed_url") || ""
+            ).trim(),
+
+        status:
+            String(
+                datosFormulario.get("status") || "draft"
+            ).trim(),
+
+        featured:
+            datosFormulario.has("featured"),
+
+        sort_order:
+            Number(
+                datosFormulario.get("sort_order") || 0
+            )
+
+    };
+
+
+    /* -----------------------------------------------------
+       ESTADO DEL BOTÓN
+       ----------------------------------------------------- */
+
+    botonGuardar.disabled = true;
+
+    botonGuardar.textContent =
+        "Guardando...";
+
+
+    try {
+
+        /* -------------------------------------------------
+           PETICIÓN POST
+           ------------------------------------------------- */
+
+        const respuesta =
+            await fetch(
+                API_ADMIN_DRAMAS,
+                {
+                    method: "POST",
+
+                    credentials: "same-origin",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+
+                        "Accept":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(datos)
+                }
+            );
+
+
+        /* -------------------------------------------------
+           LEER RESPUESTA
+           ------------------------------------------------- */
+
+        let resultado = null;
+
+
+        try {
+
+            resultado =
+                await respuesta.json();
+
+        } catch (error) {
+
+            resultado = null;
+
+        }
+
+
+        /* -------------------------------------------------
+           ERROR HTTP
+           ------------------------------------------------- */
+
+        if (!respuesta.ok) {
+
+            const mensaje =
+                resultado &&
+                typeof resultado.error === "string"
+
+                    ? resultado.error
+
+                    : `La API respondió con el estado ${respuesta.status}.`;
+
+
+            throw new Error(
+                mensaje
+            );
+        }
+
+
+        /* -------------------------------------------------
+           VALIDAR RESPUESTA API
+           ------------------------------------------------- */
+
+        if (
+            !resultado ||
+            resultado.success !== true
+        ) {
+
+            throw new Error(
+
+                resultado &&
+                typeof resultado.error === "string"
+
+                    ? resultado.error
+
+                    : "La API no confirmó el registro del microdrama."
+
+            );
+        }
+
+
+        /* -------------------------------------------------
+           CERRAR FORMULARIO
+           ------------------------------------------------- */
+
+        cerrarFormularioNuevoDrama();
+
+
+        /* -------------------------------------------------
+           MOSTRAR ÉXITO
+           ------------------------------------------------- */
+
+        mostrarMensajeAdmin(
+            "Microdrama guardado correctamente.",
+            "success"
+        );
+
+
+        /* -------------------------------------------------
+           ACTUALIZAR TABLA
+           ------------------------------------------------- */
+
+        await cargarDramasAdministrativos();
+
+
+        /*
+         * Después de recargar la tabla mostramos nuevamente
+         * el mensaje porque cargarDramasAdministrativos()
+         * limpia el mensaje durante el renderizado.
+         */
+
+        mostrarMensajeAdmin(
+            "Microdrama guardado correctamente.",
+            "success"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Error al guardar el nuevo microdrama:",
+            error
+        );
+
+
+        mostrarMensajeAdmin(
+            error.message ||
+            "No se pudo guardar el microdrama.",
+            "error"
+        );
+
+
+    } finally {
+
+        botonGuardar.disabled = false;
+
+        botonGuardar.textContent =
+            "Guardar microdrama";
+
+
+        if (botonNuevo) {
+
+            botonNuevo.disabled = false;
+
+        }
+    }
+}
 
 
 /* =========================================================
@@ -26,31 +442,40 @@ document.addEventListener(
 
 async function cargarDramasAdministrativos() {
 
-    const elementos = obtenerElementos();
+    const elementos =
+        obtenerElementos();
+
 
     if (!elementos) {
+
         return;
+
     }
 
-    mostrarEstadoCarga(elementos);
+
+    mostrarEstadoCarga(
+        elementos
+    );
 
 
     try {
 
-        const respuesta = await fetch(
-            API_ADMIN_DRAMAS,
-            {
-                method: "GET",
+        const respuesta =
+            await fetch(
+                API_ADMIN_DRAMAS,
+                {
+                    method: "GET",
 
-                credentials: "same-origin",
+                    credentials: "same-origin",
 
-                headers: {
-                    Accept: "application/json"
-                },
+                    headers: {
+                        Accept:
+                            "application/json"
+                    },
 
-                cache: "no-store"
-            }
-        );
+                    cache: "no-store"
+                }
+            );
 
 
         if (!respuesta.ok) {
@@ -62,7 +487,8 @@ async function cargarDramasAdministrativos() {
         }
 
 
-        const datos = await respuesta.json();
+        const datos =
+            await respuesta.json();
 
 
         if (
@@ -122,12 +548,14 @@ function obtenerElementos() {
 
         mensajeAdmin:
             document.getElementById("mensaje-admin")
+
     };
 
 
     const elementoFaltante =
         Object.entries(elementos).find(
-            ([, elemento]) => !elemento
+            ([, elemento]) =>
+                !elemento
         );
 
 
@@ -137,7 +565,9 @@ function obtenerElementos() {
             `No se encontró el elemento administrativo: ${elementoFaltante[0]}.`
         );
 
+
         return null;
+
     }
 
 
@@ -149,15 +579,25 @@ function obtenerElementos() {
    ESTADO DE CARGA
    ========================================================= */
 
-function mostrarEstadoCarga(elementos) {
+function mostrarEstadoCarga(
+    elementos
+) {
 
-    elementos.estadoCarga.hidden = false;
+    elementos.estadoCarga.hidden =
+        false;
 
-    elementos.estadoVacio.hidden = true;
 
-    elementos.contenedorTabla.hidden = true;
+    elementos.estadoVacio.hidden =
+        true;
 
-    elementos.mensajeAdmin.hidden = true;
+
+    elementos.contenedorTabla.hidden =
+        true;
+
+
+    elementos.mensajeAdmin.hidden =
+        true;
+
 
     elementos.listaDramas.replaceChildren();
 }
@@ -172,18 +612,26 @@ function renderizarDramas(
     elementos
 ) {
 
-    elementos.estadoCarga.hidden = true;
+    elementos.estadoCarga.hidden =
+        true;
 
-    elementos.mensajeAdmin.hidden = true;
+
+    elementos.mensajeAdmin.hidden =
+        true;
+
 
     elementos.listaDramas.replaceChildren();
 
 
     if (dramas.length === 0) {
 
-        elementos.estadoVacio.hidden = false;
+        elementos.estadoVacio.hidden =
+            false;
 
-        elementos.contenedorTabla.hidden = true;
+
+        elementos.contenedorTabla.hidden =
+            true;
+
 
         return;
     }
@@ -197,7 +645,9 @@ function renderizarDramas(
         (drama) => {
 
             fragmento.appendChild(
-                crearFilaDrama(drama)
+                crearFilaDrama(
+                    drama
+                )
             );
 
         }
@@ -209,9 +659,12 @@ function renderizarDramas(
     );
 
 
-    elementos.estadoVacio.hidden = true;
+    elementos.estadoVacio.hidden =
+        true;
 
-    elementos.contenedorTabla.hidden = false;
+
+    elementos.contenedorTabla.hidden =
+        false;
 }
 
 
@@ -219,7 +672,9 @@ function renderizarDramas(
    CREAR FILA
    ========================================================= */
 
-function crearFilaDrama(drama) {
+function crearFilaDrama(
+    drama
+) {
 
     const fila =
         document.createElement("tr");
@@ -298,13 +753,16 @@ function crearFilaDrama(drama) {
    CELDA SIMPLE
    ========================================================= */
 
-function crearCelda(contenido) {
+function crearCelda(
+    contenido
+) {
 
     const celda =
         document.createElement("td");
 
 
-    celda.textContent = contenido;
+    celda.textContent =
+        contenido;
 
 
     return celda;
@@ -352,18 +810,24 @@ function crearCeldaInformacionDrama(
         )}`;
 
 
-    portada.loading = "lazy";
+    portada.loading =
+        "lazy";
 
-    portada.width = 48;
 
-    portada.height = 72;
+    portada.width =
+        48;
+
+
+    portada.height =
+        72;
 
 
     portada.addEventListener(
         "error",
         () => {
 
-            portada.hidden = true;
+            portada.hidden =
+                true;
 
         },
         {
@@ -521,13 +985,17 @@ function crearCeldaDestacado(
 
     indicador.className =
         destacado
+
             ? "feature-value feature-value--yes"
+
             : "feature-value feature-value--no";
 
 
     indicador.textContent =
         destacado
+
             ? "Sí"
+
             : "No";
 
 
@@ -591,7 +1059,9 @@ function obtenerRutaPortada(
 
 
     if (!portada) {
+
         return "";
+
     }
 
 
@@ -615,10 +1085,13 @@ function normalizarTexto(
     ) {
 
         return valorPorDefecto;
+
     }
 
 
-    return String(valor);
+    return String(
+        valor
+    );
 }
 
 
@@ -637,11 +1110,14 @@ function formatearFecha(
     ) {
 
         return "—";
+
     }
 
 
     const fecha =
-        new Date(fechaOriginal);
+        new Date(
+            fechaOriginal
+        );
 
 
     if (
@@ -653,16 +1129,66 @@ function formatearFecha(
         return String(
             fechaOriginal
         );
+
     }
 
 
     return new Intl.DateTimeFormat(
         "es-PA",
         {
-            dateStyle: "short",
-            timeStyle: "short"
+            dateStyle:
+                "short",
+
+            timeStyle:
+                "short"
         }
-    ).format(fecha);
+    ).format(
+        fecha
+    );
+}
+
+
+/* =========================================================
+   MOSTRAR MENSAJE ADMINISTRATIVO
+   ========================================================= */
+
+function mostrarMensajeAdmin(
+    mensaje,
+    tipo
+) {
+
+    const mensajeAdmin =
+        document.getElementById(
+            "mensaje-admin"
+        );
+
+
+    if (!mensajeAdmin) {
+
+        return;
+
+    }
+
+
+    mensajeAdmin.textContent =
+        mensaje;
+
+
+    if (tipo === "success") {
+
+        mensajeAdmin.className =
+            "admin-message admin-message--success";
+
+    } else {
+
+        mensajeAdmin.className =
+            "admin-message admin-message--error";
+
+    }
+
+
+    mensajeAdmin.hidden =
+        false;
 }
 
 
@@ -675,11 +1201,16 @@ function mostrarError(
     mensaje
 ) {
 
-    elementos.estadoCarga.hidden = true;
+    elementos.estadoCarga.hidden =
+        true;
 
-    elementos.estadoVacio.hidden = true;
 
-    elementos.contenedorTabla.hidden = true;
+    elementos.estadoVacio.hidden =
+        true;
+
+
+    elementos.contenedorTabla.hidden =
+        true;
 
 
     elementos.mensajeAdmin.textContent =

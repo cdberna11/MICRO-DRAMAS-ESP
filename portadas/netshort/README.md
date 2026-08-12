@@ -1,0 +1,1 @@
+Carpeta de portadas NetShort

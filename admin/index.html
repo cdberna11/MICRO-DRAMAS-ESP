@@ -2,6 +2,7 @@
 <html lang="es">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -14,12 +15,15 @@
         content="noindex, nofollow, noarchive"
     >
 
-    <title>Administración | Micro Dramas ESP</title>
+    <title>
+        Administración | Micro Dramas ESP
+    </title>
 
     <link
         rel="stylesheet"
         href="/admin/admin.css"
     >
+
 </head>
 
 
@@ -113,9 +117,6 @@
 
             <!-- =================================================
                  FORMULARIO NUEVO MICRODRAMA
-                 
-                 Permanece oculto hasta pulsar
-                 "Nuevo microdrama".
             ================================================== -->
 
             <div
@@ -164,6 +165,8 @@
                             id="title"
                             name="title"
                             autocomplete="off"
+                            maxlength="200"
+                            placeholder="Ejemplo: La esposa del millonario"
                             required
                         >
 
@@ -171,7 +174,7 @@
 
 
                     <!-- =========================================
-                         SLUG
+                         SLUG AUTOMÁTICO
                     ========================================== -->
 
                     <div class="form-group">
@@ -185,13 +188,14 @@
                             id="slug"
                             name="slug"
                             autocomplete="off"
-                            placeholder="ejemplo-de-microdrama"
-                            pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                            maxlength="200"
+                            placeholder="Se generará automáticamente"
+                            readonly
                             required
                         >
 
                         <small>
-                            Se utilizará como identificador del microdrama.
+                            Se genera automáticamente a partir del título.
                         </small>
 
                     </div>
@@ -207,14 +211,49 @@
                             Plataforma
                         </label>
 
-                        <input
-                            type="text"
+                        <select
                             id="platform"
                             name="platform"
-                            autocomplete="off"
-                            placeholder="NetShort"
                             required
                         >
+
+                            <option
+                                value=""
+                                selected
+                                disabled
+                            >
+                                Selecciona una plataforma
+                            </option>
+
+                            <option value="DramaBox">
+                                DramaBox
+                            </option>
+
+                            <option value="DramaWave">
+                                DramaWave
+                            </option>
+
+                            <option value="GoodShort">
+                                GoodShort
+                            </option>
+
+                            <option value="FlickReel">
+                                FlickReel
+                            </option>
+
+                            <option value="Melolo">
+                                Melolo
+                            </option>
+
+                            <option value="NetShort">
+                                NetShort
+                            </option>
+
+                            <option value="ReelShort">
+                                ReelShort
+                            </option>
+
+                        </select>
 
                     </div>
 
@@ -396,7 +435,7 @@
 
 
                     <!-- =========================================
-                         BOTONES DEL FORMULARIO
+                         BOTONES
                     ========================================== -->
 
                     <div class="admin-form-actions">

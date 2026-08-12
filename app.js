@@ -16,7 +16,7 @@ const PORTADA_GENERICA =
 let detalleMovilActual = null;
 
 let reproductorActual = null;
-F
+
 
 /* =========================================================
    DETECTAR VISTA MÓVIL
@@ -117,6 +117,7 @@ async function cargarDramas() {
     }
 }
 
+
 /* =========================================================
    MICRODRAMA NUEVO
    Se considera nuevo durante 72 horas.
@@ -131,22 +132,26 @@ function esDramaNuevo(createdAt) {
         return false;
     }
 
+
     const valor =
         createdAt
             .trim()
             .replace(" ", "T");
+
 
     /*
      * D1 utiliza CURRENT_TIMESTAMP en UTC.
      * Añadimos Z para interpretar correctamente
      * la fecha como UTC.
      */
+
     const fechaCreacion =
         new Date(
             valor.endsWith("Z")
                 ? valor
                 : `${valor}Z`
         );
+
 
     if (
         Number.isNaN(
@@ -156,15 +161,19 @@ function esDramaNuevo(createdAt) {
         return false;
     }
 
+
     const ahora =
         Date.now();
+
 
     const setentaDosHoras =
         72 * 60 * 60 * 1000;
 
+
     const diferencia =
         ahora -
         fechaCreacion.getTime();
+
 
     return (
         diferencia >= 0 &&
@@ -188,6 +197,7 @@ async function registrarVista(drama) {
         return null;
     }
 
+
     try {
 
         const respuesta =
@@ -207,25 +217,32 @@ async function registrarVista(drama) {
                 }
             );
 
+
         if (!respuesta.ok) {
+
             throw new Error(
                 `Error al registrar vista: ${respuesta.status}`
             );
         }
 
+
         const datos =
             await respuesta.json();
+
 
         if (
             !datos.success
         ) {
+
             throw new Error(
                 datos.error ||
                 "No se pudo registrar la vista."
             );
         }
 
+
         return Number(datos.views) || 0;
+
 
     } catch (error) {
 
@@ -233,15 +250,16 @@ async function registrarVista(drama) {
          * Una falla del contador NO debe impedir
          * que el usuario pueda ver el microdrama.
          */
+
         console.error(
             "No se pudo registrar la reproducción:",
             error
         );
 
+
         return null;
     }
 }
-
 
 
 /* =========================================================
@@ -262,70 +280,81 @@ function crearTarjetaDrama(drama) {
     const tarjeta =
         document.createElement("article");
 
+
     tarjeta.className =
         "drama-card";
 
 
-/* -----------------------------------------------------
-   ETIQUETA RECIÉN AGREGADO
------------------------------------------------------ */
+    /* -----------------------------------------------------
+       ETIQUETA RECIÉN AGREGADO
+    ----------------------------------------------------- */
 
-if (
-    esDramaNuevo(
-        drama.created_at
-    )
-) {
+    if (
+        esDramaNuevo(
+            drama.created_at
+        )
+    ) {
 
-    const etiquetaNuevo =
-        document.createElement("div");
-
-    etiquetaNuevo.className =
-        "drama-card__new";
-
-    etiquetaNuevo.textContent =
-        "RECIÉN AGREGADO";
-
-    etiquetaNuevo.setAttribute(
-        "aria-label",
-        "Microdrama recién agregado"
-    );
-
-    tarjeta.appendChild(
-        etiquetaNuevo
-    );
-}
+        const etiquetaNuevo =
+            document.createElement("div");
 
 
-/* -----------------------------------------------------
-   ETIQUETA TOP
-   Aparece desde 3 reproducciones.
------------------------------------------------------ */
+        etiquetaNuevo.className =
+            "drama-card__new";
 
-if (
-    Number(drama.views) >= 3
-) {
 
-    const etiquetaTop =
-        document.createElement("div");
+        etiquetaNuevo.textContent =
+            "RECIÉN AGREGADO";
 
-    etiquetaTop.className =
-        "drama-card__top";
 
-    etiquetaTop.innerHTML = `
-    <span aria-hidden="true">🔥</span>
-    TOP
-`;
+        etiquetaNuevo.setAttribute(
+            "aria-label",
+            "Microdrama recién agregado"
+        );
 
-    etiquetaTop.setAttribute(
-        "aria-label",
-        "Microdrama TOP"
-    );
 
-    tarjeta.appendChild(
-        etiquetaTop
-    );
-}
-   
+        tarjeta.appendChild(
+            etiquetaNuevo
+        );
+    }
+
+
+    /* -----------------------------------------------------
+       ETIQUETA TOP
+       Aparece desde 3 reproducciones.
+    ----------------------------------------------------- */
+
+    if (
+        Number(drama.views) >= 3
+    ) {
+
+        const etiquetaTop =
+            document.createElement("div");
+
+
+        etiquetaTop.className =
+            "drama-card__top";
+
+
+        etiquetaTop.innerHTML =
+            `
+            <span aria-hidden="true">🔥</span>
+            TOP
+            `;
+
+
+        etiquetaTop.setAttribute(
+            "aria-label",
+            "Microdrama TOP"
+        );
+
+
+        tarjeta.appendChild(
+            etiquetaTop
+        );
+    }
+
+
     /* -----------------------------------------------------
        PORTADA
     ----------------------------------------------------- */
@@ -381,6 +410,7 @@ if (
     const overlay =
         document.createElement("div");
 
+
     overlay.className =
         "drama-card__overlay";
 
@@ -392,8 +422,10 @@ if (
     const titulo =
         document.createElement("h2");
 
+
     titulo.className =
         "drama-card__title";
+
 
     titulo.textContent =
         drama.title;
@@ -406,8 +438,10 @@ if (
     const tipo =
         document.createElement("p");
 
+
     tipo.className =
         "drama-card__type";
+
 
     tipo.textContent =
         "Microdrama doblado al español.";
@@ -420,12 +454,14 @@ if (
     const plataforma =
         document.createElement("p");
 
+
     plataforma.className =
         "drama-card__platform";
 
 
     const etiquetaPlataforma =
         document.createElement("strong");
+
 
     etiquetaPlataforma.textContent =
         "Plataforma: ";
@@ -453,6 +489,7 @@ if (
     const controles =
         document.createElement("div");
 
+
     controles.className =
         "drama-card__controls";
 
@@ -464,14 +501,18 @@ if (
     const botonVer =
         document.createElement("button");
 
+
     botonVer.type =
         "button";
 
+
     botonVer.className =
         "drama-card__play";
-   
-botonVer.dataset.dramaId =
-    String(drama.id);
+
+
+    botonVer.dataset.dramaId =
+        String(drama.id);
+
 
     botonVer.innerHTML =
         `
@@ -511,11 +552,14 @@ botonVer.dataset.dramaId =
     const botonMas =
         document.createElement("button");
 
+
     botonMas.type =
         "button";
 
+
     botonMas.className =
         "drama-card__more";
+
 
     botonMas.textContent =
         "+";
@@ -539,6 +583,7 @@ botonVer.dataset.dramaId =
 
     const descripcion =
         document.createElement("div");
+
 
     descripcion.className =
         "drama-card__description";
@@ -594,6 +639,7 @@ botonVer.dataset.dramaId =
         botonVer
     );
 
+
     controles.appendChild(
         botonMas
     );
@@ -607,17 +653,21 @@ botonVer.dataset.dramaId =
         titulo
     );
 
+
     overlay.appendChild(
         tipo
     );
+
 
     overlay.appendChild(
         plataforma
     );
 
+
     overlay.appendChild(
         controles
     );
+
 
     overlay.appendChild(
         descripcion
@@ -631,6 +681,7 @@ botonVer.dataset.dramaId =
     tarjeta.appendChild(
         portada
     );
+
 
     tarjeta.appendChild(
         overlay
@@ -690,8 +741,10 @@ function crearDetalleMovil() {
     const detalle =
         document.createElement("div");
 
+
     detalle.id =
         "detalle-movil";
+
 
     detalle.className =
         "mobile-detail";
@@ -706,12 +759,14 @@ function crearDetalleMovil() {
     const fondo =
         document.createElement("div");
 
+
     fondo.className =
         "mobile-detail__backdrop";
 
 
     const panel =
         document.createElement("div");
+
 
     panel.className =
         "mobile-detail__panel";
@@ -736,11 +791,14 @@ function crearDetalleMovil() {
     const cerrar =
         document.createElement("button");
 
+
     cerrar.type =
         "button";
 
+
     cerrar.className =
         "mobile-detail__close";
+
 
     cerrar.innerHTML =
         "×";
@@ -759,6 +817,7 @@ function crearDetalleMovil() {
     const imagen =
         document.createElement("img");
 
+
     imagen.className =
         "mobile-detail__image";
 
@@ -769,6 +828,7 @@ function crearDetalleMovil() {
 
     const contenido =
         document.createElement("div");
+
 
     contenido.className =
         "mobile-detail__content";
@@ -781,6 +841,7 @@ function crearDetalleMovil() {
     const titulo =
         document.createElement("h2");
 
+
     titulo.className =
         "mobile-detail__title";
 
@@ -792,8 +853,10 @@ function crearDetalleMovil() {
     const tipo =
         document.createElement("p");
 
+
     tipo.className =
         "mobile-detail__type";
+
 
     tipo.textContent =
         "Microdrama doblado al español.";
@@ -806,6 +869,7 @@ function crearDetalleMovil() {
     const plataforma =
         document.createElement("p");
 
+
     plataforma.className =
         "mobile-detail__platform";
 
@@ -817,8 +881,10 @@ function crearDetalleMovil() {
     const botonVer =
         document.createElement("button");
 
+
     botonVer.type =
         "button";
+
 
     botonVer.className =
         "mobile-detail__play";
@@ -867,8 +933,10 @@ function crearDetalleMovil() {
     const tituloDescripcion =
         document.createElement("h3");
 
+
     tituloDescripcion.className =
         "mobile-detail__description-title";
+
 
     tituloDescripcion.textContent =
         "Descripción";
@@ -876,6 +944,7 @@ function crearDetalleMovil() {
 
     const descripcion =
         document.createElement("p");
+
 
     descripcion.className =
         "mobile-detail__description";
@@ -887,6 +956,7 @@ function crearDetalleMovil() {
 
     const acciones =
         document.createElement("div");
+
 
     acciones.className =
         "mobile-detail__actions";
@@ -905,21 +975,26 @@ function crearDetalleMovil() {
         titulo
     );
 
+
     contenido.appendChild(
         tipo
     );
+
 
     contenido.appendChild(
         plataforma
     );
 
+
     contenido.appendChild(
         acciones
     );
 
+
     contenido.appendChild(
         tituloDescripcion
     );
+
 
     contenido.appendChild(
         descripcion
@@ -930,9 +1005,11 @@ function crearDetalleMovil() {
         cerrar
     );
 
+
     panel.appendChild(
         imagen
     );
+
 
     panel.appendChild(
         contenido
@@ -942,6 +1019,7 @@ function crearDetalleMovil() {
     detalle.appendChild(
         fondo
     );
+
 
     detalle.appendChild(
         panel
@@ -1142,8 +1220,10 @@ function crearReproductor() {
     const reproductor =
         document.createElement("div");
 
+
     reproductor.id =
         "reproductor";
+
 
     reproductor.className =
         "video-player";
@@ -1162,6 +1242,7 @@ function crearReproductor() {
     const fondo =
         document.createElement("div");
 
+
     fondo.className =
         "video-player__backdrop";
 
@@ -1172,6 +1253,7 @@ function crearReproductor() {
 
     const ventana =
         document.createElement("div");
+
 
     ventana.className =
         "video-player__window";
@@ -1196,12 +1278,14 @@ function crearReproductor() {
     const cabecera =
         document.createElement("div");
 
+
     cabecera.className =
         "video-player__header";
 
 
     const titulo =
         document.createElement("h2");
+
 
     titulo.className =
         "video-player__title";
@@ -1210,11 +1294,14 @@ function crearReproductor() {
     const cerrar =
         document.createElement("button");
 
+
     cerrar.type =
         "button";
 
+
     cerrar.className =
         "video-player__close";
+
 
     cerrar.textContent =
         "×";
@@ -1230,6 +1317,7 @@ function crearReproductor() {
         titulo
     );
 
+
     cabecera.appendChild(
         cerrar
     );
@@ -1241,6 +1329,7 @@ function crearReproductor() {
 
     const videoArea =
         document.createElement("div");
+
 
     videoArea.className =
         "video-player__area";
@@ -1299,6 +1388,7 @@ function crearReproductor() {
         cabecera
     );
 
+
     ventana.appendChild(
         videoArea
     );
@@ -1307,6 +1397,7 @@ function crearReproductor() {
     reproductor.appendChild(
         fondo
     );
+
 
     reproductor.appendChild(
         ventana
@@ -1410,105 +1501,125 @@ function reproducirDrama(drama) {
 
     reproductorActual =
         drama;
-/* -----------------------------------------------------
-   REGISTRAR VISTA
------------------------------------------------------ */
 
-registrarVista(
-    drama
-).then(
-    (viewsActualizadas) => {
 
-        if (
-            viewsActualizadas === null
-        ) {
-            return;
-        }
+    /* -----------------------------------------------------
+       REGISTRAR VISTA
+    ----------------------------------------------------- */
 
-        /*
-         * Actualizamos el valor local.
-         */
-        drama.views =
-            viewsActualizadas;
+    registrarVista(
+        drama
+    ).then(
+        (viewsActualizadas) => {
 
-        /*
-         * Si acaba de alcanzar 3 vistas,
-         * mostramos inmediatamente el 🔥
-         * sin esperar a recargar la página.
-         */
-        if (
-            viewsActualizadas >= 3
-        ) {
+            if (
+                viewsActualizadas === null
+            ) {
+                return;
+            }
 
-            const tarjetas =
-                document.querySelectorAll(
-                    ".drama-card"
+
+            /*
+             * Actualizamos el valor local.
+             */
+
+            drama.views =
+                viewsActualizadas;
+
+
+            /*
+             * Si acaba de alcanzar 3 vistas,
+             * mostramos inmediatamente el TOP
+             * sin esperar a recargar la página.
+             */
+
+            if (
+                viewsActualizadas >= 3
+            ) {
+
+                const tarjetas =
+                    document.querySelectorAll(
+                        ".drama-card"
+                    );
+
+
+                tarjetas.forEach(
+                    (tarjeta) => {
+
+                        /*
+                         * Buscamos la tarjeta
+                         * correspondiente mediante
+                         * el botón Ver.
+                         */
+
+                        const boton =
+                            tarjeta.querySelector(
+                                ".drama-card__play"
+                            );
+
+
+                        if (
+                            !boton
+                        ) {
+                            return;
+                        }
+
+
+                        /*
+                         * La referencia al drama
+                         * se conserva en el closure
+                         * de cada botón.
+                         */
+
+                        if (
+                            boton.dataset.dramaId !==
+                            String(drama.id)
+                        ) {
+                            return;
+                        }
+
+
+                        if (
+                            tarjeta.querySelector(
+                                ".drama-card__top"
+                            )
+                        ) {
+                            return;
+                        }
+
+
+                        const etiquetaTop =
+                            document.createElement(
+                                "div"
+                            );
+
+
+                        etiquetaTop.className =
+                            "drama-card__top";
+
+
+                        etiquetaTop.innerHTML =
+                            `
+                            <span aria-hidden="true">🔥</span>
+                            TOP
+                            `;
+
+
+                        etiquetaTop.setAttribute(
+                            "aria-label",
+                            "Microdrama TOP"
+                        );
+
+
+                        tarjeta.appendChild(
+                            etiquetaTop
+                        );
+                    }
                 );
-
-            tarjetas.forEach(
-                (tarjeta) => {
-
-                    /*
-                     * Buscamos la tarjeta
-                     * correspondiente mediante
-                     * el botón Ver.
-                     */
-                    const boton =
-                        tarjeta.querySelector(
-                            ".drama-card__play"
-                        );
-
-                    if (
-                        !boton
-                    ) {
-                        return;
-                    }
-
-                    /*
-                     * La referencia al drama
-                     * se conserva en el closure
-                     * de cada botón.
-                     */
-                    if (
-                        boton.dataset.dramaId !==
-                        String(drama.id)
-                    ) {
-                        return;
-                    }
-
-                    if (
-                        tarjeta.querySelector(
-                            ".drama-card__top"
-                        )
-                    ) {
-                        return;
-                    }
-
-                    const etiquetaTop =
-                        document.createElement(
-                            "div"
-                        );
-
-                    etiquetaTop.className =
-                        "drama-card__top";
-
-                    etiquetaTop.textContent =
-                        "🔥";
-
-                    etiquetaTop.setAttribute(
-                        "aria-label",
-                        "Microdrama TOP"
-                    );
-
-                    tarjeta.appendChild(
-                        etiquetaTop
-                    );
-                }
-            );
+            }
         }
-    }
-);
-   
+    );
+
 
     /* -----------------------------------------------------
        MOSTRAR
@@ -1612,6 +1723,7 @@ function mostrarMensajeSinVideo(
 
     const mensaje =
         document.createElement("div");
+
 
     mensaje.className =
         "video-missing-message";

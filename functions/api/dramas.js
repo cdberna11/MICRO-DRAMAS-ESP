@@ -26,6 +26,7 @@ export async function onRequestGet(context) {
         description,
         video_description,
         cover_url,
+        views,
         video_url,
         embed_url,
         featured,

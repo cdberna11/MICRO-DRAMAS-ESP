@@ -2,11 +2,30 @@
 
 
 /* =========================================================
-   CONFIGURACIÓNF
+   CONFIGURACIÓN
 ========================================================= */
 
 const PORTADA_GENERICA =
     "/portadas/generica/portada-generica.png";
+
+
+/* =========================================================
+   REFERENCIAS
+========================================================= */
+
+let detalleMovilActual = null;
+
+
+/* =========================================================
+   DETECTAR DISPOSITIVO / VISTA MÓVIL
+========================================================= */
+
+function esVistaMovil() {
+
+    return window.matchMedia(
+        "(max-width: 600px)"
+    ).matches;
+}
 
 
 /* =========================================================
@@ -194,7 +213,7 @@ function crearTarjetaDrama(
 
 
     /* -----------------------------------------------------
-       INFORMACIÓN SUPERPUESTA
+       INFORMACIÓN SUPERPUESTA — ESCRITORIO
     ----------------------------------------------------- */
 
     const overlay =
@@ -223,56 +242,56 @@ function crearTarjetaDrama(
 
 
     /* -----------------------------------------------------
-       TEXTO
+       TIPO
     ----------------------------------------------------- */
 
     const tipo =
-    document.createElement(
-        "p"
+        document.createElement(
+            "p"
+        );
+
+    tipo.className =
+        "drama-card__type";
+
+    tipo.textContent =
+        "Microdrama doblado al español.";
+
+
+    /* -----------------------------------------------------
+       PLATAFORMA
+    ----------------------------------------------------- */
+
+    const plataforma =
+        document.createElement(
+            "p"
+        );
+
+    plataforma.className =
+        "drama-card__platform";
+
+
+    const etiquetaPlataforma =
+        document.createElement(
+            "strong"
+        );
+
+    etiquetaPlataforma.textContent =
+        "Plataforma: ";
+
+
+    plataforma.appendChild(
+        etiquetaPlataforma
     );
 
-tipo.className =
-    "drama-card__type";
 
-tipo.textContent =
-    "Microdrama doblado al español.";
-
-
-/* -----------------------------------------------------
-   PLATAFORMA
------------------------------------------------------ */
-
-const plataforma =
-    document.createElement(
-        "p"
+    plataforma.appendChild(
+        document.createTextNode(
+            typeof drama.platform === "string" &&
+            drama.platform.trim() !== ""
+                ? drama.platform.trim()
+                : "No especificada"
+        )
     );
-
-plataforma.className =
-    "drama-card__platform";
-
-
-const etiquetaPlataforma =
-    document.createElement(
-        "strong"
-    );
-
-etiquetaPlataforma.textContent =
-    "Plataforma: ";
-
-
-plataforma.appendChild(
-    etiquetaPlataforma
-);
-
-
-plataforma.appendChild(
-    document.createTextNode(
-        typeof drama.platform === "string" &&
-        drama.platform.trim() !== ""
-            ? drama.platform.trim()
-            : "No especificada"
-    )
-);
 
 
     /* -----------------------------------------------------
@@ -318,20 +337,18 @@ plataforma.appendChild(
         `;
 
 
-    /*
-     * Por ahora solamente detenemos
-     * el comportamiento.
-     *
-     * En la siguiente etapa este botón
-     * abrirá el reproductor interno.
-     */
-
     botonVer.addEventListener(
         "click",
         (evento) => {
 
             evento.preventDefault();
             evento.stopPropagation();
+
+
+            /*
+             * El reproductor interno será
+             * implementado en la Etapa 3.
+             */
 
             console.log(
                 "Reproducir microdrama:",
@@ -359,9 +376,16 @@ plataforma.appendChild(
     botonMas.textContent =
         "+";
 
+
     botonMas.setAttribute(
         "aria-label",
         `Mostrar descripción de ${drama.title}`
+    );
+
+
+    botonMas.setAttribute(
+        "aria-expanded",
+        "false"
     );
 
 
@@ -388,11 +412,6 @@ plataforma.appendChild(
     descripcion.textContent =
         descripcionTexto || "";
 
-
-    /*
-     * El botón + muestra u oculta
-     * la descripción.
-     */
 
     botonMas.addEventListener(
         "click",
@@ -432,6 +451,7 @@ plataforma.appendChild(
         botonVer
     );
 
+
     controles.appendChild(
         botonMas
     );
@@ -442,20 +462,24 @@ plataforma.appendChild(
     ----------------------------------------------------- */
 
     overlay.appendChild(
-    titulo
-);
+        titulo
+    );
 
-overlay.appendChild(
-    tipo
-);
 
-overlay.appendChild(
-    plataforma
-);
+    overlay.appendChild(
+        tipo
+    );
 
-overlay.appendChild(
-    controles
-);
+
+    overlay.appendChild(
+        plataforma
+    );
+
+
+    overlay.appendChild(
+        controles
+    );
+
 
     overlay.appendChild(
         descripcion
@@ -470,8 +494,50 @@ overlay.appendChild(
         portada
     );
 
+
     tarjeta.appendChild(
         overlay
+    );
+
+
+    /* -----------------------------------------------------
+       INTERACCIÓN MÓVIL
+    ----------------------------------------------------- */
+
+    tarjeta.addEventListener(
+        "click",
+        (evento) => {
+
+            /*
+             * En escritorio no hacemos nada.
+             * La interacción continúa siendo mediante hover.
+             */
+
+            if (
+                !esVistaMovil()
+            ) {
+                return;
+            }
+
+
+            /*
+             * Si se tocó un botón,
+             * no abrimos nuevamente el detalle.
+             */
+
+            if (
+                evento.target.closest(
+                    "button"
+                )
+            ) {
+                return;
+            }
+
+
+            abrirDetalleMovil(
+                drama
+            );
+        }
     );
 
 
@@ -479,6 +545,609 @@ overlay.appendChild(
         tarjeta
     );
 }
+
+
+/* =========================================================
+   CREAR VISTA DE DETALLE MÓVIL
+========================================================= */
+
+function crearDetalleMovil() {
+
+    /*
+     * Evitamos crear el elemento más de una vez.
+     */
+
+    if (
+        document.getElementById(
+            "detalle-movil"
+        )
+    ) {
+        return;
+    }
+
+
+    const detalle =
+        document.createElement(
+            "div"
+        );
+
+    detalle.id =
+        "detalle-movil";
+
+    detalle.className =
+        "mobile-detail";
+
+    detalle.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+
+    /* -----------------------------------------------------
+       FONDO
+    ----------------------------------------------------- */
+
+    const fondo =
+        document.createElement(
+            "div"
+        );
+
+    fondo.className =
+        "mobile-detail__backdrop";
+
+
+    /* -----------------------------------------------------
+       PANEL
+    ----------------------------------------------------- */
+
+    const panel =
+        document.createElement(
+            "div"
+        );
+
+    panel.className =
+        "mobile-detail__panel";
+
+    panel.setAttribute(
+        "role",
+        "dialog"
+    );
+
+    panel.setAttribute(
+        "aria-modal",
+        "true"
+    );
+
+    panel.setAttribute(
+        "aria-labelledby",
+        "detalle-movil-titulo"
+    );
+
+
+    /* -----------------------------------------------------
+       BOTÓN CERRAR
+    ----------------------------------------------------- */
+
+    const cerrar =
+        document.createElement(
+            "button"
+        );
+
+    cerrar.type =
+        "button";
+
+    cerrar.className =
+        "mobile-detail__close";
+
+    cerrar.innerHTML =
+        "×";
+
+    cerrar.setAttribute(
+        "aria-label",
+        "Cerrar"
+    );
+
+
+    /* -----------------------------------------------------
+       PORTADA
+    ----------------------------------------------------- */
+
+    const imagen =
+        document.createElement(
+            "img"
+        );
+
+    imagen.className =
+        "mobile-detail__image";
+
+    imagen.alt =
+        "";
+
+
+    /* -----------------------------------------------------
+       CONTENIDO
+    ----------------------------------------------------- */
+
+    const contenido =
+        document.createElement(
+            "div"
+        );
+
+    contenido.className =
+        "mobile-detail__content";
+
+
+    /* -----------------------------------------------------
+       TÍTULO
+    ----------------------------------------------------- */
+
+    const titulo =
+        document.createElement(
+            "h2"
+        );
+
+    titulo.id =
+        "detalle-movil-titulo";
+
+    titulo.className =
+        "mobile-detail__title";
+
+
+    /* -----------------------------------------------------
+       TIPO
+    ----------------------------------------------------- */
+
+    const tipo =
+        document.createElement(
+            "p"
+        );
+
+    tipo.className =
+        "mobile-detail__type";
+
+    tipo.textContent =
+        "Microdrama doblado al español.";
+
+
+    /* -----------------------------------------------------
+       PLATAFORMA
+    ----------------------------------------------------- */
+
+    const plataforma =
+        document.createElement(
+            "p"
+        );
+
+    plataforma.className =
+        "mobile-detail__platform";
+
+
+    /* -----------------------------------------------------
+       BOTÓN VER
+    ----------------------------------------------------- */
+
+    const botonVer =
+        document.createElement(
+            "button"
+        );
+
+    botonVer.type =
+        "button";
+
+    botonVer.className =
+        "mobile-detail__play";
+
+    botonVer.innerHTML =
+        `
+        <span
+            class="mobile-detail__play-icon"
+            aria-hidden="true"
+        >
+            ▶
+        </span>
+
+        <span>
+            Ver
+        </span>
+        `;
+
+
+    botonVer.addEventListener(
+        "click",
+        (evento) => {
+
+            evento.preventDefault();
+
+
+            if (
+                !detalleMovilActual
+            ) {
+                return;
+            }
+
+
+            /*
+             * El reproductor interno se agregará
+             * en la Etapa 3.
+             */
+
+            console.log(
+                "Reproducir:",
+                detalleMovilActual.title
+            );
+        }
+    );
+
+
+    /* -----------------------------------------------------
+       DESCRIPCIÓN DEL VIDEO
+    ----------------------------------------------------- */
+
+    const etiquetaDescripcion =
+        document.createElement(
+            "h3"
+        );
+
+    etiquetaDescripcion.className =
+        "mobile-detail__description-title";
+
+    etiquetaDescripcion.textContent =
+        "Descripción";
+
+
+    const descripcion =
+        document.createElement(
+            "p"
+        );
+
+    descripcion.className =
+        "mobile-detail__description";
+
+
+    /* -----------------------------------------------------
+       CONTROLES
+    ----------------------------------------------------- */
+
+    const acciones =
+        document.createElement(
+            "div"
+        );
+
+    acciones.className =
+        "mobile-detail__actions";
+
+
+    acciones.appendChild(
+        botonVer
+    );
+
+
+    /* -----------------------------------------------------
+       CONSTRUIR CONTENIDO
+    ----------------------------------------------------- */
+
+    contenido.appendChild(
+        titulo
+    );
+
+
+    contenido.appendChild(
+        tipo
+    );
+
+
+    contenido.appendChild(
+        plataforma
+    );
+
+
+    contenido.appendChild(
+        acciones
+    );
+
+
+    contenido.appendChild(
+        etiquetaDescripcion
+    );
+
+
+    contenido.appendChild(
+        descripcion
+    );
+
+
+    /* -----------------------------------------------------
+       CONSTRUIR PANEL
+    ----------------------------------------------------- */
+
+    panel.appendChild(
+        cerrar
+    );
+
+
+    panel.appendChild(
+        imagen
+    );
+
+
+    panel.appendChild(
+        contenido
+    );
+
+
+    /* -----------------------------------------------------
+       CONSTRUIR DETALLE
+    ----------------------------------------------------- */
+
+    detalle.appendChild(
+        fondo
+    );
+
+
+    detalle.appendChild(
+        panel
+    );
+
+
+    document.body.appendChild(
+        detalle
+    );
+
+
+    /* -----------------------------------------------------
+       CERRAR
+    ----------------------------------------------------- */
+
+    cerrar.addEventListener(
+        "click",
+        cerrarDetalleMovil
+    );
+
+
+    fondo.addEventListener(
+        "click",
+        cerrarDetalleMovil
+    );
+
+
+    /*
+     * ESC también permite cerrar
+     * la ventana cuando se utiliza
+     * un teclado.
+     */
+
+    document.addEventListener(
+        "keydown",
+        manejarTeclaEscape
+    );
+}
+
+
+/* =========================================================
+   ABRIR DETALLE MÓVIL
+========================================================= */
+
+function abrirDetalleMovil(
+    drama
+) {
+
+    if (
+        !esVistaMovil()
+    ) {
+        return;
+    }
+
+
+    crearDetalleMovil();
+
+
+    const detalle =
+        document.getElementById(
+            "detalle-movil"
+        );
+
+
+    if (!detalle) {
+        return;
+    }
+
+
+    const imagen =
+        detalle.querySelector(
+            ".mobile-detail__image"
+        );
+
+
+    const titulo =
+        detalle.querySelector(
+            ".mobile-detail__title"
+        );
+
+
+    const plataforma =
+        detalle.querySelector(
+            ".mobile-detail__platform"
+        );
+
+
+    const descripcion =
+        detalle.querySelector(
+            ".mobile-detail__description"
+        );
+
+
+    const portadaUrl =
+        typeof drama.cover_url === "string" &&
+        drama.cover_url.trim() !== ""
+            ? drama.cover_url.trim()
+            : PORTADA_GENERICA;
+
+
+    imagen.src =
+        portadaUrl;
+
+
+    imagen.alt =
+        `Portada de ${drama.title}`;
+
+
+    /*
+     * Fallback de portada.
+     */
+
+    imagen.onerror =
+        () => {
+
+            if (
+                !imagen.src.endsWith(
+                    PORTADA_GENERICA
+                )
+            ) {
+
+                imagen.src =
+                    PORTADA_GENERICA;
+            }
+        };
+
+
+    titulo.textContent =
+        drama.title;
+
+
+    const nombrePlataforma =
+        typeof drama.platform === "string" &&
+        drama.platform.trim() !== ""
+            ? drama.platform.trim()
+            : "No especificada";
+
+
+    plataforma.textContent =
+        `Plataforma: ${nombrePlataforma}`;
+
+
+    const descripcionTexto =
+        typeof drama.video_description === "string" &&
+        drama.video_description.trim() !== ""
+            ? drama.video_description.trim()
+            : drama.description;
+
+
+    descripcion.textContent =
+        descripcionTexto || "Sin descripción disponible.";
+
+
+    detalleMovilActual =
+        drama;
+
+
+    detalle.classList.add(
+        "is-open"
+    );
+
+
+    detalle.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+
+    document.body.classList.add(
+        "mobile-detail-open"
+    );
+
+
+    /*
+     * Comenzamos arriba de la vista
+     * cuando se abre.
+     */
+
+    const panel =
+        detalle.querySelector(
+            ".mobile-detail__panel"
+        );
+
+
+    if (panel) {
+
+        panel.scrollTop =
+            0;
+    }
+}
+
+
+/* =========================================================
+   CERRAR DETALLE MÓVIL
+========================================================= */
+
+function cerrarDetalleMovil() {
+
+    const detalle =
+        document.getElementById(
+            "detalle-movil"
+        );
+
+
+    if (!detalle) {
+        return;
+    }
+
+
+    detalle.classList.remove(
+        "is-open"
+    );
+
+
+    detalle.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+
+    document.body.classList.remove(
+        "mobile-detail-open"
+    );
+
+
+    detalleMovilActual =
+        null;
+}
+
+
+/* =========================================================
+   TECLA ESC
+========================================================= */
+
+function manejarTeclaEscape(
+    evento
+) {
+
+    if (
+        evento.key !== "Escape"
+    ) {
+        return;
+    }
+
+
+    cerrarDetalleMovil();
+}
+
+
+/* =========================================================
+   CERRAR SI CAMBIAMOS DE MÓVIL A ESCRITORIO
+========================================================= */
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        if (
+            !esVistaMovil()
+        ) {
+
+            cerrarDetalleMovil();
+        }
+    }
+);
 
 
 /* =========================================================

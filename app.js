@@ -57,8 +57,7 @@ async function cargarDramas() {
             const descripcion = document.createElement("p");
             descripcion.textContent = drama.description;
 
-            const detallesDescripcion = document.createElement("details");
-            detallesDescripcion.className = "video-details";
+            
 
             const resumenDescripcion = document.createElement("summary");
             resumenDescripcion.textContent = "Descripción del video";
@@ -79,7 +78,7 @@ async function cargarDramas() {
             contenido.appendChild(titulo);
             contenido.appendChild(plataforma);
             contenido.appendChild(descripcion);
-            contenido.appendChild(detallesDescripcion);
+            contenido.appendChild(descripcion);
             contenido.appendChild(boton);
 
             tarjeta.appendChild(portada);

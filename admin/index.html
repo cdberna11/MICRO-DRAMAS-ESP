@@ -15,12 +15,14 @@
 
     <title>Administración | Micro Dramas ESP</title>
 
-    /admin/admin.css
+    <link rel="stylesheet" href="/admin/admin.css">
 </head>
 
 <body>
+
     <header class="admin-header">
         <div class="admin-header__content">
+
             <div>
                 <p class="admin-header__label">
                     Panel administrativo
@@ -29,16 +31,23 @@
                 <h1>Micro Dramas ESP</h1>
             </div>
 
-            /--secondary"
+            <a
+                href="/"
+                class="button button--secondary"
             >
                 Ver catálogo
             </a>
+
         </div>
     </header>
 
+
     <main class="admin-main">
+
         <section class="admin-panel">
+
             <div class="admin-panel__heading">
+
                 <div>
                     <h2>Gestión de microdramas</h2>
 
@@ -57,7 +66,9 @@
                 >
                     Nuevo microdrama
                 </button>
+
             </div>
+
 
             <div
                 id="mensaje-admin"
@@ -67,6 +78,7 @@
                 hidden
             ></div>
 
+
             <div
                 id="estado-carga"
                 class="loading-state"
@@ -74,12 +86,15 @@
                 Cargando microdramas...
             </div>
 
+
             <div
                 id="contenedor-tabla"
                 class="table-container"
                 hidden
             >
+
                 <table class="admin-table">
+
                     <thead>
                         <tr>
                             <th scope="col">ID</th>
@@ -94,8 +109,11 @@
                     </thead>
 
                     <tbody id="lista-dramas"></tbody>
+
                 </table>
+
             </div>
+
 
             <div
                 id="estado-vacio"
@@ -104,9 +122,13 @@
             >
                 No hay microdramas registrados.
             </div>
+
         </section>
+
     </main>
 
-    /admin/admin.js
+
+    <script src="/admin/admin.js" defer></script>
+
 </body>
 </html>

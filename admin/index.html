@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="robots"
+        content="noindex, nofollow, noarchive"
+    >
+
+    <title>Administración | Micro Dramas ESP</title>
+
+    /admin/admin.css
+</head>
+
+<body>
+    <header class="admin-header">
+        <div class="admin-header__content">
+            <div>
+                <p class="admin-header__label">
+                    Panel administrativo
+                </p>
+
+                <h1>Micro Dramas ESP</h1>
+            </div>
+
+            /
+                Ver catálogo
+            </a>
+        </div>
+    </header>
+
+    <main class="admin-main">
+        <section class="admin-panel">
+            <div class="admin-panel__heading">
+                <div>
+                    <h2>Gestión de microdramas</h2>
+
+                    <p>
+                        Administra los registros almacenados
+                        en Cloudflare D1.
+                    </p>
+                </div>
+
+                <button
+                    id="boton-nuevo"
+                    class="button button--primary"
+                    type="button"
+                    disabled
+                    title="La creación de registros se habilitará próximamente."
+                >
+                    Nuevo microdrama
+                </button>
+            </div>
+
+            <div
+                id="mensaje-admin"
+                class="admin-message"
+                role="status"
+                aria-live="polite"
+                hidden
+            ></div>
+
+            <div
+                id="estado-carga"
+                class="loading-state"
+            >
+                Cargando microdramas...
+            </div>
+
+            <div
+                id="contenedor-tabla"
+                class="table-container"
+                hidden
+            >
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Microdrama</th>
+                            <th scope="col">Plataforma</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col">Destacado</th>
+                            <th scope="col">Orden</th>
+                            <th scope="col">Actualización</th>
+                            <th scope="col">Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="lista-dramas">
+                    </tbody>
+                </table>
+            </div>
+
+            <div
+                id="estado-vacio"
+                class="empty-state"
+                hidden
+            >
+                No hay microdramas registrados.
+            </div>
+        </section>
+    </main>
+
+    /admin/admin.jsscript>
+</body>
+</html>

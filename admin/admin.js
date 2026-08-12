@@ -5,7 +5,8 @@
    CONFIGURACIÓN
    ========================================================= */
 
-const API_ADMIN_DRAMAS = "/api/admin/dramas";
+const API_ADMIN_DRAMAS =
+    "/api/admin/dramas";
 
 
 /* =========================================================
@@ -25,33 +26,53 @@ document.addEventListener(
 
 
 /* =========================================================
-   FORMULARIO NUEVO MICRODRAMA
+   INICIALIZAR FORMULARIO
    ========================================================= */
 
 function inicializarFormularioNuevoDrama() {
 
     const botonNuevo =
-        document.getElementById("boton-nuevo");
+        document.getElementById(
+            "boton-nuevo"
+        );
 
     const formularioContenedor =
-        document.getElementById("formulario-nuevo");
+        document.getElementById(
+            "formulario-nuevo"
+        );
 
     const formulario =
-        document.getElementById("form-nuevo-drama");
+        document.getElementById(
+            "form-nuevo-drama"
+        );
 
     const botonCancelar =
-        document.getElementById("boton-cancelar");
+        document.getElementById(
+            "boton-cancelar"
+        );
+
+    const campoTitulo =
+        document.getElementById(
+            "title"
+        );
+
+    const campoSlug =
+        document.getElementById(
+            "slug"
+        );
 
 
     if (
         !botonNuevo ||
         !formularioContenedor ||
         !formulario ||
-        !botonCancelar
+        !botonCancelar ||
+        !campoTitulo ||
+        !campoSlug
     ) {
 
         console.error(
-            "No se pudieron inicializar los controles del formulario de nuevo microdrama."
+            "No se pudieron inicializar correctamente los controles del formulario."
         );
 
         return;
@@ -66,20 +87,32 @@ function inicializarFormularioNuevoDrama() {
         "click",
         () => {
 
-            formularioContenedor.hidden = false;
+            formularioContenedor.hidden =
+                false;
 
-            botonNuevo.disabled = true;
-
-
-            const campoTitulo =
-                document.getElementById("title");
+            botonNuevo.disabled =
+                true;
 
 
-            if (campoTitulo) {
+            campoTitulo.focus();
 
-                campoTitulo.focus();
+        }
+    );
 
-            }
+
+    /* -----------------------------------------------------
+       GENERAR SLUG AUTOMÁTICAMENTE
+       ----------------------------------------------------- */
+
+    campoTitulo.addEventListener(
+        "input",
+        () => {
+
+            campoSlug.value =
+                generarSlug(
+                    campoTitulo.value
+                );
+
         }
     );
 
@@ -119,19 +152,117 @@ function inicializarFormularioNuevoDrama() {
 
 
 /* =========================================================
-   CERRAR FORMULARIO NUEVO MICRODRAMA
+   GENERAR SLUG
+   ========================================================= */
+
+function generarSlug(
+    texto
+) {
+
+    if (
+        typeof texto !== "string"
+    ) {
+
+        return "";
+
+    }
+
+
+    return texto
+
+        /* -----------------------------------------------
+           Convertir caracteres Unicode y eliminar acentos
+        ----------------------------------------------- */
+
+        .normalize("NFD")
+
+        .replace(
+            /[\u0300-\u036f]/g,
+            ""
+        )
+
+        /* -----------------------------------------------
+           Convertir a minúsculas
+        ----------------------------------------------- */
+
+        .toLowerCase()
+
+        /* -----------------------------------------------
+           Reemplazar ampersand
+        ----------------------------------------------- */
+
+        .replace(
+            /&/g,
+            " y "
+        )
+
+        /* -----------------------------------------------
+           Todo lo que no sea letra o número
+        ----------------------------------------------- */
+
+        .replace(
+            /[^a-z0-9]+/g,
+            "-"
+        )
+
+        /* -----------------------------------------------
+           Eliminar guiones al principio
+        ----------------------------------------------- */
+
+        .replace(
+            /^-+/,
+            ""
+        )
+
+        /* -----------------------------------------------
+           Eliminar guiones al final
+        ----------------------------------------------- */
+
+        .replace(
+            /-+$/,
+            ""
+        )
+
+        /* -----------------------------------------------
+           Limitar a 200 caracteres
+        ----------------------------------------------- */
+
+        .slice(
+            0,
+            200
+        )
+
+        /* -----------------------------------------------
+           Evitar guion sobrante al final
+        ----------------------------------------------- */
+
+        .replace(
+            /-+$/,
+            ""
+        );
+}
+
+
+/* =========================================================
+   CERRAR FORMULARIO
    ========================================================= */
 
 function cerrarFormularioNuevoDrama() {
 
     const formularioContenedor =
-        document.getElementById("formulario-nuevo");
+        document.getElementById(
+            "formulario-nuevo"
+        );
 
     const formulario =
-        document.getElementById("form-nuevo-drama");
+        document.getElementById(
+            "form-nuevo-drama"
+        );
 
     const botonNuevo =
-        document.getElementById("boton-nuevo");
+        document.getElementById(
+            "boton-nuevo"
+        );
 
 
     if (formulario) {
@@ -141,27 +272,60 @@ function cerrarFormularioNuevoDrama() {
     }
 
 
+    const campoSlug =
+        document.getElementById(
+            "slug"
+        );
+
+
+    if (campoSlug) {
+
+        campoSlug.value =
+            "";
+
+    }
+
+
     const orden =
-        document.getElementById("sort_order");
+        document.getElementById(
+            "sort_order"
+        );
 
 
     if (orden) {
 
-        orden.value = "1";
+        orden.value =
+            "1";
+
+    }
+
+
+    const plataforma =
+        document.getElementById(
+            "platform"
+        );
+
+
+    if (plataforma) {
+
+        plataforma.value =
+            "";
 
     }
 
 
     if (formularioContenedor) {
 
-        formularioContenedor.hidden = true;
+        formularioContenedor.hidden =
+            true;
 
     }
 
 
     if (botonNuevo) {
 
-        botonNuevo.disabled = false;
+        botonNuevo.disabled =
+            false;
 
     }
 }
@@ -177,7 +341,9 @@ async function guardarNuevoDrama(
 ) {
 
     const botonGuardar =
-        document.getElementById("boton-guardar");
+        document.getElementById(
+            "boton-guardar"
+        );
 
 
     if (!botonGuardar) {
@@ -191,10 +357,12 @@ async function guardarNuevoDrama(
 
 
     /* -----------------------------------------------------
-       VALIDACIÓN HTML
+       VALIDACIÓN
        ----------------------------------------------------- */
 
-    if (!formulario.checkValidity()) {
+    if (
+        !formulario.checkValidity()
+    ) {
 
         formulario.reportValidity();
 
@@ -207,72 +375,108 @@ async function guardarNuevoDrama(
        ----------------------------------------------------- */
 
     const datosFormulario =
-        new FormData(formulario);
+        new FormData(
+            formulario
+        );
 
 
     const datos = {
 
         title:
             String(
-                datosFormulario.get("title") || ""
+                datosFormulario.get(
+                    "title"
+                ) || ""
             ).trim(),
+
 
         slug:
             String(
-                datosFormulario.get("slug") || ""
-            ).trim(),
+                datosFormulario.get(
+                    "slug"
+                ) || ""
+            ).trim()
+            .toLowerCase(),
+
 
         platform:
             String(
-                datosFormulario.get("platform") || ""
+                datosFormulario.get(
+                    "platform"
+                ) || ""
             ).trim(),
+
 
         description:
             String(
-                datosFormulario.get("description") || ""
+                datosFormulario.get(
+                    "description"
+                ) || ""
             ).trim(),
+
 
         video_description:
             String(
-                datosFormulario.get("video_description") || ""
+                datosFormulario.get(
+                    "video_description"
+                ) || ""
             ).trim(),
+
 
         cover_url:
             String(
-                datosFormulario.get("cover_url") || ""
+                datosFormulario.get(
+                    "cover_url"
+                ) || ""
             ).trim(),
+
 
         video_url:
             String(
-                datosFormulario.get("video_url") || ""
+                datosFormulario.get(
+                    "video_url"
+                ) || ""
             ).trim(),
+
 
         embed_url:
             String(
-                datosFormulario.get("embed_url") || ""
+                datosFormulario.get(
+                    "embed_url"
+                ) || ""
             ).trim(),
+
 
         status:
             String(
-                datosFormulario.get("status") || "draft"
+                datosFormulario.get(
+                    "status"
+                ) || "draft"
             ).trim(),
 
+
         featured:
-            datosFormulario.has("featured"),
+            datosFormulario.has(
+                "featured"
+            ),
+
 
         sort_order:
             Number(
-                datosFormulario.get("sort_order") || 0
+                datosFormulario.get(
+                    "sort_order"
+                ) || 0
             )
 
     };
 
 
     /* -----------------------------------------------------
-       ESTADO DEL BOTÓN
+       DESACTIVAR BOTÓN
        ----------------------------------------------------- */
 
-    botonGuardar.disabled = true;
+    botonGuardar.disabled =
+        true;
 
     botonGuardar.textContent =
         "Guardando...";
@@ -280,37 +484,40 @@ async function guardarNuevoDrama(
 
     try {
 
-        /* -------------------------------------------------
-           PETICIÓN POST
-           ------------------------------------------------- */
-
         const respuesta =
             await fetch(
                 API_ADMIN_DRAMAS,
                 {
                     method: "POST",
 
-                    credentials: "same-origin",
+                    credentials:
+                        "same-origin",
 
                     headers: {
+
                         "Content-Type":
                             "application/json",
 
                         "Accept":
                             "application/json"
+
                     },
 
                     body:
-                        JSON.stringify(datos)
+                        JSON.stringify(
+                            datos
+                        )
+
                 }
             );
 
 
         /* -------------------------------------------------
            LEER RESPUESTA
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
-        let resultado = null;
+        let resultado =
+            null;
 
 
         try {
@@ -318,22 +525,26 @@ async function guardarNuevoDrama(
             resultado =
                 await respuesta.json();
 
-        } catch (error) {
+        } catch {
 
-            resultado = null;
+            resultado =
+                null;
 
         }
 
 
         /* -------------------------------------------------
            ERROR HTTP
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
-        if (!respuesta.ok) {
+        if (
+            !respuesta.ok
+        ) {
 
             const mensaje =
                 resultado &&
-                typeof resultado.error === "string"
+                typeof resultado.error ===
+                    "string"
 
                     ? resultado.error
 
@@ -347,8 +558,8 @@ async function guardarNuevoDrama(
 
 
         /* -------------------------------------------------
-           VALIDAR RESPUESTA API
-           ------------------------------------------------- */
+           VALIDAR RESPUESTA
+        ------------------------------------------------- */
 
         if (
             !resultado ||
@@ -358,7 +569,8 @@ async function guardarNuevoDrama(
             throw new Error(
 
                 resultado &&
-                typeof resultado.error === "string"
+                typeof resultado.error ===
+                    "string"
 
                     ? resultado.error
 
@@ -370,33 +582,21 @@ async function guardarNuevoDrama(
 
         /* -------------------------------------------------
            CERRAR FORMULARIO
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         cerrarFormularioNuevoDrama();
 
 
         /* -------------------------------------------------
-           MOSTRAR ÉXITO
-           ------------------------------------------------- */
-
-        mostrarMensajeAdmin(
-            "Microdrama guardado correctamente.",
-            "success"
-        );
-
-
-        /* -------------------------------------------------
-           ACTUALIZAR TABLA
-           ------------------------------------------------- */
+           RECARGAR TABLA
+        ------------------------------------------------- */
 
         await cargarDramasAdministrativos();
 
 
-        /*
-         * Después de recargar la tabla mostramos nuevamente
-         * el mensaje porque cargarDramasAdministrativos()
-         * limpia el mensaje durante el renderizado.
-         */
+        /* -------------------------------------------------
+           MOSTRAR ÉXITO
+        ------------------------------------------------- */
 
         mostrarMensajeAdmin(
             "Microdrama guardado correctamente.",
@@ -421,7 +621,8 @@ async function guardarNuevoDrama(
 
     } finally {
 
-        botonGuardar.disabled = false;
+        botonGuardar.disabled =
+            false;
 
         botonGuardar.textContent =
             "Guardar microdrama";
@@ -429,7 +630,8 @@ async function guardarNuevoDrama(
 
         if (botonNuevo) {
 
-            botonNuevo.disabled = false;
+            botonNuevo.disabled =
+                false;
 
         }
     }
@@ -466,24 +668,27 @@ async function cargarDramasAdministrativos() {
                 {
                     method: "GET",
 
-                    credentials: "same-origin",
+                    credentials:
+                        "same-origin",
 
                     headers: {
                         Accept:
                             "application/json"
                     },
 
-                    cache: "no-store"
+                    cache:
+                        "no-store"
                 }
             );
 
 
-        if (!respuesta.ok) {
+        if (
+            !respuesta.ok
+        ) {
 
             throw new Error(
                 `La API respondió con el estado ${respuesta.status}.`
             );
-
         }
 
 
@@ -493,13 +698,14 @@ async function cargarDramasAdministrativos() {
 
         if (
             !datos.success ||
-            !Array.isArray(datos.dramas)
+            !Array.isArray(
+                datos.dramas
+            )
         ) {
 
             throw new Error(
                 "La API administrativa devolvió una respuesta no válida."
             );
-
         }
 
 
@@ -521,13 +727,12 @@ async function cargarDramasAdministrativos() {
             elementos,
             "No se pudieron cargar los microdramas. Recarga la página e inténtalo nuevamente."
         );
-
     }
 }
 
 
 /* =========================================================
-   OBTENER ELEMENTOS DEL DOM
+   OBTENER ELEMENTOS
    ========================================================= */
 
 function obtenerElementos() {
@@ -535,31 +740,45 @@ function obtenerElementos() {
     const elementos = {
 
         estadoCarga:
-            document.getElementById("estado-carga"),
+            document.getElementById(
+                "estado-carga"
+            ),
 
         estadoVacio:
-            document.getElementById("estado-vacio"),
+            document.getElementById(
+                "estado-vacio"
+            ),
 
         contenedorTabla:
-            document.getElementById("contenedor-tabla"),
+            document.getElementById(
+                "contenedor-tabla"
+            ),
 
         listaDramas:
-            document.getElementById("lista-dramas"),
+            document.getElementById(
+                "lista-dramas"
+            ),
 
         mensajeAdmin:
-            document.getElementById("mensaje-admin")
+            document.getElementById(
+                "mensaje-admin"
+            )
 
     };
 
 
     const elementoFaltante =
-        Object.entries(elementos).find(
+        Object.entries(
+            elementos
+        ).find(
             ([, elemento]) =>
                 !elemento
         );
 
 
-    if (elementoFaltante) {
+    if (
+        elementoFaltante
+    ) {
 
         console.error(
             `No se encontró el elemento administrativo: ${elementoFaltante[0]}.`
@@ -567,7 +786,6 @@ function obtenerElementos() {
 
 
         return null;
-
     }
 
 
@@ -623,7 +841,9 @@ function renderizarDramas(
     elementos.listaDramas.replaceChildren();
 
 
-    if (dramas.length === 0) {
+    if (
+        dramas.length === 0
+    ) {
 
         elementos.estadoVacio.hidden =
             false;
@@ -677,7 +897,9 @@ function crearFilaDrama(
 ) {
 
     const fila =
-        document.createElement("tr");
+        document.createElement(
+            "tr"
+        );
 
 
     fila.appendChild(
@@ -758,7 +980,9 @@ function crearCelda(
 ) {
 
     const celda =
-        document.createElement("td");
+        document.createElement(
+            "td"
+        );
 
 
     celda.textContent =
@@ -778,11 +1002,15 @@ function crearCeldaInformacionDrama(
 ) {
 
     const celda =
-        document.createElement("td");
+        document.createElement(
+            "td"
+        );
 
 
     const contenedor =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     contenedor.className =
@@ -790,7 +1018,9 @@ function crearCeldaInformacionDrama(
 
 
     const portada =
-        document.createElement("img");
+        document.createElement(
+            "img"
+        );
 
 
     portada.className =
@@ -837,11 +1067,15 @@ function crearCeldaInformacionDrama(
 
 
     const textos =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     const titulo =
-        document.createElement("p");
+        document.createElement(
+            "p"
+        );
 
 
     titulo.className =
@@ -856,7 +1090,9 @@ function crearCeldaInformacionDrama(
 
 
     const slug =
-        document.createElement("p");
+        document.createElement(
+            "p"
+        );
 
 
     slug.className =
@@ -912,11 +1148,15 @@ function crearCeldaEstado(
 ) {
 
     const celda =
-        document.createElement("td");
+        document.createElement(
+            "td"
+        );
 
 
     const indicador =
-        document.createElement("span");
+        document.createElement(
+            "span"
+        );
 
 
     const estado =
@@ -930,7 +1170,9 @@ function crearCeldaEstado(
         "status-badge";
 
 
-    if (estado === "published") {
+    if (
+        estado === "published"
+    ) {
 
         indicador.classList.add(
             "status-badge--published"
@@ -970,11 +1212,15 @@ function crearCeldaDestacado(
 ) {
 
     const celda =
-        document.createElement("td");
+        document.createElement(
+            "td"
+        );
 
 
     const indicador =
-        document.createElement("span");
+        document.createElement(
+            "span"
+        );
 
 
     const destacado =
@@ -1015,11 +1261,15 @@ function crearCeldaDestacado(
 function crearCeldaAcciones() {
 
     const celda =
-        document.createElement("td");
+        document.createElement(
+            "td"
+        );
 
 
     const mensaje =
-        document.createElement("span");
+        document.createElement(
+            "span"
+        );
 
 
     mensaje.className =
@@ -1061,7 +1311,6 @@ function obtenerRutaPortada(
     if (!portada) {
 
         return "";
-
     }
 
 
@@ -1085,7 +1334,6 @@ function normalizarTexto(
     ) {
 
         return valorPorDefecto;
-
     }
 
 
@@ -1110,7 +1358,6 @@ function formatearFecha(
     ) {
 
         return "—";
-
     }
 
 
@@ -1129,7 +1376,6 @@ function formatearFecha(
         return String(
             fechaOriginal
         );
-
     }
 
 
@@ -1149,7 +1395,7 @@ function formatearFecha(
 
 
 /* =========================================================
-   MOSTRAR MENSAJE ADMINISTRATIVO
+   MOSTRAR MENSAJE
    ========================================================= */
 
 function mostrarMensajeAdmin(
@@ -1166,7 +1412,6 @@ function mostrarMensajeAdmin(
     if (!mensajeAdmin) {
 
         return;
-
     }
 
 
@@ -1174,7 +1419,9 @@ function mostrarMensajeAdmin(
         mensaje;
 
 
-    if (tipo === "success") {
+    if (
+        tipo === "success"
+    ) {
 
         mensajeAdmin.className =
             "admin-message admin-message--success";
@@ -1183,7 +1430,6 @@ function mostrarMensajeAdmin(
 
         mensajeAdmin.className =
             "admin-message admin-message--error";
-
     }
 
 

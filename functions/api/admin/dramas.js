@@ -28,7 +28,8 @@ function crearRespuestaJson(
 
 const DESCRIPCION_AUTOMATICA =
     "Drama doblado al español.";
-
+const PORTADA_GENERICA =
+    "/portadas/generica/portada-generica.png";
 
 /* =========================================================
    UTILIDADES
@@ -166,9 +167,9 @@ function normalizarDrama(
 
 
         cover_url:
-            limpiarTexto(
-                datos.cover_url
-            ),
+    limpiarTexto(
+        datos.cover_url
+    ) || PORTADA_GENERICA,
 
 
         /*

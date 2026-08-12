@@ -1001,15 +1001,27 @@ body.mobile-detail-open {
 
 
     .catalog-carousel {
-        gap:
-            12px;
+    display:
+        grid;
 
-        padding:
-            12px 4px 28px;
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
 
-        scrollbar-width:
-            none;
-    }
+    gap:
+        12px;
+
+    width:
+        100%;
+
+    padding:
+        12px 4px 28px;
+
+    overflow:
+        visible;
+
+    scrollbar-width:
+        auto;
+}
 
 
     .catalog-carousel::-webkit-scrollbar {
@@ -1023,18 +1035,14 @@ body.mobile-detail-open {
      */
 
     .drama-card {
-        flex-basis:
-            170px;
+    width:
+        100%;
 
-        width:
-            170px;
+    height:
+        auto;
 
-        height:
-            255px;
-
-        border-radius:
-            9px;
-    }
+    aspect-ratio:
+        2 / 3;
 
 
     /*

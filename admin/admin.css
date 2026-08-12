@@ -376,7 +376,7 @@ body {
 
 
 /* =========================================================
-   FORMULARIO NUEVO MICRODRAMA
+   FORMULARIO
    ========================================================= */
 
 .admin-form-container {
@@ -523,6 +523,38 @@ body {
 }
 
 
+/* =========================================================
+   CAMPOS AUTOMÁTICOS
+   ========================================================= */
+
+.form-group input[readonly],
+.form-group textarea[readonly] {
+
+    background-color:
+        #101015;
+
+    border-color:
+        #25252d;
+
+    color:
+        #a9a9b3;
+
+    cursor:
+        not-allowed;
+}
+
+
+.form-group input[readonly]:focus,
+.form-group textarea[readonly]:focus {
+
+    border-color:
+        #25252d;
+
+    box-shadow:
+        none;
+}
+
+
 .form-group small {
 
     color:
@@ -533,6 +565,48 @@ body {
     line-height: 1.4;
 }
 
+
+/* =========================================================
+   NUEVA PLATAFORMA
+   ========================================================= */
+
+.new-platform-container {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+    margin-top: 4px;
+
+    padding: 14px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 8px;
+
+    background-color:
+        #15151b;
+}
+
+
+.new-platform-container label {
+
+    font-size: 12px;
+}
+
+
+.new-platform-container input {
+
+    margin-top: 0;
+}
+
+
+/* =========================================================
+   CHECKBOX
+   ========================================================= */
 
 .form-group--checkbox {
 
@@ -566,6 +640,10 @@ body {
         var(--primary);
 }
 
+
+/* =========================================================
+   ACCIONES FORMULARIO
+   ========================================================= */
 
 .admin-form-actions {
 
@@ -666,7 +744,7 @@ body {
 
 
 /* =========================================================
-   INFORMACIÓN DEL MICRODRAMA
+   INFORMACIÓN MICRODRAMA
    ========================================================= */
 
 .drama-info {
@@ -890,13 +968,6 @@ body {
     .admin-form-actions .button {
 
         width: 100%;
-    }
-
-
-    .admin-table th,
-    .admin-table td {
-
-        padding: 12px;
     }
 
 

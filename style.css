@@ -167,7 +167,7 @@ body.video-player-open {
     position: absolute;
 
     left: -42px;
-    bottom: 28px;
+    top: 28px;
 
     width: 190px;
 
@@ -183,7 +183,7 @@ body.video-player-open {
 
     letter-spacing: 0.4px;
 
-    transform: rotate(45deg);
+    transform: rotate(-45deg);
 
     z-index: 8;
 

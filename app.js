@@ -2,7 +2,7 @@
 
 
 /* =========================================================
-   CONFIGURACIÓN
+   CONFIGURACIÓNF
 ========================================================= */
 
 const PORTADA_GENERICA =
@@ -227,15 +227,52 @@ function crearTarjetaDrama(
     ----------------------------------------------------- */
 
     const tipo =
-        document.createElement(
-            "p"
-        );
+    document.createElement(
+        "p"
+    );
 
-    tipo.className =
-        "drama-card__type";
+tipo.className =
+    "drama-card__type";
 
-    tipo.textContent =
-        "Microdrama doblado al español.";
+tipo.textContent =
+    "Microdrama doblado al español.";
+
+
+/* -----------------------------------------------------
+   PLATAFORMA
+----------------------------------------------------- */
+
+const plataforma =
+    document.createElement(
+        "p"
+    );
+
+plataforma.className =
+    "drama-card__platform";
+
+
+const etiquetaPlataforma =
+    document.createElement(
+        "strong"
+    );
+
+etiquetaPlataforma.textContent =
+    "Plataforma: ";
+
+
+plataforma.appendChild(
+    etiquetaPlataforma
+);
+
+
+plataforma.appendChild(
+    document.createTextNode(
+        typeof drama.platform === "string" &&
+        drama.platform.trim() !== ""
+            ? drama.platform.trim()
+            : "No especificada"
+    )
+);
 
 
     /* -----------------------------------------------------

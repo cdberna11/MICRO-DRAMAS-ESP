@@ -16,7 +16,7 @@ const PORTADA_GENERICA =
 let detalleMovilActual = null;
 
 let reproductorActual = null;
-
+F
 
 /* =========================================================
    DETECTAR VISTA MÓVIL
@@ -311,8 +311,10 @@ if (
     etiquetaTop.className =
         "drama-card__top";
 
-    etiquetaTop.textContent =
-        "🔥";
+    etiquetaTop.innerHTML = `
+    <span aria-hidden="true">🔥</span>
+    TOP
+`;
 
     etiquetaTop.setAttribute(
         "aria-label",

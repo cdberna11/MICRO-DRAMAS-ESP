@@ -30,7 +30,8 @@ body {
 }
 
 
-body.mobile-detail-open {
+body.mobile-detail-open,
+body.video-player-open {
     overflow: hidden;
 }
 
@@ -256,7 +257,7 @@ body.mobile-detail-open {
 
 
 /* =========================================================
-   INFORMACIÓN SUPERPUESTA
+   OVERLAY
 ========================================================= */
 
 .drama-card__overlay {
@@ -596,7 +597,7 @@ body.mobile-detail-open {
 
 
 /* =========================================================
-   VISTA DE DETALLE MÓVIL
+   DETALLE MÓVIL
 ========================================================= */
 
 .mobile-detail {
@@ -623,10 +624,6 @@ body.mobile-detail-open {
 }
 
 
-/* =========================================================
-   FONDO OSCURO
-========================================================= */
-
 .mobile-detail__backdrop {
     position:
         absolute;
@@ -638,10 +635,6 @@ body.mobile-detail-open {
         rgba(0, 0, 0, 0.96);
 }
 
-
-/* =========================================================
-   PANEL
-========================================================= */
 
 .mobile-detail__panel {
     position:
@@ -671,7 +664,7 @@ body.mobile-detail-open {
 
 
 /* =========================================================
-   BOTÓN CERRAR
+   CERRAR DETALLE
 ========================================================= */
 
 .mobile-detail__close {
@@ -726,7 +719,7 @@ body.mobile-detail-open {
 
 
 /* =========================================================
-   IMAGEN DE DETALLE
+   IMAGEN DETALLE
 ========================================================= */
 
 .mobile-detail__image {
@@ -754,7 +747,7 @@ body.mobile-detail-open {
 
 
 /* =========================================================
-   CONTENIDO
+   CONTENIDO DETALLE
 ========================================================= */
 
 .mobile-detail__content {
@@ -762,10 +755,6 @@ body.mobile-detail-open {
         22px 20px 40px;
 }
 
-
-/* =========================================================
-   TÍTULO
-========================================================= */
 
 .mobile-detail__title {
     margin:
@@ -785,10 +774,6 @@ body.mobile-detail-open {
 }
 
 
-/* =========================================================
-   TIPO
-========================================================= */
-
 .mobile-detail__type {
     margin:
         0 0 7px;
@@ -804,10 +789,6 @@ body.mobile-detail-open {
 }
 
 
-/* =========================================================
-   PLATAFORMA
-========================================================= */
-
 .mobile-detail__platform {
     margin:
         0 0 20px;
@@ -822,10 +803,6 @@ body.mobile-detail-open {
         1.4;
 }
 
-
-/* =========================================================
-   ACCIONES
-========================================================= */
 
 .mobile-detail__actions {
     width:
@@ -898,7 +875,7 @@ body.mobile-detail-open {
 
 
 /* =========================================================
-   TÍTULO DESCRIPCIÓN
+   DESCRIPCIÓN MÓVIL
 ========================================================= */
 
 .mobile-detail__description-title {
@@ -919,10 +896,6 @@ body.mobile-detail-open {
 }
 
 
-/* =========================================================
-   DESCRIPCIÓN
-========================================================= */
-
 .mobile-detail__description {
     margin:
         0;
@@ -935,6 +908,350 @@ body.mobile-detail-open {
 
     line-height:
         1.6;
+}
+
+
+/* =========================================================
+   REPRODUCTOR INTERNO
+========================================================= */
+
+.video-player {
+    display:
+        none;
+
+    position:
+        fixed;
+
+    inset:
+        0;
+
+    z-index:
+        10000;
+
+    background:
+        #000000;
+}
+
+
+.video-player.is-open {
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+}
+
+
+/* =========================================================
+   FONDO REPRODUCTOR
+========================================================= */
+
+.video-player__backdrop {
+    position:
+        absolute;
+
+    inset:
+        0;
+
+    background:
+        rgba(0, 0, 0, 0.94);
+}
+
+
+/* =========================================================
+   VENTANA REPRODUCTOR
+========================================================= */
+
+.video-player__window {
+    position:
+        relative;
+
+    z-index:
+        2;
+
+    width:
+        min(1200px, 94vw);
+
+    max-height:
+        94vh;
+
+    background:
+        #111116;
+
+    border:
+        1px solid #29292f;
+
+    border-radius:
+        10px;
+
+    overflow:
+        hidden;
+
+    box-shadow:
+        0 25px 80px
+        rgba(0, 0, 0, 0.80);
+}
+
+
+/* =========================================================
+   CABECERA REPRODUCTOR
+========================================================= */
+
+.video-player__header {
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    gap:
+        15px;
+
+    min-height:
+        54px;
+
+    padding:
+        8px 12px 8px 18px;
+
+    background:
+        #111116;
+
+    border-bottom:
+        1px solid #29292f;
+}
+
+
+.video-player__title {
+    min-width:
+        0;
+
+    color:
+        #ffffff;
+
+    font-size:
+        17px;
+
+    line-height:
+        1.3;
+
+    font-weight:
+        700;
+
+    white-space:
+        nowrap;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+}
+
+
+/* =========================================================
+   CERRAR REPRODUCTOR
+========================================================= */
+
+.video-player__close {
+    flex:
+        0 0 auto;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    width:
+        38px;
+
+    height:
+        38px;
+
+    border:
+        none;
+
+    border-radius:
+        50%;
+
+    background:
+        #29292f;
+
+    color:
+        #ffffff;
+
+    font-size:
+        27px;
+
+    line-height:
+        1;
+
+    cursor:
+        pointer;
+
+    transition:
+        background-color 0.18s ease,
+        transform 0.18s ease;
+}
+
+
+.video-player__close:hover {
+    background:
+        #3a3a43;
+
+    transform:
+        scale(1.05);
+}
+
+
+/* =========================================================
+   ÁREA DEL VIDEO
+========================================================= */
+
+.video-player__area {
+    position:
+        relative;
+
+    width:
+        100%;
+
+    aspect-ratio:
+        16 / 9;
+
+    background:
+        #000000;
+}
+
+
+/* =========================================================
+   IFRAME
+========================================================= */
+
+.video-player__iframe {
+    display:
+        block;
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    border:
+        none;
+
+    background:
+        #000000;
+}
+
+
+/* =========================================================
+   VIDEO SIN CONFIGURAR
+========================================================= */
+
+.video-missing-message {
+    position:
+        fixed;
+
+    inset:
+        0;
+
+    z-index:
+        11000;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    padding:
+        20px;
+
+    background:
+        rgba(0, 0, 0, 0.88);
+}
+
+
+.video-missing-message__box {
+    width:
+        min(460px, 100%);
+
+    padding:
+        28px;
+
+    border:
+        1px solid #303039;
+
+    border-radius:
+        12px;
+
+    background:
+        #18181e;
+
+    box-shadow:
+        0 20px 60px
+        rgba(0, 0, 0, 0.70);
+
+    text-align:
+        center;
+}
+
+
+.video-missing-message__box h2 {
+    margin:
+        0 0 12px;
+
+    font-size:
+        22px;
+}
+
+
+.video-missing-message__box p {
+    margin:
+        0 0 22px;
+
+    color:
+        #cfcfd4;
+
+    line-height:
+        1.5;
+}
+
+
+.video-missing-message__close {
+    padding:
+        10px 20px;
+
+    border:
+        none;
+
+    border-radius:
+        5px;
+
+    background:
+        #ffffff;
+
+    color:
+        #111111;
+
+    font-weight:
+        700;
+
+    cursor:
+        pointer;
 }
 
 
@@ -973,6 +1290,12 @@ body.mobile-detail-open {
             330px;
     }
 
+
+    .video-player__window {
+        width:
+            94vw;
+    }
+
 }
 
 
@@ -1000,55 +1323,48 @@ body.mobile-detail-open {
     }
 
 
+    /* -----------------------------------------------------
+       CATÁLOGO VERTICAL
+    ----------------------------------------------------- */
+
     .catalog-carousel {
-    display:
-        grid;
-
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap:
-        12px;
-
-    width:
-        100%;
-
-    padding:
-        12px 4px 28px;
-
-    overflow:
-        visible;
-
-    scrollbar-width:
-        auto;
-}
-
-
-    .catalog-carousel::-webkit-scrollbar {
         display:
-            none;
+            grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap:
+            12px;
+
+        width:
+            100%;
+
+        padding:
+            12px 4px 28px;
+
+        overflow:
+            visible;
+
+        scrollbar-width:
+            auto;
     }
 
 
-    /*
-     * Tarjetas verticales.
-     */
-
     .drama-card {
-    width:
-        100%;
+        width:
+            100%;
 
-    height:
-        auto;
+        height:
+            auto;
 
-    aspect-ratio:
-        2 / 3;
+        aspect-ratio:
+            2 / 3;
 
+        border-radius:
+            9px;
+    }
 
-    /*
-     * En móvil no utilizamos
-     * el efecto hover de escritorio.
-     */
 
     .drama-card:hover {
         transform:
@@ -1071,10 +1387,9 @@ body.mobile-detail-open {
     }
 
 
-    /*
-     * El detalle móvil ocupa
-     * toda la pantalla.
-     */
+    /* -----------------------------------------------------
+       DETALLE MÓVIL
+    ----------------------------------------------------- */
 
     .mobile-detail__image {
         max-height:
@@ -1126,6 +1441,81 @@ body.mobile-detail-open {
             1.55;
     }
 
+
+    /* -----------------------------------------------------
+       REPRODUCTOR MÓVIL
+    ----------------------------------------------------- */
+
+    .video-player {
+        align-items:
+            flex-start;
+
+        justify-content:
+            flex-start;
+    }
+
+
+    .video-player__window {
+        width:
+            100%;
+
+        height:
+            100%;
+
+        max-height:
+            none;
+
+        border:
+            none;
+
+        border-radius:
+            0;
+
+        background:
+            #000000;
+    }
+
+
+    .video-player__header {
+        min-height:
+            52px;
+
+        padding:
+            7px 10px 7px 14px;
+    }
+
+
+    .video-player__title {
+        font-size:
+            15px;
+    }
+
+
+    .video-player__close {
+        width:
+            36px;
+
+        height:
+            36px;
+
+        font-size:
+            25px;
+    }
+
+
+    /*
+     * El video ocupa una relación
+     * 16:9 en la parte superior.
+     */
+
+    .video-player__area {
+        width:
+            100%;
+
+        aspect-ratio:
+            16 / 9;
+    }
+
 }
 
 
@@ -1136,14 +1526,8 @@ body.mobile-detail-open {
 @media (max-width: 360px) {
 
     .drama-card {
-        flex-basis:
-            155px;
-
-        width:
-            155px;
-
-        height:
-            232px;
+        aspect-ratio:
+            2 / 3;
     }
 
 

@@ -140,10 +140,10 @@ function esSlugValido(
 
 
 /* =========================================================
-   PLATAFORMAS PERMITIDAS
+   PLATAFORMAS PREDETERMINADAS
    ========================================================= */
 
-const PLATAFORMAS_PERMITIDAS = [
+const PLATAFORMAS_PREDETERMINADAS = [
     "DramaBox",
     "DramaWave",
     "GoodShort",
@@ -200,10 +200,16 @@ function normalizarDrama(
             ),
 
 
+        /*
+         * video_url se conserva internamente para
+         * compatibilidad con registros existentes.
+         *
+         * Los nuevos microdramas ya no utilizan
+         * este campo desde el formulario.
+         */
+
         video_url:
-            limpiarTexto(
-                datos.video_url
-            ),
+            "",
 
 
         embed_url:
@@ -222,16 +228,6 @@ function normalizarDrama(
         featured:
             convertirDestacado(
                 datos.featured
-            ),
-
-
-        sort_order:
-            Math.max(
-                0,
-                convertirEntero(
-                    datos.sort_order,
-                    0
-                )
             )
 
     };
@@ -312,15 +308,15 @@ function validarDrama(
         errores.push(
             "La plataforma es obligatoria."
         );
+    }
 
-    } else if (
-        !PLATAFORMAS_PERMITIDAS.includes(
-            drama.platform
-        )
+
+    if (
+        drama.platform.length > 100
     ) {
 
         errores.push(
-            "La plataforma seleccionada no es válida."
+            "El nombre de la plataforma no puede superar 100 caracteres."
         );
     }
 
@@ -356,11 +352,6 @@ function validarDrama(
         ],
 
         [
-            "La URL del video",
-            drama.video_url
-        ],
-
-        [
             "La URL de inserción",
             drama.embed_url
         ]
@@ -387,6 +378,41 @@ function validarDrama(
 
 
     return errores;
+}
+
+
+/* =========================================================
+   OBTENER SIGUIENTE ORDEN
+   ========================================================= */
+
+async function obtenerSiguienteOrden(
+    database
+) {
+
+    const resultado =
+        await database
+            .prepare(`
+                SELECT
+                    COALESCE(
+                        MAX(sort_order),
+                        0
+                    ) AS max_order
+                FROM dramas
+            `)
+            .first();
+
+
+    const maxOrder =
+        convertirEntero(
+            resultado?.max_order,
+            0
+        );
+
+
+    return Math.max(
+        1,
+        maxOrder + 1
+    );
 }
 
 
@@ -674,6 +700,16 @@ export async function onRequestPost(
 
 
         /* -------------------------------------------------
+           OBTENER ORDEN AUTOMÁTICO
+        ------------------------------------------------- */
+
+        const siguienteOrden =
+            await obtenerSiguienteOrden(
+                database
+            );
+
+
+        /* -------------------------------------------------
            INSERTAR EN D1
         ------------------------------------------------- */
 
@@ -722,7 +758,7 @@ export async function onRequestPost(
                     drama.embed_url,
                     drama.status,
                     drama.featured,
-                    drama.sort_order
+                    siguienteOrden
                 )
                 .run();
 
@@ -825,10 +861,6 @@ export async function onRequestPost(
             );
 
 
-        /* -------------------------------------------------
-           SLUG DUPLICADO
-        ------------------------------------------------- */
-
         if (
             mensaje.includes(
                 "UNIQUE constraint failed"
@@ -850,10 +882,6 @@ export async function onRequestPost(
             );
         }
 
-
-        /* -------------------------------------------------
-           ERROR GENERAL
-        ------------------------------------------------- */
 
         return crearRespuestaJson(
             {

@@ -9,9 +9,7 @@ function crearRespuestaJson(datos, estado = 200) {
 }
 
 function limpiarTexto(valor) {
-  return typeof valor === "string"
-    ? valor.trim()
-    : "";
+  return typeof valor === "string" ? valor.trim() : "";
 }
 
 function convertirEntero(valor, valorPredeterminado = 0) {
@@ -40,7 +38,7 @@ function esSlugValido(slug) {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
 }
 
-function normalizarDrama(datos) {
+function normali*arDrama(datos) {
   return {
     sl*g: limpiarTexto(datos.slug).toLowe*Case(),
     title: limpiarTexto(da*os.title),
@@ -51,49 +49,60 @@ function normalizarDrama(datos) {
     embed_url: limpi*rTexto(datos.embed_url),
     statu*: limpiarTexto(datos.status).toLow*rCase() || "draft",
     featured: *onvertirEntero(datos.featured, 0) *== 1 ? 1 : 0,
-    sort_order: Math*max(0, convertirEntero(datos.sort_*rder, 0))
+    sort_order: Math*max(
+      0,
+      convertirEnter*(datos.sort_order, 0)
+    )
   };
-}
+}*
+function validarDrama(drama) {
+  *onst errores = [];
 
-function validar*rama(drama) {
-  const errores = []*
-
-  if (!drama.title) {
-    errore*.push("El título es obligatorio.")*
+  if (!drama.t*tle) {
+    errores.push("El título*es obligatorio.");
   }
 
-  if (drama.title.length > 2*0) {
-    errores.push("El título n* puede superar 200 caracteres.");
-* }
+  if (dram*.title.length > 200) {
+    errores*push(
+      "El título no puede su*erar 200 caracteres."
+    );
+  }
 
-  if (!drama.slug) {
-    error*s.push("El slug es obligatorio.");*  } else if (!esSlugValido(drama.s*ug)) {
+* if (!drama.slug) {
+    errores.pu*h("El slug es obligatorio.");
+  } *lse if (!esSlugValido(drama.slug))*{
     errores.push(
-      "El*slug solamente puede contener letr*s minúsculas, números y guiones."
-*   );
+      "El slug*solamente puede contener letras mi*úsculas, números y guiones."
+    )*
   }
 
-  if (drama.slug.length*> 200) {
-    errores.push("El slug*no puede superar 200 caracteres.")*
+  if (drama.slug.length > 20*) {
+    errores.push(
+      "El sl*g no puede superar 200 caracteres.*
+    );
   }
 
-  if (!drama.platform) {
-   *errores.push("La plataforma es obl*gatoria.");
+  if (!drama.platform* {
+    errores.push("La plataforma*es obligatoria.");
   }
 
-  if (!["draft", "published"].includes(drama.status)* {
-    errores.push("El estado deb* ser draft o published.");
+  if (!["draft", "published"].includes(drama.*tatus)) {
+    errores.push(
+      *El estado debe ser draft o publish*d."
+    );
   }
 
-  *onst urls = [
+  const urls = [
     ["La URL de portada", drama.cover_url],
     ["La URL del video", drama.video_url],
     ["La URL de inserción", drama.embed_url]
   ];
 
-  for (const [nombre, valor] of urls) {
-    if (!esUrlHtt*Valida(valor)) {
-      errores.pus*(`${nombre} debe comenzar con http*// o https://.`);
+  for (const [nombre, valor] of urls) *
+    if (!esUrlHttpValida(valor)) *
+      errores.push(
+        `${no*bre} debe comenzar con http:// o h*tps://.`
+      );
     }
   }
 
@@ -179,96 +188,117 @@ export async func*ion onRequestPost(context) {
    *  );
     }
 
-    const contentType * context.request.headers.get("cont*nt-type") || "";
+    const contentType *
+      context.request.headers.get*"content-type") || "";
 
-    if (!content*ype.toLowerCase().includes("applic*tion/json")) {
-      return crearR*spuestaJson(
+    if (
+ *    !contentType
+        .toLowerC*se()
+        .includes("applicatio*/json")
+    ) {
+      return crear*espuestaJson(
         {
-          s*ccess: false,
-          error: "La*solicitud debe utilizar applicatio*/json."
+          *uccess: false,
+          error: "L* solicitud debe utilizar applicati*n/json."
         },
         415
-   *  );
+  *   );
     }
 
     let datos;
 
-    tr* {
-      datos = await context.req*est.json();
+    t*y {
+      datos = await context.re*uest.json();
     } catch {
-      re*urn crearRespuestaJson(
-        {
-*         success: false,
-         *error: "El cuerpo JSON de la solic*tud no es válido."
+      r*turn crearRespuestaJson(
+        {*          success: false,
+        * error: "El cuerpo JSON de la soli*itud no es válido."
         },
-    *   400
+   *    400
       );
     }
 
-    if (!da*os || typeof datos !== "object" ||*Array.isArray(datos)) {
-      retu*n crearRespuestaJson(
+    if (
+ *    !datos ||
+      typeof datos !*= "object" ||
+      Array.isArray(*atos)
+    ) {
+      return crearRe*puestaJson(
         {
-  *       success: false,
-          e*ror: "Los datos enviados no son vá*idos."
-        },
+          su*cess: false,
+          error: "Los*datos enviados no son válidos."
+  *     },
         400
-    * );
+      );
+    }*
+    const drama = normalizarDrama*datos);
+    const errores = valida*Drama(drama);
+
+    if (errores.len*th > 0) {
+      return crearRespue*taJson(
+        {
+          succes*: false,
+          error: errores[0],
+          errors: errores
+     *  },
+        400
+      );
     }
 
-    const drama = normalizarDrama(datos);
-    const errore* = validarDrama(drama);
-
-    if (e*rores.length > 0) {
-      return c*earRespuestaJson(
-        {
-      *   success: false,
-          error* errores[0],
-          errors: err*res
-        },
-        400
-      )*
-    }
-
-    const existente = awai* database
-      .prepare(
-        *
-          SELECT id
-          FRO* dramas
-          WHERE slug = ?
- *        LIMIT 1
+ *  const existente = await database*      .prepare(
+        `
+        * SELECT id
+          FROM dramas
+ *        WHERE slug = ?
+          L*MIT 1
         `
       )
-*     .bind(drama.slug)
-      .firs*();
+      .bin*(drama.slug)
+      .first();
 
-    if (existente) {
-      re*urn crearRespuestaJson(
+    *f (existente) {
+      return crear*espuestaJson(
         {
-*         success: false,
-         *error: "Ya existe un microdrama co* ese slug."
+          *uccess: false,
+          error: "Y* existe un microdrama con ese slug*"
         },
-        409*      );
-    }
+        409
+      );
+*   }
 
-    const insercio* = await database
+    const insercion = await *atabase
       .prepare(
-*       `
-          INSERT INTO dra*as (
+        `
+          INSERT INTO dramas (
             slug,
-           *title,
+            title,
             platform,
-     *      description,
-            vid*o_description,
-            cover_u*l,
+            description,
+            video_description,
+            cover_url,
             video_url,
-        *   embed_url,
+            embed_url,
             status,
-*           featured,
-            s*rt_order,
+            featured,
+            sort_order,
             created_at,
-*           updated_at
+            updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          VALUES (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            CURRENT_TIMESTAMP,
+            CURRENT_TIMESTAMP
+          )
         `
       )
       .bind(
@@ -287,13 +317,20 @@ export async func*ion onRequestPost(context) {
       .run();
 
     if (!insercion.success) {
-      throw new Error("Cloudflare D1 no confirmó la inserción.");
+      throw new Error(
+        "Cloudflare D1 no confirmó la inserción."
+      );
     }
 
     const idCreado = insercion.meta?.last_row_id;
 
-    if (!idCreado) {
-      throw new Error("D1 no devolvió el identificador del registro.");
+    if (
+      idCreado === undefined ||
+      idCreado === null
+    ) {
+      throw new Error(
+        "D1 no devolvió el identificador del registro."
+      );
     }
 
     const nuevoDrama = await database

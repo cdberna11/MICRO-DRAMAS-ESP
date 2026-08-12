@@ -1,230 +1,720 @@
-/* Configuración general */
+/* =========================================================
+   CONFIGURACIÓN GENERAL
+========================================================= */
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+
+html {
+    scroll-behavior: smooth;
+}
+
+
 body {
     min-height: 100vh;
+
     background-color: #0b0b0f;
+
     color: #ffffff;
-    font-family: Arial, Helvetica, sans-serif;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    overflow-x: hidden;
 }
 
-/* Encabezado */
-header {
-    padding: 24px 32px;
-    background-color: #111116;
-    border-bottom: 1px solid #29292f;
-}
 
-header h1 {
-    color: #ffffff;
-    font-size: 28px;
-    font-weight: 700;
-}
+/* =========================================================
+   CABECERA
+========================================================= */
 
-/* Contenedor principal */
-main {
+.site-header {
     width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 28px 32px;
+
+    padding:
+        24px 32px;
+
+    background-color:
+        #0b0b0f;
+
+    border-bottom:
+        1px solid #1e1e24;
 }
 
-/* Catálogo en cuadrícula */
-#catalogo {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-    gap: 24px;
-    align-items: start;
-}
 
-/* Tarjeta */
-.card {
+.site-header__content {
     width: 100%;
-    max-width: 240px;
-    background-color: #18181e;
-    border: 1px solid #27272f;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+
+    max-width:
+        1500px;
+
+    margin:
+        0 auto;
+}
+
+
+.site-header h1 {
+    color:
+        #ffffff;
+
+    font-size:
+        28px;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        -0.5px;
+}
+
+
+/* =========================================================
+   CONTENIDO
+========================================================= */
+
+.site-main {
+    width:
+        100%;
+
+    max-width:
+        1500px;
+
+    margin:
+        0 auto;
+
+    padding:
+        28px 32px 50px;
+}
+
+
+/* =========================================================
+   CARRUSEL
+========================================================= */
+
+.catalog-carousel {
+    display:
+        flex;
+
+    flex-wrap:
+        nowrap;
+
+    gap:
+        18px;
+
+    width:
+        100%;
+
+    overflow-x:
+        auto;
+
+    overflow-y:
+        visible;
+
+    padding:
+        20px 8px 40px;
+
+    scroll-behavior:
+        smooth;
+
+    scrollbar-width:
+        thin;
+
+    scrollbar-color:
+        #44444d transparent;
+}
+
+
+/*
+ * Barra de desplazamiento Chromium
+ */
+
+.catalog-carousel::-webkit-scrollbar {
+    height:
+        7px;
+}
+
+
+.catalog-carousel::-webkit-scrollbar-track {
+    background:
+        transparent;
+}
+
+
+.catalog-carousel::-webkit-scrollbar-thumb {
+    background:
+        #3a3a42;
+
+    border-radius:
+        20px;
+}
+
+
+.catalog-carousel::-webkit-scrollbar-thumb:hover {
+    background:
+        #55555f;
+}
+
+
+/* =========================================================
+   TARJETA
+========================================================= */
+
+.drama-card {
+    position:
+        relative;
+
+    flex:
+        0 0 240px;
+
+    width:
+        240px;
+
+    height:
+        360px;
+
+    border-radius:
+        12px;
+
+    overflow:
+        hidden;
+
+    background:
+        #18181e;
+
+    border:
+        1px solid #292930;
+
+    box-shadow:
+        0 8px 22px
+        rgba(0, 0, 0, 0.40);
+
+    cursor:
+        pointer;
+
     transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease,
-        border-color 0.25s ease;
+        transform 0.28s ease,
+        box-shadow 0.28s ease,
+        border-color 0.28s ease;
 }
 
-.card:hover {
-    transform: translateY(-6px);
-    border-color: #e50914;
-    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+
+/*
+ * La tarjeta sobresale al pasar
+ * el cursor.
+ */
+
+.drama-card:hover {
+    transform:
+        scale(1.08);
+
+    z-index:
+        20;
+
+    border-color:
+        #3c3c45;
+
+    box-shadow:
+        0 20px 45px
+        rgba(0, 0, 0, 0.75);
 }
 
-/* Portada vertical estándar */
-.card img {
-    display: block;
-    width: 100%;
-    aspect-ratio: 2 / 3;
-    object-fit: cover;
-    object-position: center;
-    background-color: #25252c;
-}
 
-/* Información de la tarjeta */
-.card-content {
-    padding: 15px;
-}
+/* =========================================================
+   PORTADA
+========================================================= */
 
-.card-content h2 {
-    margin-bottom: 10px;
-    color: #ffffff;
-    font-size: 17px;
-    line-height: 1.3;
+.drama-card > img {
+    display:
+        block;
 
-    /* Máximo de dos líneas para el título */
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-}
+    width:
+        100%;
 
-.card-content p {
-    margin-bottom: 8px;
-    color: #b9b9c2;
-    font-size: 14px;
-    line-height: 1.45;
-}
+    height:
+        100%;
 
-.card-content p strong {
-    color: #ffffff;
-}
+    object-fit:
+        cover;
 
-/* Botón */
-.btn {
-    display: block;
-    width: 100%;
-    margin-top: 14px;
-    padding: 11px 14px;
-    border-radius: 7px;
-    background-color: #e50914;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 700;
-    text-align: center;
-    text-decoration: none;
+    object-position:
+        center;
+
+    background:
+        #25252c;
+
     transition:
-        background-color 0.2s ease,
-        transform 0.2s ease;
+        transform 0.35s ease;
 }
 
-.btn:hover {
-    background-color: #ff1824;
-    transform: scale(1.02);
+
+.drama-card:hover > img {
+    transform:
+        scale(1.03);
 }
 
-/* Mensaje de error */
-.mensaje-error {
-    padding: 20px;
-    border: 1px solid #e50914;
-    border-radius: 8px;
-    background-color: #241216;
-    color: #ffffff;
+
+/* =========================================================
+   DEGRADADO INFERIOR
+========================================================= */
+
+.drama-card__overlay {
+    position:
+        absolute;
+
+    left:
+        0;
+
+    right:
+        0;
+
+    bottom:
+        0;
+
+    padding:
+        60px 15px 15px;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(10, 10, 13, 0.98) 0%,
+            rgba(10, 10, 13, 0.92) 45%,
+            rgba(10, 10, 13, 0.00) 100%
+        );
+
+    transform:
+        translateY(100%);
+
+    transition:
+        transform 0.28s ease;
 }
 
-/* Teléfonos */
+
+/*
+ * Al pasar el mouse aparece
+ * la información.
+ */
+
+.drama-card:hover
+.drama-card__overlay {
+    transform:
+        translateY(0);
+}
+
+
+/* =========================================================
+   TÍTULO
+========================================================= */
+
+.drama-card__title {
+    margin:
+        0 0 6px;
+
+    color:
+        #ffffff;
+
+    font-size:
+        17px;
+
+    line-height:
+        1.25;
+
+    font-weight:
+        800;
+
+    display:
+        -webkit-box;
+
+    -webkit-box-orient:
+        vertical;
+
+    -webkit-line-clamp:
+        2;
+
+    overflow:
+        hidden;
+}
+
+
+/* =========================================================
+   TIPO
+========================================================= */
+
+.drama-card__type {
+    margin:
+        0 0 12px;
+
+    color:
+        #d4d4d8;
+
+    font-size:
+        12px;
+
+    line-height:
+        1.35;
+}
+
+
+/* =========================================================
+   CONTROLES
+========================================================= */
+
+.drama-card__controls {
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
+}
+
+
+/* =========================================================
+   BOTÓN VER
+========================================================= */
+
+.drama-card__play {
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    gap:
+        7px;
+
+    min-height:
+        36px;
+
+    padding:
+        8px 15px;
+
+    border:
+        none;
+
+    border-radius:
+        5px;
+
+    background:
+        #ffffff;
+
+    color:
+        #111111;
+
+    font-size:
+        14px;
+
+    font-weight:
+        800;
+
+    cursor:
+        pointer;
+
+    transition:
+        transform 0.18s ease,
+        background-color 0.18s ease;
+}
+
+
+.drama-card__play:hover {
+    background:
+        #e6e6e6;
+
+    transform:
+        scale(1.04);
+}
+
+
+.drama-card__play-icon {
+    font-size:
+        14px;
+}
+
+
+/* =========================================================
+   BOTÓN +
+========================================================= */
+
+.drama-card__more {
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    width:
+        36px;
+
+    height:
+        36px;
+
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.70);
+
+    border-radius:
+        50%;
+
+    background:
+        rgba(20, 20, 23, 0.85);
+
+    color:
+        #ffffff;
+
+    font-size:
+        24px;
+
+    line-height:
+        1;
+
+    cursor:
+        pointer;
+
+    transition:
+        background-color 0.18s ease,
+        transform 0.18s ease;
+}
+
+
+.drama-card__more:hover {
+    background:
+        #ffffff;
+
+    color:
+        #111111;
+
+    transform:
+        scale(1.06);
+}
+
+
+/* =========================================================
+   DESCRIPCIÓN
+========================================================= */
+
+.drama-card__description {
+    max-height:
+        0;
+
+    margin-top:
+        0;
+
+    overflow:
+        hidden;
+
+    color:
+        #dddddf;
+
+    font-size:
+        12px;
+
+    line-height:
+        1.45;
+
+    opacity:
+        0;
+
+    transition:
+        max-height 0.28s ease,
+        margin-top 0.28s ease,
+        opacity 0.2s ease;
+}
+
+
+.drama-card.is-description-open
+.drama-card__description {
+    max-height:
+        130px;
+
+    margin-top:
+        12px;
+
+    opacity:
+        1;
+
+    overflow-y:
+        auto;
+}
+
+
+/* =========================================================
+   ESTADOS
+========================================================= */
+
+.mensaje-error,
+.mensaje-vacio {
+    flex:
+        0 0 100%;
+
+    padding:
+        20px;
+
+    border-radius:
+        8px;
+
+    background:
+        #18181e;
+
+    border:
+        1px solid #2c2c34;
+
+    color:
+        #ffffff;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .site-header {
+        padding:
+            20px 22px;
+    }
+
+
+    .site-header h1 {
+        font-size:
+            24px;
+    }
+
+
+    .site-main {
+        padding:
+            22px 18px 40px;
+    }
+
+
+    .drama-card {
+        flex-basis:
+            220px;
+
+        width:
+            220px;
+
+        height:
+            330px;
+    }
+
+}
+
+
+/* =========================================================
+   MÓVIL
+========================================================= */
+
 @media (max-width: 600px) {
-    header {
-        padding: 18px 16px;
+
+    .site-header {
+        padding:
+            18px 16px;
     }
 
-    header h1 {
-        font-size: 22px;
+
+    .site-header h1 {
+        font-size:
+            21px;
     }
 
-    main {
-        padding: 20px 14px;
+
+    .site-main {
+        padding:
+            14px 12px 30px;
     }
 
-    #catalogo {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+
+    .catalog-carousel {
+        gap:
+            12px;
+
+        padding:
+            12px 4px 28px;
+
+        scrollbar-width:
+            none;
     }
 
-    .card {
-        max-width: none;
+
+    .catalog-carousel::-webkit-scrollbar {
+        display:
+            none;
     }
 
-    .card-content {
-        padding: 11px;
+
+    .drama-card {
+        flex-basis:
+            170px;
+
+        width:
+            170px;
+
+        height:
+            255px;
+
+        border-radius:
+            9px;
     }
 
-    .card-content h2 {
-        font-size: 14px;
+
+    /*
+     * En móvil no utilizamos
+     * el efecto hover de escritorio.
+     */
+
+    .drama-card:hover {
+        transform:
+            none;
+
+        z-index:
+            auto;
     }
 
-    .card-content p {
-        font-size: 12px;
+
+    .drama-card:hover > img {
+        transform:
+            none;
     }
 
-    .btn {
-        padding: 9px;
-        font-size: 13px;
+
+    .drama-card__overlay {
+        display:
+            none;
     }
+
 }
 
-/* Pantallas muy pequeñas */
+
+/* =========================================================
+   PANTALLAS MUY PEQUEÑAS
+========================================================= */
+
 @media (max-width: 360px) {
-    #catalogo {
-        grid-template-columns: 1fr;
+
+    .drama-card {
+        flex-basis:
+            155px;
+
+        width:
+            155px;
+
+        height:
+            232px;
     }
 
-    .card {
-        max-width: 230px;
-        margin: 0 auto;
-    }
-}
-.video-details {
-    margin: 12px 0 16px;
-    border-top: 1px solid #2d2d35;
-    border-bottom: 1px solid #2d2d35;
-}
-
-.video-details summary {
-    position: relative;
-    padding: 12px 32px 12px 0;
-    color: #ffffff;
-    font-weight: 700;
-    cursor: pointer;
-    list-style: none;
-    user-select: none;
-}
-
-.video-details summary::-webkit-details-marker {
-    display: none;
-}
-
-.video-details summary::after {
-    content: "+";
-    position: absolute;
-    top: 50%;
-    right: 4px;
-    transform: translateY(-50%);
-    color: #f20d24;
-    font-size: 24px;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.video-details[open] summary::after {
-    content: "−";
-}
-
-.video-description {
-    margin: 0;
-    padding: 0 0 14px;
-    color: #d7d7dc;
-    line-height: 1.5;
 }
 

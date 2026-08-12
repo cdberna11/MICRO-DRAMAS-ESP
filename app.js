@@ -57,10 +57,18 @@ async function cargarDramas() {
             const descripcion = document.createElement("p");
             descripcion.textContent = drama.description;
 
+            const detallesDescripcion = document.createElement("details");
+            detallesDescripcion.className = "video-details";
+
+            const resumenDescripcion = document.createElement("summary");
+            resumenDescripcion.textContent = "Descripción del video";
+
             const descripcionVideo = document.createElement("p");
             descripcionVideo.className = "video-description";
             descripcionVideo.textContent = drama.video_description;
 
+            detallesDescripcion.appendChild(resumenDescripcion);
+            detallesDescripcion.appendChild(descripcionVideo);    
             const boton = document.createElement("a");
             boton.className = "btn";
             boton.href = drama.embed_url;
@@ -71,7 +79,7 @@ async function cargarDramas() {
             contenido.appendChild(titulo);
             contenido.appendChild(plataforma);
             contenido.appendChild(descripcion);
-            contenido.appendChild(descripcionVideo);
+            contenido.appendChild(detallesDescripcion);
             contenido.appendChild(boton);
 
             tarjeta.appendChild(portada);

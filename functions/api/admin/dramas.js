@@ -1,37 +1,117 @@
-function crearRespuestaJson(datos, estado = 200) {
-    return Response.json(datos, {
-        status: estado,
-        headers: {
-            "Cache-Control": "no-store",
-            "Content-Type": "application/json; charset=utf-8"
+function crearRespuestaJson(
+    datos,
+    estado = 200
+) {
+
+    return Response.json(
+        datos,
+        {
+            status: estado,
+
+            headers: {
+                "Cache-Control":
+                    "no-store",
+
+                "Content-Type":
+                    "application/json; charset=utf-8"
+            }
         }
-    });
+    );
 }
 
 
-function limpiarTexto(valor) {
+/* =========================================================
+   LIMPIAR TEXTO
+   ========================================================= */
+
+function limpiarTexto(
+    valor
+) {
+
     return typeof valor === "string"
         ? valor.trim()
         : "";
 }
 
 
-function convertirEntero(valor, valorPredeterminado = 0) {
-    const numero = Number.parseInt(valor, 10);
+/* =========================================================
+   CONVERTIR ENTERO
+   ========================================================= */
 
-    return Number.isInteger(numero)
+function convertirEntero(
+    valor,
+    valorPredeterminado = 0
+) {
+
+    const numero =
+        Number.parseInt(
+            valor,
+            10
+        );
+
+
+    return Number.isInteger(
+        numero
+    )
         ? numero
         : valorPredeterminado;
 }
 
 
-function esUrlHttpValida(valor) {
+/* =========================================================
+   CONVERTIR DESTACADO
+   ========================================================= */
+
+function convertirDestacado(
+    valor
+) {
+
+    if (
+        valor === true ||
+        valor === 1 ||
+        valor === "1"
+    ) {
+
+        return 1;
+    }
+
+
+    if (
+        valor === false ||
+        valor === 0 ||
+        valor === "0" ||
+        valor === null ||
+        valor === undefined ||
+        valor === ""
+    ) {
+
+        return 0;
+    }
+
+
+    return 0;
+}
+
+
+/* =========================================================
+   VALIDAR URL HTTP/HTTPS
+   ========================================================= */
+
+function esUrlHttpValida(
+    valor
+) {
+
     if (!valor) {
+
         return true;
     }
 
+
     try {
-        const url = new URL(valor);
+
+        const url =
+            new URL(valor);
+
 
         return (
             url.protocol === "http:" ||
@@ -39,94 +119,158 @@ function esUrlHttpValida(valor) {
         );
 
     } catch {
+
         return false;
     }
 }
 
 
-function esSlugValido(slug) {
-    return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+/* =========================================================
+   VALIDAR SLUG
+   ========================================================= */
+
+function esSlugValido(
+    slug
+) {
+
+    return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(
+        slug
+    );
 }
 
 
-function normalizarDrama(datos) {
+/* =========================================================
+   NORMALIZAR MICRODRAMA
+   ========================================================= */
+
+function normalizarDrama(
+    datos
+) {
+
     return {
-        slug: limpiarTexto(datos.slug).toLowerCase(),
 
-        title: limpiarTexto(datos.title),
+        slug:
+            limpiarTexto(
+                datos.slug
+            ).toLowerCase(),
 
-        platform: limpiarTexto(datos.platform),
 
-        description: limpiarTexto(
-            datos.description
-        ),
+        title:
+            limpiarTexto(
+                datos.title
+            ),
 
-        video_description: limpiarTexto(
-            datos.video_description
-        ),
 
-        cover_url: limpiarTexto(
-            datos.cover_url
-        ),
+        platform:
+            limpiarTexto(
+                datos.platform
+            ),
 
-        video_url: limpiarTexto(
-            datos.video_url
-        ),
 
-        embed_url: limpiarTexto(
-            datos.embed_url
-        ),
+        description:
+            limpiarTexto(
+                datos.description
+            ),
+
+
+        video_description:
+            limpiarTexto(
+                datos.video_description
+            ),
+
+
+        cover_url:
+            limpiarTexto(
+                datos.cover_url
+            ),
+
+
+        video_url:
+            limpiarTexto(
+                datos.video_url
+            ),
+
+
+        embed_url:
+            limpiarTexto(
+                datos.embed_url
+            ),
+
 
         status:
-            limpiarTexto(datos.status).toLowerCase() ||
+            limpiarTexto(
+                datos.status
+            ).toLowerCase() ||
             "draft",
 
-        featured:
-            convertirEntero(
-                datos.featured,
-                0
-            ) === 1
-                ? 1
-                : 0,
 
-        sort_order: Math.max(
-            0,
-            convertirEntero(
-                datos.sort_order,
-                0
+        featured:
+            convertirDestacado(
+                datos.featured
+            ),
+
+
+        sort_order:
+            Math.max(
+                0,
+                convertirEntero(
+                    datos.sort_order,
+                    0
+                )
             )
-        )
+
     };
 }
 
 
-function validarDrama(drama) {
+/* =========================================================
+   VALIDAR MICRODRAMA
+   ========================================================= */
+
+function validarDrama(
+    drama
+) {
+
     const errores = [];
 
 
-    // Título
+    /* -----------------------------------------------------
+       TÍTULO
+       ----------------------------------------------------- */
+
     if (!drama.title) {
+
         errores.push(
             "El título es obligatorio."
         );
     }
 
 
-    if (drama.title.length > 200) {
+    if (
+        drama.title.length > 200
+    ) {
+
         errores.push(
             "El título no puede superar 200 caracteres."
         );
     }
 
 
-    // Slug
+    /* -----------------------------------------------------
+       SLUG
+       ----------------------------------------------------- */
+
     if (!drama.slug) {
 
         errores.push(
             "El slug es obligatorio."
         );
 
-    } else if (!esSlugValido(drama.slug)) {
+    } else if (
+        !esSlugValido(
+            drama.slug
+        )
+    ) {
 
         errores.push(
             "El slug solamente puede contener letras minúsculas, números y guiones."
@@ -134,53 +278,81 @@ function validarDrama(drama) {
     }
 
 
-    if (drama.slug.length > 200) {
+    if (
+        drama.slug.length > 200
+    ) {
+
         errores.push(
             "El slug no puede superar 200 caracteres."
         );
     }
 
 
-    // Plataforma
+    /* -----------------------------------------------------
+       PLATAFORMA
+       ----------------------------------------------------- */
+
     if (!drama.platform) {
+
         errores.push(
             "La plataforma es obligatoria."
         );
     }
 
 
-    // Estado
+    /* -----------------------------------------------------
+       ESTADO
+       ----------------------------------------------------- */
+
     if (
-        !["draft", "published"].includes(
+        ![
+            "draft",
+            "published"
+        ].includes(
             drama.status
         )
     ) {
+
         errores.push(
             "El estado debe ser draft o published."
         );
     }
 
 
-    // URLs
+    /* -----------------------------------------------------
+       URLS
+       ----------------------------------------------------- */
+
     const urls = [
+
         [
             "La URL de portada",
             drama.cover_url
         ],
+
         [
             "La URL del video",
             drama.video_url
         ],
+
         [
             "La URL de inserción",
             drama.embed_url
         ]
+
     ];
 
 
-    for (const [nombre, valor] of urls) {
+    for (
+        const [nombre, valor]
+        of urls
+    ) {
 
-        if (!esUrlHttpValida(valor)) {
+        if (
+            !esUrlHttpValida(
+                valor
+            )
+        ) {
 
             errores.push(
                 `${nombre} debe comenzar con http:// o https://.`
@@ -197,11 +369,14 @@ function validarDrama(drama) {
    GET /api/admin/dramas
    ========================================================= */
 
-export async function onRequestGet(context) {
+export async function onRequestGet(
+    context
+) {
 
     try {
 
-        const database = context.env.DB;
+        const database =
+            context.env.DB;
 
 
         if (!database) {
@@ -209,9 +384,11 @@ export async function onRequestGet(context) {
             return crearRespuestaJson(
                 {
                     success: false,
+
                     error:
                         "El binding DB no está disponible."
                 },
+
                 500
             );
         }
@@ -241,22 +418,29 @@ export async function onRequestGet(context) {
         `;
 
 
-        const resultado = await database
-            .prepare(consulta)
-            .all();
+        const resultado =
+            await database
+                .prepare(
+                    consulta
+                )
+                .all();
 
 
-        const dramas = Array.isArray(
-            resultado.results
-        )
-            ? resultado.results
-            : [];
+        const dramas =
+            Array.isArray(
+                resultado.results
+            )
+                ? resultado.results
+                : [];
 
 
-        return crearRespuestaJson({
-            success: true,
-            dramas
-        });
+        return crearRespuestaJson(
+            {
+                success: true,
+
+                dramas
+            }
+        );
 
 
     } catch (error) {
@@ -270,9 +454,11 @@ export async function onRequestGet(context) {
         return crearRespuestaJson(
             {
                 success: false,
+
                 error:
                     "No se pudieron obtener los dramas administrativos."
             },
+
             500
         );
     }
@@ -283,29 +469,38 @@ export async function onRequestGet(context) {
    POST /api/admin/dramas
    ========================================================= */
 
-export async function onRequestPost(context) {
+export async function onRequestPost(
+    context
+) {
 
     try {
 
-        const database = context.env.DB;
+        const database =
+            context.env.DB;
 
+
+        /* -------------------------------------------------
+           VERIFICAR BASE DE DATOS
+           ------------------------------------------------- */
 
         if (!database) {
 
             return crearRespuestaJson(
                 {
                     success: false,
+
                     error:
                         "El binding DB no está disponible."
                 },
+
                 500
             );
         }
 
 
-        /* ---------------------------------------------------
-           Verificar Content-Type
-        --------------------------------------------------- */
+        /* -------------------------------------------------
+           VERIFICAR CONTENT-TYPE
+           ------------------------------------------------- */
 
         const contentType =
             context.request.headers.get(
@@ -316,23 +511,27 @@ export async function onRequestPost(context) {
         if (
             !contentType
                 .toLowerCase()
-                .includes("application/json")
+                .includes(
+                    "application/json"
+                )
         ) {
 
             return crearRespuestaJson(
                 {
                     success: false,
+
                     error:
                         "La solicitud debe utilizar application/json."
                 },
+
                 415
             );
         }
 
 
-        /* ---------------------------------------------------
-           Leer JSON
-        --------------------------------------------------- */
+        /* -------------------------------------------------
+           LEER JSON
+           ------------------------------------------------- */
 
         let datos;
 
@@ -347,17 +546,19 @@ export async function onRequestPost(context) {
             return crearRespuestaJson(
                 {
                     success: false,
+
                     error:
                         "El cuerpo JSON de la solicitud no es válido."
                 },
+
                 400
             );
         }
 
 
-        /* ---------------------------------------------------
-           Validar estructura del cuerpo
-        --------------------------------------------------- */
+        /* -------------------------------------------------
+           VALIDAR ESTRUCTURA
+           ------------------------------------------------- */
 
         if (
             !datos ||
@@ -368,46 +569,59 @@ export async function onRequestPost(context) {
             return crearRespuestaJson(
                 {
                     success: false,
+
                     error:
                         "Los datos enviados no son válidos."
                 },
+
                 400
             );
         }
 
 
-        /* ---------------------------------------------------
-           Normalizar
-        --------------------------------------------------- */
+        /* -------------------------------------------------
+           NORMALIZAR
+           ------------------------------------------------- */
 
         const drama =
-            normalizarDrama(datos);
+            normalizarDrama(
+                datos
+            );
 
 
-        /* ---------------------------------------------------
-           Validar
-        --------------------------------------------------- */
+        /* -------------------------------------------------
+           VALIDAR
+           ------------------------------------------------- */
 
         const errores =
-            validarDrama(drama);
+            validarDrama(
+                drama
+            );
 
 
-        if (errores.length > 0) {
+        if (
+            errores.length > 0
+        ) {
 
             return crearRespuestaJson(
                 {
                     success: false,
-                    error: errores[0],
-                    errors: errores
+
+                    error:
+                        errores[0],
+
+                    errors:
+                        errores
                 },
+
                 400
             );
         }
 
 
-        /* ---------------------------------------------------
-           Comprobar slug duplicado
-        --------------------------------------------------- */
+        /* -------------------------------------------------
+           COMPROBAR SLUG DUPLICADO
+           ------------------------------------------------- */
 
         const existente =
             await database
@@ -417,7 +631,9 @@ export async function onRequestPost(context) {
                     WHERE slug = ?
                     LIMIT 1
                 `)
-                .bind(drama.slug)
+                .bind(
+                    drama.slug
+                )
                 .first();
 
 
@@ -426,17 +642,19 @@ export async function onRequestPost(context) {
             return crearRespuestaJson(
                 {
                     success: false,
+
                     error:
                         "Ya existe un microdrama con ese slug."
                 },
+
                 409
             );
         }
 
 
-        /* ---------------------------------------------------
-           Insertar registro en D1
-        --------------------------------------------------- */
+        /* -------------------------------------------------
+           INSERTAR EN D1
+           ------------------------------------------------- */
 
         const insercion =
             await database
@@ -488,11 +706,13 @@ export async function onRequestPost(context) {
                 .run();
 
 
-        /* ---------------------------------------------------
-           Confirmar inserción
-        --------------------------------------------------- */
+        /* -------------------------------------------------
+           CONFIRMAR INSERCIÓN
+           ------------------------------------------------- */
 
-        if (!insercion.success) {
+        if (
+            !insercion.success
+        ) {
 
             throw new Error(
                 "Cloudflare D1 no confirmó la inserción."
@@ -500,9 +720,9 @@ export async function onRequestPost(context) {
         }
 
 
-        /* ---------------------------------------------------
-           Obtener ID creado
-        --------------------------------------------------- */
+        /* -------------------------------------------------
+           OBTENER ID CREADO
+           ------------------------------------------------- */
 
         const idCreado =
             insercion.meta?.last_row_id;
@@ -519,9 +739,9 @@ export async function onRequestPost(context) {
         }
 
 
-        /* ---------------------------------------------------
-           Obtener registro recién creado
-        --------------------------------------------------- */
+        /* -------------------------------------------------
+           OBTENER REGISTRO CREADO
+           ------------------------------------------------- */
 
         const nuevoDrama =
             await database
@@ -545,21 +765,27 @@ export async function onRequestPost(context) {
                     WHERE id = ?
                     LIMIT 1
                 `)
-                .bind(idCreado)
+                .bind(
+                    idCreado
+                )
                 .first();
 
 
-        /* ---------------------------------------------------
-           Respuesta
-        --------------------------------------------------- */
+        /* -------------------------------------------------
+           RESPUESTA
+           ------------------------------------------------- */
 
         return crearRespuestaJson(
             {
                 success: true,
+
                 message:
                     "Microdrama creado correctamente.",
-                drama: nuevoDrama
+
+                drama:
+                    nuevoDrama
             },
+
             201
         );
 
@@ -578,6 +804,10 @@ export async function onRequestPost(context) {
             );
 
 
+        /* -------------------------------------------------
+           SLUG DUPLICADO
+           ------------------------------------------------- */
+
         if (
             mensaje.includes(
                 "UNIQUE constraint failed"
@@ -590,20 +820,28 @@ export async function onRequestPost(context) {
             return crearRespuestaJson(
                 {
                     success: false,
+
                     error:
                         "Ya existe un microdrama con ese slug."
                 },
+
                 409
             );
         }
 
 
+        /* -------------------------------------------------
+           ERROR GENERAL
+           ------------------------------------------------- */
+
         return crearRespuestaJson(
             {
                 success: false,
+
                 error:
                     "No se pudo crear el microdrama."
             },
+
             500
         );
     }

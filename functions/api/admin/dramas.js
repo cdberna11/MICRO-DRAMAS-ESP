@@ -9,11 +9,13 @@ function crearRespuestaJson(
             status: estado,
 
             headers: {
+
                 "Cache-Control":
                     "no-store",
 
                 "Content-Type":
                     "application/json; charset=utf-8"
+
             }
         }
     );
@@ -21,8 +23,16 @@ function crearRespuestaJson(
 
 
 /* =========================================================
-   LIMPIAR TEXTO
-   ========================================================= */
+   CONFIGURACIÓN
+========================================================= */
+
+const DESCRIPCION_AUTOMATICA =
+    "Drama doblado al español.";
+
+
+/* =========================================================
+   UTILIDADES
+========================================================= */
 
 function limpiarTexto(
     valor
@@ -34,13 +44,9 @@ function limpiarTexto(
 }
 
 
-/* =========================================================
-   CONVERTIR ENTERO
-   ========================================================= */
-
 function convertirEntero(
     valor,
-    valorPredeterminado = 0
+    predeterminado = 0
 ) {
 
     const numero =
@@ -54,13 +60,9 @@ function convertirEntero(
         numero
     )
         ? numero
-        : valorPredeterminado;
+        : predeterminado;
 }
 
-
-/* =========================================================
-   CONVERTIR DESTACADO
-   ========================================================= */
 
 function convertirDestacado(
     valor
@@ -76,26 +78,9 @@ function convertirDestacado(
     }
 
 
-    if (
-        valor === false ||
-        valor === 0 ||
-        valor === "0" ||
-        valor === null ||
-        valor === undefined ||
-        valor === ""
-    ) {
-
-        return 0;
-    }
-
-
     return 0;
 }
 
-
-/* =========================================================
-   VALIDAR URL HTTP/HTTPS
-   ========================================================= */
 
 function esUrlHttpValida(
     valor
@@ -110,7 +95,9 @@ function esUrlHttpValida(
     try {
 
         const url =
-            new URL(valor);
+            new URL(
+                valor
+            );
 
 
         return (
@@ -125,10 +112,6 @@ function esUrlHttpValida(
 }
 
 
-/* =========================================================
-   VALIDAR SLUG
-   ========================================================= */
-
 function esSlugValido(
     slug
 ) {
@@ -140,23 +123,8 @@ function esSlugValido(
 
 
 /* =========================================================
-   PLATAFORMAS PREDETERMINADAS
-   ========================================================= */
-
-const PLATAFORMAS_PREDETERMINADAS = [
-    "DramaBox",
-    "DramaWave",
-    "GoodShort",
-    "FlickReel",
-    "Melolo",
-    "NetShort",
-    "ReelShort"
-];
-
-
-/* =========================================================
-   NORMALIZAR MICRODRAMA
-   ========================================================= */
+   NORMALIZAR DRAMA
+========================================================= */
 
 function normalizarDrama(
     datos
@@ -182,10 +150,13 @@ function normalizarDrama(
             ),
 
 
+        /*
+         * La descripción NO se toma del cliente.
+         * El servidor la establece siempre.
+         */
+
         description:
-            limpiarTexto(
-                datos.description
-            ),
+            DESCRIPCION_AUTOMATICA,
 
 
         video_description:
@@ -201,16 +172,11 @@ function normalizarDrama(
 
 
         /*
-         * video_url se conserva internamente para
-         * compatibilidad con registros existentes.
+         * video_url ya no se utiliza
+         * en el nuevo formulario.
          *
-         * Los nuevos microdramas ya no utilizan
-         * este campo desde el formulario.
+         * La columna permanece en D1 por compatibilidad.
          */
-
-        video_url:
-            "",
-
 
         embed_url:
             limpiarTexto(
@@ -222,7 +188,7 @@ function normalizarDrama(
             limpiarTexto(
                 datos.status
             ).toLowerCase() ||
-            "draft",
+            "published",
 
 
         featured:
@@ -235,8 +201,8 @@ function normalizarDrama(
 
 
 /* =========================================================
-   VALIDAR MICRODRAMA
-   ========================================================= */
+   VALIDAR DRAMA
+========================================================= */
 
 function validarDrama(
     drama
@@ -247,9 +213,11 @@ function validarDrama(
 
     /* -----------------------------------------------------
        TÍTULO
-       ----------------------------------------------------- */
+    ----------------------------------------------------- */
 
-    if (!drama.title) {
+    if (
+        !drama.title
+    ) {
 
         errores.push(
             "El título es obligatorio."
@@ -269,9 +237,11 @@ function validarDrama(
 
     /* -----------------------------------------------------
        SLUG
-       ----------------------------------------------------- */
+    ----------------------------------------------------- */
 
-    if (!drama.slug) {
+    if (
+        !drama.slug
+    ) {
 
         errores.push(
             "El slug es obligatorio."
@@ -284,7 +254,7 @@ function validarDrama(
     ) {
 
         errores.push(
-            "El slug solamente puede contener letras minúsculas, números y guiones."
+            "El slug generado no es válido."
         );
     }
 
@@ -301,9 +271,11 @@ function validarDrama(
 
     /* -----------------------------------------------------
        PLATAFORMA
-       ----------------------------------------------------- */
+    ----------------------------------------------------- */
 
-    if (!drama.platform) {
+    if (
+        !drama.platform
+    ) {
 
         errores.push(
             "La plataforma es obligatoria."
@@ -323,7 +295,7 @@ function validarDrama(
 
     /* -----------------------------------------------------
        ESTADO
-       ----------------------------------------------------- */
+    ----------------------------------------------------- */
 
     if (
         ![
@@ -341,39 +313,34 @@ function validarDrama(
 
 
     /* -----------------------------------------------------
-       URLS
-       ----------------------------------------------------- */
+       URL PORTADA
+    ----------------------------------------------------- */
 
-    const urls = [
-
-        [
-            "La URL de portada",
+    if (
+        !esUrlHttpValida(
             drama.cover_url
-        ],
-
-        [
-            "La URL de inserción",
-            drama.embed_url
-        ]
-
-    ];
-
-
-    for (
-        const [nombre, valor]
-        of urls
+        )
     ) {
 
-        if (
-            !esUrlHttpValida(
-                valor
-            )
-        ) {
+        errores.push(
+            "La URL de portada debe comenzar con http:// o https://."
+        );
+    }
 
-            errores.push(
-                `${nombre} debe comenzar con http:// o https://.`
-            );
-        }
+
+    /* -----------------------------------------------------
+       URL EMBED
+    ----------------------------------------------------- */
+
+    if (
+        !esUrlHttpValida(
+            drama.embed_url
+        )
+    ) {
+
+        errores.push(
+            "La URL de inserción debe comenzar con http:// o https://."
+        );
     }
 
 
@@ -382,8 +349,8 @@ function validarDrama(
 
 
 /* =========================================================
-   OBTENER SIGUIENTE ORDEN
-   ========================================================= */
+   SIGUIENTE ORDEN
+========================================================= */
 
 async function obtenerSiguienteOrden(
     database
@@ -402,7 +369,7 @@ async function obtenerSiguienteOrden(
             .first();
 
 
-    const maxOrder =
+    const maximo =
         convertirEntero(
             resultado?.max_order,
             0
@@ -411,14 +378,15 @@ async function obtenerSiguienteOrden(
 
     return Math.max(
         1,
-        maxOrder + 1
+        maximo + 1
     );
 }
 
 
 /* =========================================================
-   GET /api/admin/dramas
-   ========================================================= */
+   GET
+   Obtener todos los microdramas
+========================================================= */
 
 export async function onRequestGet(
     context
@@ -430,7 +398,9 @@ export async function onRequestGet(
             context.env.DB;
 
 
-        if (!database) {
+        if (
+            !database
+        ) {
 
             return crearRespuestaJson(
                 {
@@ -439,57 +409,48 @@ export async function onRequestGet(
                     error:
                         "El binding DB no está disponible."
                 },
-
                 500
             );
         }
 
 
-        const consulta = `
-            SELECT
-                id,
-                slug,
-                title,
-                platform,
-                description,
-                video_description,
-                cover_url,
-                video_url,
-                embed_url,
-                status,
-                featured,
-                sort_order,
-                created_at,
-                updated_at
-            FROM dramas
-            ORDER BY
-                featured DESC,
-                sort_order ASC,
-                id DESC
-        `;
-
-
         const resultado =
             await database
-                .prepare(
-                    consulta
-                )
+                .prepare(`
+                    SELECT
+                        id,
+                        slug,
+                        title,
+                        platform,
+                        description,
+                        video_description,
+                        cover_url,
+                        video_url,
+                        embed_url,
+                        status,
+                        featured,
+                        sort_order,
+                        created_at,
+                        updated_at
+                    FROM dramas
+                    ORDER BY
+                        featured DESC,
+                        sort_order ASC,
+                        id DESC
+                `)
                 .all();
-
-
-        const dramas =
-            Array.isArray(
-                resultado.results
-            )
-                ? resultado.results
-                : [];
 
 
         return crearRespuestaJson(
             {
                 success: true,
 
-                dramas
+                dramas:
+                    Array.isArray(
+                        resultado.results
+                    )
+                        ? resultado.results
+                        : []
             }
         );
 
@@ -497,7 +458,7 @@ export async function onRequestGet(
     } catch (error) {
 
         console.error(
-            "Error al consultar los dramas administrativos:",
+            "Error GET dramas:",
             error
         );
 
@@ -507,9 +468,8 @@ export async function onRequestGet(
                 success: false,
 
                 error:
-                    "No se pudieron obtener los dramas administrativos."
+                    "No se pudieron obtener los microdramas."
             },
-
             500
         );
     }
@@ -517,8 +477,9 @@ export async function onRequestGet(
 
 
 /* =========================================================
-   POST /api/admin/dramas
-   ========================================================= */
+   POST
+   Crear nuevo microdrama
+========================================================= */
 
 export async function onRequestPost(
     context
@@ -530,7 +491,9 @@ export async function onRequestPost(
             context.env.DB;
 
 
-        if (!database) {
+        if (
+            !database
+        ) {
 
             return crearRespuestaJson(
                 {
@@ -539,15 +502,10 @@ export async function onRequestPost(
                     error:
                         "El binding DB no está disponible."
                 },
-
                 500
             );
         }
 
-
-        /* -------------------------------------------------
-           CONTENT-TYPE
-        ------------------------------------------------- */
 
         const contentType =
             context.request.headers.get(
@@ -570,15 +528,10 @@ export async function onRequestPost(
                     error:
                         "La solicitud debe utilizar application/json."
                 },
-
                 415
             );
         }
 
-
-        /* -------------------------------------------------
-           LEER JSON
-        ------------------------------------------------- */
 
         let datos;
 
@@ -597,15 +550,10 @@ export async function onRequestPost(
                     error:
                         "El cuerpo JSON de la solicitud no es válido."
                 },
-
                 400
             );
         }
 
-
-        /* -------------------------------------------------
-           VALIDAR ESTRUCTURA
-        ------------------------------------------------- */
 
         if (
             !datos ||
@@ -620,25 +568,16 @@ export async function onRequestPost(
                     error:
                         "Los datos enviados no son válidos."
                 },
-
                 400
             );
         }
 
-
-        /* -------------------------------------------------
-           NORMALIZAR
-        ------------------------------------------------- */
 
         const drama =
             normalizarDrama(
                 datos
             );
 
-
-        /* -------------------------------------------------
-           VALIDAR
-        ------------------------------------------------- */
 
         const errores =
             validarDrama(
@@ -660,20 +599,20 @@ export async function onRequestPost(
                     errors:
                         errores
                 },
-
                 400
             );
         }
 
 
-        /* -------------------------------------------------
-           COMPROBAR SLUG DUPLICADO
-        ------------------------------------------------- */
+        /* -----------------------------------------------------
+           Comprobar slug duplicado
+        ----------------------------------------------------- */
 
         const existente =
             await database
                 .prepare(`
-                    SELECT id
+                    SELECT
+                        id
                     FROM dramas
                     WHERE slug = ?
                     LIMIT 1
@@ -684,7 +623,9 @@ export async function onRequestPost(
                 .first();
 
 
-        if (existente) {
+        if (
+            existente
+        ) {
 
             return crearRespuestaJson(
                 {
@@ -693,15 +634,14 @@ export async function onRequestPost(
                     error:
                         "Ya existe un microdrama con ese slug."
                 },
-
                 409
             );
         }
 
 
-        /* -------------------------------------------------
-           OBTENER ORDEN AUTOMÁTICO
-        ------------------------------------------------- */
+        /* -----------------------------------------------------
+           Orden automático
+        ----------------------------------------------------- */
 
         const siguienteOrden =
             await obtenerSiguienteOrden(
@@ -709,9 +649,9 @@ export async function onRequestPost(
             );
 
 
-        /* -------------------------------------------------
-           INSERTAR EN D1
-        ------------------------------------------------- */
+        /* -----------------------------------------------------
+           Insertar
+        ----------------------------------------------------- */
 
         const insercion =
             await database
@@ -738,7 +678,7 @@ export async function onRequestPost(
                         ?,
                         ?,
                         ?,
-                        ?,
+                        '',
                         ?,
                         ?,
                         ?,
@@ -754,7 +694,6 @@ export async function onRequestPost(
                     drama.description,
                     drama.video_description,
                     drama.cover_url,
-                    drama.video_url,
                     drama.embed_url,
                     drama.status,
                     drama.featured,
@@ -762,10 +701,6 @@ export async function onRequestPost(
                 )
                 .run();
 
-
-        /* -------------------------------------------------
-           CONFIRMAR INSERCIÓN
-        ------------------------------------------------- */
 
         if (
             !insercion.success
@@ -777,61 +712,6 @@ export async function onRequestPost(
         }
 
 
-        /* -------------------------------------------------
-           OBTENER ID
-        ------------------------------------------------- */
-
-        const idCreado =
-            insercion.meta?.last_row_id;
-
-
-        if (
-            idCreado === undefined ||
-            idCreado === null
-        ) {
-
-            throw new Error(
-                "D1 no devolvió el identificador del registro."
-            );
-        }
-
-
-        /* -------------------------------------------------
-           OBTENER REGISTRO CREADO
-        ------------------------------------------------- */
-
-        const nuevoDrama =
-            await database
-                .prepare(`
-                    SELECT
-                        id,
-                        slug,
-                        title,
-                        platform,
-                        description,
-                        video_description,
-                        cover_url,
-                        video_url,
-                        embed_url,
-                        status,
-                        featured,
-                        sort_order,
-                        created_at,
-                        updated_at
-                    FROM dramas
-                    WHERE id = ?
-                    LIMIT 1
-                `)
-                .bind(
-                    idCreado
-                )
-                .first();
-
-
-        /* -------------------------------------------------
-           RESPUESTA
-        ------------------------------------------------- */
-
         return crearRespuestaJson(
             {
                 success: true,
@@ -839,10 +719,9 @@ export async function onRequestPost(
                 message:
                     "Microdrama creado correctamente.",
 
-                drama:
-                    nuevoDrama
+                id:
+                    insercion.meta?.last_row_id
             },
-
             201
         );
 
@@ -850,7 +729,7 @@ export async function onRequestPost(
     } catch (error) {
 
         console.error(
-            "Error al crear el microdrama:",
+            "Error POST dramas:",
             error
         );
 
@@ -877,7 +756,6 @@ export async function onRequestPost(
                     error:
                         "Ya existe un microdrama con ese slug."
                 },
-
                 409
             );
         }
@@ -890,7 +768,511 @@ export async function onRequestPost(
                 error:
                     "No se pudo crear el microdrama."
             },
+            500
+        );
+    }
+}
 
+
+/* =========================================================
+   PUT
+   Actualizar microdrama existente
+========================================================= */
+
+export async function onRequestPut(
+    context
+) {
+
+    try {
+
+        const database =
+            context.env.DB;
+
+
+        if (
+            !database
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        "El binding DB no está disponible."
+                },
+                500
+            );
+        }
+
+
+        const contentType =
+            context.request.headers.get(
+                "content-type"
+            ) || "";
+
+
+        if (
+            !contentType
+                .toLowerCase()
+                .includes(
+                    "application/json"
+                )
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        "La solicitud debe utilizar application/json."
+                },
+                415
+            );
+        }
+
+
+        let datos;
+
+
+        try {
+
+            datos =
+                await context.request.json();
+
+        } catch {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        "El cuerpo JSON de la solicitud no es válido."
+                },
+                400
+            );
+        }
+
+
+        const id =
+            convertirEntero(
+                datos?.id,
+                0
+            );
+
+
+        if (
+            id <= 0
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        "El identificador del microdrama no es válido."
+                },
+                400
+            );
+        }
+
+
+        const drama =
+            normalizarDrama(
+                datos
+            );
+
+
+        const errores =
+            validarDrama(
+                drama
+            );
+
+
+        if (
+            errores.length > 0
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        errores[0],
+
+                    errors:
+                        errores
+                },
+                400
+            );
+        }
+
+
+        /* -----------------------------------------------------
+           Verificar que existe
+        ----------------------------------------------------- */
+
+        const registro =
+            await database
+                .prepare(`
+                    SELECT
+                        id
+                    FROM dramas
+                    WHERE id = ?
+                    LIMIT 1
+                `)
+                .bind(
+                    id
+                )
+                .first();
+
+
+        if (
+            !registro
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        "El microdrama no existe."
+                },
+                404
+            );
+        }
+
+
+        /* -----------------------------------------------------
+           Verificar slug duplicado
+        ----------------------------------------------------- */
+
+        const slugDuplicado =
+            await database
+                .prepare(`
+                    SELECT
+                        id
+                    FROM dramas
+                    WHERE slug = ?
+                    AND id != ?
+                    LIMIT 1
+                `)
+                .bind(
+                    drama.slug,
+                    id
+                )
+                .first();
+
+
+        if (
+            slugDuplicado
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        "Otro microdrama ya utiliza ese slug."
+                },
+                409
+            );
+        }
+
+
+        /* -----------------------------------------------------
+           Actualizar
+           
+           IMPORTANTE:
+           sort_order NO se toca.
+           El orden actual del microdrama se conserva.
+        ----------------------------------------------------- */
+
+        const actualizacion =
+            await database
+                .prepare(`
+                    UPDATE dramas
+                    SET
+                        slug = ?,
+                        title = ?,
+                        platform = ?,
+                        description = ?,
+                        video_description = ?,
+                        cover_url = ?,
+                        embed_url = ?,
+                        status = ?,
+                        featured = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                `)
+                .bind(
+                    drama.slug,
+                    drama.title,
+                    drama.platform,
+                    drama.description,
+                    drama.video_description,
+                    drama.cover_url,
+                    drama.embed_url,
+                    drama.status,
+                    drama.featured,
+                    id
+                )
+                .run();
+
+
+        if (
+            !actualizacion.success
+        ) {
+
+            throw new Error(
+                "Cloudflare D1 no confirmó la actualización."
+            );
+        }
+
+
+        return crearRespuestaJson(
+            {
+                success: true,
+
+                message:
+                    "Microdrama actualizado correctamente."
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Error PUT dramas:",
+            error
+        );
+
+
+        const mensaje =
+            String(
+                error?.message || ""
+            );
+
+
+        if (
+            mensaje.includes(
+                "UNIQUE constraint failed"
+            ) ||
+            mensaje.includes(
+                "dramas.slug"
+            )
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        "Otro microdrama ya utiliza ese slug."
+                },
+                409
+            );
+        }
+
+
+        return crearRespuestaJson(
+            {
+                success: false,
+
+                error:
+                    "No se pudo actualizar el microdrama."
+            },
+            500
+        );
+    }
+}
+
+
+/* =========================================================
+   DELETE
+   Eliminar uno o varios microdramas
+========================================================= */
+
+export async function onRequestDelete(
+    context
+) {
+
+    try {
+
+        const database =
+            context.env.DB;
+
+
+        if (
+            !database
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        "El binding DB no está disponible."
+                },
+                500
+            );
+        }
+
+
+        const contentType =
+            context.request.headers.get(
+                "content-type"
+            ) || "";
+
+
+        if (
+            !contentType
+                .toLowerCase()
+                .includes(
+                    "application/json"
+                )
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        "La solicitud debe utilizar application/json."
+                },
+                415
+            );
+        }
+
+
+        let datos;
+
+
+        try {
+
+            datos =
+                await context.request.json();
+
+        } catch {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        "El cuerpo JSON de la solicitud no es válido."
+                },
+                400
+            );
+        }
+
+
+        const ids =
+            Array.isArray(
+                datos?.ids
+            )
+                ? [
+                    ...new Set(
+                        datos.ids
+                            .map(
+                                (id) =>
+                                    convertirEntero(
+                                        id,
+                                        0
+                                    )
+                            )
+                            .filter(
+                                (id) =>
+                                    id > 0
+                            )
+                    )
+                ]
+                : [];
+
+
+        if (
+            ids.length === 0
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        "No se seleccionaron microdramas para eliminar."
+                },
+                400
+            );
+        }
+
+
+        /* -----------------------------------------------------
+           Crear placeholders seguros
+        ----------------------------------------------------- */
+
+        const placeholders =
+            ids
+                .map(
+                    () => "?"
+                )
+                .join(", ");
+
+
+        /* -----------------------------------------------------
+           Eliminar
+        ----------------------------------------------------- */
+
+        const eliminacion =
+            await database
+                .prepare(`
+                    DELETE FROM dramas
+                    WHERE id IN (${placeholders})
+                `)
+                .bind(
+                    ...ids
+                )
+                .run();
+
+
+        if (
+            !eliminacion.success
+        ) {
+
+            throw new Error(
+                "Cloudflare D1 no confirmó la eliminación."
+            );
+        }
+
+
+        return crearRespuestaJson(
+            {
+                success: true,
+
+                message:
+                    ids.length === 1
+                        ? "Microdrama eliminado correctamente."
+                        : "Microdramas eliminados correctamente.",
+
+                deleted:
+                    ids.length
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Error DELETE dramas:",
+            error
+        );
+
+
+        return crearRespuestaJson(
+            {
+                success: false,
+
+                error:
+                    "No se pudieron eliminar los microdramas."
+            },
             500
         );
     }

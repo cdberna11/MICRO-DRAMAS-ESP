@@ -9,6 +9,14 @@ const API_ADMIN_DRAMAS =
     "/api/admin/dramas";
 
 
+const DESCRIPCION_AUTOMATICA =
+    "Drama doblado al español.";
+
+
+const OPCION_NUEVA_PLATAFORMA =
+    "__agregar_nueva__";
+
+
 /* =========================================================
    INICIO
    ========================================================= */
@@ -61,6 +69,11 @@ function inicializarFormularioNuevoDrama() {
             "slug"
         );
 
+    const campoPlataforma =
+        document.getElementById(
+            "platform"
+        );
+
 
     if (
         !botonNuevo ||
@@ -68,7 +81,8 @@ function inicializarFormularioNuevoDrama() {
         !formulario ||
         !botonCancelar ||
         !campoTitulo ||
-        !campoSlug
+        !campoSlug ||
+        !campoPlataforma
     ) {
 
         console.error(
@@ -85,13 +99,19 @@ function inicializarFormularioNuevoDrama() {
 
     botonNuevo.addEventListener(
         "click",
-        () => {
+        async () => {
 
             formularioContenedor.hidden =
                 false;
 
             botonNuevo.disabled =
                 true;
+
+
+            establecerDescripcionAutomatica();
+
+
+            await establecerSiguienteOrden();
 
 
             campoTitulo.focus();
@@ -114,6 +134,16 @@ function inicializarFormularioNuevoDrama() {
                 );
 
         }
+    );
+
+
+    /* -----------------------------------------------------
+       CAMBIAR PLATAFORMA
+       ----------------------------------------------------- */
+
+    campoPlataforma.addEventListener(
+        "change",
+        manejarCambioPlataforma
     );
 
 
@@ -152,6 +182,131 @@ function inicializarFormularioNuevoDrama() {
 
 
 /* =========================================================
+   DESCRIPCIÓN AUTOMÁTICA
+   ========================================================= */
+
+function establecerDescripcionAutomatica() {
+
+    const campoDescripcion =
+        document.getElementById(
+            "description"
+        );
+
+
+    if (!campoDescripcion) {
+
+        return;
+    }
+
+
+    campoDescripcion.value =
+        DESCRIPCION_AUTOMATICA;
+}
+
+
+/* =========================================================
+   MANEJAR PLATAFORMA
+   ========================================================= */
+
+function manejarCambioPlataforma(
+    evento
+) {
+
+    const valor =
+        evento.target.value;
+
+
+    const contenedorNuevaPlataforma =
+        document.getElementById(
+            "nueva-plataforma-container"
+        );
+
+    const campoNuevaPlataforma =
+        document.getElementById(
+            "nueva-plataforma"
+        );
+
+
+    if (
+        !contenedorNuevaPlataforma ||
+        !campoNuevaPlataforma
+    ) {
+
+        return;
+    }
+
+
+    if (
+        valor === OPCION_NUEVA_PLATAFORMA
+    ) {
+
+        contenedorNuevaPlataforma.hidden =
+            false;
+
+        campoNuevaPlataforma.required =
+            true;
+
+        campoNuevaPlataforma.focus();
+
+    } else {
+
+        contenedorNuevaPlataforma.hidden =
+            true;
+
+        campoNuevaPlataforma.required =
+            false;
+
+        campoNuevaPlataforma.value =
+            "";
+    }
+}
+
+
+/* =========================================================
+   OBTENER PLATAFORMA FINAL
+   ========================================================= */
+
+function obtenerPlataformaSeleccionada() {
+
+    const campoPlataforma =
+        document.getElementById(
+            "platform"
+        );
+
+    const campoNuevaPlataforma =
+        document.getElementById(
+            "nueva-plataforma"
+        );
+
+
+    if (
+        !campoPlataforma
+    ) {
+
+        return "";
+    }
+
+
+    if (
+        campoPlataforma.value ===
+        OPCION_NUEVA_PLATAFORMA
+    ) {
+
+        return String(
+            campoNuevaPlataforma?.value ||
+            ""
+        ).trim();
+    }
+
+
+    return String(
+        campoPlataforma.value ||
+        ""
+    ).trim();
+}
+
+
+/* =========================================================
    GENERAR SLUG
    ========================================================= */
 
@@ -164,82 +319,161 @@ function generarSlug(
     ) {
 
         return "";
-
     }
 
 
     return texto
 
-        /* -----------------------------------------------
-           Convertir caracteres Unicode y eliminar acentos
-        ----------------------------------------------- */
-
-        .normalize("NFD")
+        .normalize(
+            "NFD"
+        )
 
         .replace(
             /[\u0300-\u036f]/g,
             ""
         )
 
-        /* -----------------------------------------------
-           Convertir a minúsculas
-        ----------------------------------------------- */
-
         .toLowerCase()
-
-        /* -----------------------------------------------
-           Reemplazar ampersand
-        ----------------------------------------------- */
 
         .replace(
             /&/g,
             " y "
         )
 
-        /* -----------------------------------------------
-           Todo lo que no sea letra o número
-        ----------------------------------------------- */
-
         .replace(
             /[^a-z0-9]+/g,
             "-"
         )
-
-        /* -----------------------------------------------
-           Eliminar guiones al principio
-        ----------------------------------------------- */
 
         .replace(
             /^-+/,
             ""
         )
 
-        /* -----------------------------------------------
-           Eliminar guiones al final
-        ----------------------------------------------- */
-
         .replace(
             /-+$/,
             ""
         )
-
-        /* -----------------------------------------------
-           Limitar a 200 caracteres
-        ----------------------------------------------- */
 
         .slice(
             0,
             200
         )
 
-        /* -----------------------------------------------
-           Evitar guion sobrante al final
-        ----------------------------------------------- */
-
         .replace(
             /-+$/,
             ""
         );
+}
+
+
+/* =========================================================
+   OBTENER SIGUIENTE ORDEN
+   ========================================================= */
+
+async function establecerSiguienteOrden() {
+
+    const campoOrden =
+        document.getElementById(
+            "sort_order"
+        );
+
+
+    if (!campoOrden) {
+
+        return;
+    }
+
+
+    campoOrden.value =
+        "1";
+
+
+    try {
+
+        const respuesta =
+            await fetch(
+                API_ADMIN_DRAMAS,
+                {
+                    method: "GET",
+
+                    credentials:
+                        "same-origin",
+
+                    headers: {
+                        Accept:
+                            "application/json"
+                    },
+
+                    cache:
+                        "no-store"
+                }
+            );
+
+
+        if (
+            !respuesta.ok
+        ) {
+
+            return;
+        }
+
+
+        const datos =
+            await respuesta.json();
+
+
+        if (
+            !datos.success ||
+            !Array.isArray(
+                datos.dramas
+            )
+        ) {
+
+            return;
+        }
+
+
+        let mayorOrden =
+            0;
+
+
+        datos.dramas.forEach(
+            (drama) => {
+
+                const orden =
+                    Number(
+                        drama.sort_order
+                    );
+
+
+                if (
+                    Number.isInteger(
+                        orden
+                    ) &&
+                    orden > mayorOrden
+                ) {
+
+                    mayorOrden =
+                        orden;
+                }
+            }
+        );
+
+
+        campoOrden.value =
+            String(
+                mayorOrden + 1
+            );
+
+
+    } catch (error) {
+
+        console.error(
+            "No se pudo calcular el siguiente orden:",
+            error
+        );
+    }
 }
 
 
@@ -264,53 +498,61 @@ function cerrarFormularioNuevoDrama() {
             "boton-nuevo"
         );
 
-
-    if (formulario) {
-
-        formulario.reset();
-
-    }
-
-
-    const campoSlug =
+    const campoDescripcion =
         document.getElementById(
-            "slug"
+            "description"
         );
 
-
-    if (campoSlug) {
-
-        campoSlug.value =
-            "";
-
-    }
-
-
-    const orden =
+    const campoNuevaPlataforma =
         document.getElementById(
-            "sort_order"
+            "nueva-plataforma"
         );
 
+    const contenedorNuevaPlataforma =
+        document.getElementById(
+            "nueva-plataforma-container"
+        );
 
-    if (orden) {
-
-        orden.value =
-            "1";
-
-    }
-
-
-    const plataforma =
+    const campoPlataforma =
         document.getElementById(
             "platform"
         );
 
 
-    if (plataforma) {
+    if (formulario) {
 
-        plataforma.value =
+        formulario.reset();
+    }
+
+
+    if (campoDescripcion) {
+
+        campoDescripcion.value =
+            DESCRIPCION_AUTOMATICA;
+    }
+
+
+    if (campoPlataforma) {
+
+        campoPlataforma.value =
+            "";
+    }
+
+
+    if (campoNuevaPlataforma) {
+
+        campoNuevaPlataforma.value =
             "";
 
+        campoNuevaPlataforma.required =
+            false;
+    }
+
+
+    if (contenedorNuevaPlataforma) {
+
+        contenedorNuevaPlataforma.hidden =
+            true;
     }
 
 
@@ -318,7 +560,6 @@ function cerrarFormularioNuevoDrama() {
 
         formularioContenedor.hidden =
             true;
-
     }
 
 
@@ -326,7 +567,6 @@ function cerrarFormularioNuevoDrama() {
 
         botonNuevo.disabled =
             false;
-
     }
 }
 
@@ -357,7 +597,7 @@ async function guardarNuevoDrama(
 
 
     /* -----------------------------------------------------
-       VALIDACIÓN
+       VALIDACIÓN HTML
        ----------------------------------------------------- */
 
     if (
@@ -370,9 +610,26 @@ async function guardarNuevoDrama(
     }
 
 
-    /* -----------------------------------------------------
-       OBTENER DATOS
-       ----------------------------------------------------- */
+    const plataforma =
+        obtenerPlataformaSeleccionada();
+
+
+    if (!plataforma) {
+
+        mostrarMensajeAdmin(
+            "Debes seleccionar una plataforma.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    const campoOrden =
+        document.getElementById(
+            "sort_order"
+        );
+
 
     const datosFormulario =
         new FormData(
@@ -400,19 +657,11 @@ async function guardarNuevoDrama(
 
 
         platform:
-            String(
-                datosFormulario.get(
-                    "platform"
-                ) || ""
-            ).trim(),
+            plataforma,
 
 
         description:
-            String(
-                datosFormulario.get(
-                    "description"
-                ) || ""
-            ).trim(),
+            DESCRIPCION_AUTOMATICA,
 
 
         video_description:
@@ -427,14 +676,6 @@ async function guardarNuevoDrama(
             String(
                 datosFormulario.get(
                     "cover_url"
-                ) || ""
-            ).trim(),
-
-
-        video_url:
-            String(
-                datosFormulario.get(
-                    "video_url"
                 ) || ""
             ).trim(),
 
@@ -463,16 +704,14 @@ async function guardarNuevoDrama(
 
         sort_order:
             Number(
-                datosFormulario.get(
-                    "sort_order"
-                ) || 0
+                campoOrden?.value || 1
             )
 
     };
 
 
     /* -----------------------------------------------------
-       DESACTIVAR BOTÓN
+       BOTÓN
        ----------------------------------------------------- */
 
     botonGuardar.disabled =
@@ -507,14 +746,9 @@ async function guardarNuevoDrama(
                         JSON.stringify(
                             datos
                         )
-
                 }
             );
 
-
-        /* -------------------------------------------------
-           LEER RESPUESTA
-        ------------------------------------------------- */
 
         let resultado =
             null;
@@ -529,13 +763,8 @@ async function guardarNuevoDrama(
 
             resultado =
                 null;
-
         }
 
-
-        /* -------------------------------------------------
-           ERROR HTTP
-        ------------------------------------------------- */
 
         if (
             !respuesta.ok
@@ -557,10 +786,6 @@ async function guardarNuevoDrama(
         }
 
 
-        /* -------------------------------------------------
-           VALIDAR RESPUESTA
-        ------------------------------------------------- */
-
         if (
             !resultado ||
             resultado.success !== true
@@ -575,28 +800,15 @@ async function guardarNuevoDrama(
                     ? resultado.error
 
                     : "La API no confirmó el registro del microdrama."
-
             );
         }
 
 
-        /* -------------------------------------------------
-           CERRAR FORMULARIO
-        ------------------------------------------------- */
-
         cerrarFormularioNuevoDrama();
 
 
-        /* -------------------------------------------------
-           RECARGAR TABLA
-        ------------------------------------------------- */
-
         await cargarDramasAdministrativos();
 
-
-        /* -------------------------------------------------
-           MOSTRAR ÉXITO
-        ------------------------------------------------- */
 
         mostrarMensajeAdmin(
             "Microdrama guardado correctamente.",
@@ -632,7 +844,6 @@ async function guardarNuevoDrama(
 
             botonNuevo.disabled =
                 false;
-
         }
     }
 }
@@ -651,7 +862,6 @@ async function cargarDramasAdministrativos() {
     if (!elementos) {
 
         return;
-
     }
 
 
@@ -804,18 +1014,14 @@ function mostrarEstadoCarga(
     elementos.estadoCarga.hidden =
         false;
 
-
     elementos.estadoVacio.hidden =
         true;
-
 
     elementos.contenedorTabla.hidden =
         true;
 
-
     elementos.mensajeAdmin.hidden =
         true;
-
 
     elementos.listaDramas.replaceChildren();
 }
@@ -833,10 +1039,8 @@ function renderizarDramas(
     elementos.estadoCarga.hidden =
         true;
 
-
     elementos.mensajeAdmin.hidden =
         true;
-
 
     elementos.listaDramas.replaceChildren();
 
@@ -848,10 +1052,8 @@ function renderizarDramas(
         elementos.estadoVacio.hidden =
             false;
 
-
         elementos.contenedorTabla.hidden =
             true;
-
 
         return;
     }
@@ -869,7 +1071,6 @@ function renderizarDramas(
                     drama
                 )
             );
-
         }
     );
 
@@ -881,7 +1082,6 @@ function renderizarDramas(
 
     elementos.estadoVacio.hidden =
         true;
-
 
     elementos.contenedorTabla.hidden =
         false;
@@ -1231,17 +1431,13 @@ function crearCeldaDestacado(
 
     indicador.className =
         destacado
-
             ? "feature-value feature-value--yes"
-
             : "feature-value feature-value--no";
 
 
     indicador.textContent =
         destacado
-
             ? "Sí"
-
             : "No";
 
 
@@ -1419,18 +1615,10 @@ function mostrarMensajeAdmin(
         mensaje;
 
 
-    if (
+    mensajeAdmin.className =
         tipo === "success"
-    ) {
-
-        mensajeAdmin.className =
-            "admin-message admin-message--success";
-
-    } else {
-
-        mensajeAdmin.className =
-            "admin-message admin-message--error";
-    }
+            ? "admin-message admin-message--success"
+            : "admin-message admin-message--error";
 
 
     mensajeAdmin.hidden =
@@ -1450,22 +1638,17 @@ function mostrarError(
     elementos.estadoCarga.hidden =
         true;
 
-
     elementos.estadoVacio.hidden =
         true;
-
 
     elementos.contenedorTabla.hidden =
         true;
 
-
     elementos.mensajeAdmin.textContent =
         mensaje;
 
-
     elementos.mensajeAdmin.className =
         "admin-message admin-message--error";
-
 
     elementos.mensajeAdmin.hidden =
         false;

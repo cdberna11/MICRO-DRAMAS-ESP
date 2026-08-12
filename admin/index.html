@@ -195,7 +195,7 @@
                         >
 
                         <small>
-                            Se genera automáticamente a partir del título.
+                            Generado automáticamente a partir del título.
                         </small>
 
                     </div>
@@ -253,7 +253,46 @@
                                 ReelShort
                             </option>
 
+                            <option
+                                value="__agregar_nueva__"
+                            >
+                                ➕ Agregar nueva plataforma...
+                            </option>
+
                         </select>
+
+
+                        <!-- =====================================
+                             NUEVA PLATAFORMA
+                        ====================================== -->
+
+                        <div
+                            id="nueva-plataforma-container"
+                            class="new-platform-container"
+                            hidden
+                        >
+
+                            <label
+                                for="nueva-plataforma"
+                            >
+                                Nombre de la nueva plataforma
+                            </label>
+
+                            <input
+                                type="text"
+                                id="nueva-plataforma"
+                                name="nueva_plataforma"
+                                maxlength="100"
+                                autocomplete="off"
+                                placeholder="Ejemplo: StarDrama"
+                            >
+
+                            <small>
+                                La nueva plataforma se utilizará
+                                para este microdrama.
+                            </small>
+
+                        </div>
 
                     </div>
 
@@ -272,7 +311,12 @@
                             id="description"
                             name="description"
                             rows="5"
-                        ></textarea>
+                            readonly
+                        >Drama doblado al español.</textarea>
+
+                        <small>
+                            Texto automático del sistema.
+                        </small>
 
                     </div>
 
@@ -318,27 +362,6 @@
 
 
                     <!-- =========================================
-                         URL DEL VIDEO
-                    ========================================== -->
-
-                    <div class="form-group">
-
-                        <label for="video_url">
-                            URL del video
-                        </label>
-
-                        <input
-                            type="url"
-                            id="video_url"
-                            name="video_url"
-                            placeholder="https://..."
-                            autocomplete="off"
-                        >
-
-                    </div>
-
-
-                    <!-- =========================================
                          URL EMBED
                     ========================================== -->
 
@@ -355,6 +378,11 @@
                             placeholder="https://..."
                             autocomplete="off"
                         >
+
+                        <small>
+                            Este será el enlace utilizado por
+                            el reproductor de video de Mega.
+                        </small>
 
                     </div>
 
@@ -412,7 +440,7 @@
 
 
                     <!-- =========================================
-                         ORDEN
+                         ORDEN AUTOMÁTICO
                     ========================================== -->
 
                     <div class="form-group">
@@ -426,10 +454,15 @@
                             id="sort_order"
                             name="sort_order"
                             value="1"
-                            min="0"
+                            min="1"
                             step="1"
                             inputmode="numeric"
+                            readonly
                         >
+
+                        <small>
+                            Asignado automáticamente por el sistema.
+                        </small>
 
                     </div>
 

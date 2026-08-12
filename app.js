@@ -1,37 +1,65 @@
 async function cargarDramas() {
-    const respuesta = await fetch("dramas.json");
-    const dramas = await respuesta.json();
-
     const catalogo = document.getElementById("catalogo");
 
-    catalogo.innerHTML = "";
+    try {
+        const respuesta = await fetch("./dramas.json");
 
-    dramas.forEach(drama => {
+        if (!respuesta.ok) {
+            throw new Error(`Error al cargar dramas.json: ${respuesta.status}`);
+        }
 
-        const card = `
-            <div class="card">
+        const dramas = await respuesta.json();
 
-                drama.portada}" alt="${drama.titulo}">
+        catalogo.innerHTML = "";
 
-                <div class="card-content">
+        dramas.forEach((drama) => {
+            const tarjeta = document.createElement("article");
+            tarjeta.className = "card";
 
-                    <h2>${drama.titulo}</h2>
+            const portada = document.createElement("img");
+            portada.src = drama.portada;
+            portada.alt = `Portada de ${drama.titulo}`;
+            portada.loading = "lazy";
 
-                    <p><strong>Plataforma:</strong> ${drama.plataforma}</p>
+            const contenido = document.createElement("div");
+            contenido.className = "card-content";
 
-                    <p>${drama.descripcion}</p>
+            const titulo = document.createElement("h2");
+            titulo.textContent = drama.titulo;
 
-                    ${drama.video}
-                        Ver ahora
-                    </a>
+            const plataforma = document.createElement("p");
 
-                </div>
+            const etiquetaPlataforma = document.createElement("strong");
+            etiquetaPlataforma.textContent = "Plataforma: ";
 
-            </div>
-        `;
+            plataforma.appendChild(etiquetaPlataforma);
+            plataforma.appendChild(
+                document.createTextNode(drama.plataforma)
+            );
 
-        catalogo.innerHTML += card;
-    });
+            const descripcion = document.createElement("p");
+            descripcion.textContent = drama.descripcion;
+
+            const boton = document.createElement("a");
+            boton.className = "btn";
+            boton.href = drama.video;
+            boton.textContent = "Ver ahora";
+
+            contenido.appendChild(titulo);
+            contenido.appendChild(plataforma);
+            contenido.appendChild(descripcion);
+            contenido.appendChild(boton);
+
+            tarjeta.appendChild(portada);
+            tarjeta.appendChild(contenido);
+
+            catalogo.appendChild(tarjeta);
+        });
+    } catch (error) {
+        console.error(error);
+        catalogo.innerHTML =
+            '<p class="mensaje-error">No se pudo cargar el catálogo.</p>';
+    }
 }
 
 cargarDramas();

@@ -3,6 +3,7 @@
    ========================================================= */
 
 :root {
+
     color-scheme: dark;
 
     font-family:
@@ -32,8 +33,11 @@
    ========================================================= */
 
 * {
+
     box-sizing: border-box;
+
     margin: 0;
+
     padding: 0;
 }
 
@@ -43,11 +47,14 @@
    ========================================================= */
 
 body {
+
     min-height: 100vh;
 
-    background-color: var(--background);
+    background-color:
+        var(--background);
 
-    color: var(--text);
+    color:
+        var(--text);
 }
 
 
@@ -56,16 +63,21 @@ body {
    ========================================================= */
 
 .admin-header {
-    border-bottom: 1px solid var(--border);
 
-    background-color: #111116;
+    border-bottom:
+        1px solid var(--border);
+
+    background-color:
+        #111116;
 }
 
 
 .admin-header__content {
+
     display: flex;
 
     width: 100%;
+
     max-width: 1500px;
 
     min-height: 88px;
@@ -75,6 +87,7 @@ body {
     padding: 18px 32px;
 
     align-items: center;
+
     justify-content: space-between;
 
     gap: 24px;
@@ -82,11 +95,14 @@ body {
 
 
 .admin-header__label {
+
     margin-bottom: 5px;
 
-    color: var(--primary);
+    color:
+        var(--primary);
 
     font-size: 13px;
+
     font-weight: 700;
 
     letter-spacing: 0.08em;
@@ -96,7 +112,9 @@ body {
 
 
 .admin-header h1 {
+
     font-size: 26px;
+
     line-height: 1.2;
 }
 
@@ -106,7 +124,9 @@ body {
    ========================================================= */
 
 .admin-main {
+
     width: 100%;
+
     max-width: 1500px;
 
     margin: 0 auto;
@@ -116,34 +136,46 @@ body {
 
 
 .admin-panel {
+
     overflow: hidden;
 
-    border: 1px solid var(--border);
+    border:
+        1px solid var(--border);
 
     border-radius: 14px;
 
-    background-color: var(--surface);
+    background-color:
+        var(--surface);
 
     box-shadow:
-        0 14px 34px rgba(0, 0, 0, 0.35);
+        0 14px 34px rgba(
+            0,
+            0,
+            0,
+            0.35
+        );
 }
 
 
 .admin-panel__heading {
+
     display: flex;
 
     padding: 24px;
 
     align-items: center;
+
     justify-content: space-between;
 
     gap: 24px;
 
-    border-bottom: 1px solid var(--border);
+    border-bottom:
+        1px solid var(--border);
 }
 
 
 .admin-panel__heading h2 {
+
     margin-bottom: 7px;
 
     font-size: 22px;
@@ -151,7 +183,9 @@ body {
 
 
 .admin-panel__heading p {
-    color: var(--text-secondary);
+
+    color:
+        var(--text-secondary);
 
     font-size: 14px;
 
@@ -164,24 +198,29 @@ body {
    ========================================================= */
 
 .button {
+
     display: inline-flex;
 
     min-height: 42px;
 
     padding: 10px 16px;
 
-    border: 1px solid transparent;
+    border:
+        1px solid transparent;
 
     border-radius: 8px;
 
     align-items: center;
+
     justify-content: center;
 
     gap: 8px;
 
-    color: var(--text);
+    color:
+        var(--text);
 
     font-size: 14px;
+
     font-weight: 700;
 
     text-align: center;
@@ -199,45 +238,66 @@ body {
 
 
 .button:hover:not(:disabled) {
-    transform: translateY(-1px);
+
+    transform:
+        translateY(-1px);
 }
 
 
 .button:focus-visible {
-    outline: 3px solid rgba(229, 9, 20, 0.35);
+
+    outline:
+        3px solid rgba(
+            229,
+            9,
+            20,
+            0.35
+        );
 
     outline-offset: 2px;
 }
 
 
 .button--primary {
-    background-color: var(--primary);
+
+    background-color:
+        var(--primary);
 }
 
 
 .button--primary:hover:not(:disabled) {
-    background-color: var(--primary-hover);
+
+    background-color:
+        var(--primary-hover);
 }
 
 
 .button--secondary {
-    border-color: var(--border);
 
-    background-color: var(--surface-secondary);
+    border-color:
+        var(--border);
+
+    background-color:
+        var(--surface-secondary);
 }
 
 
 .button--secondary:hover {
-    border-color: #484854;
 
-    background-color: #272730;
+    border-color:
+        #484854;
+
+    background-color:
+        #272730;
 }
 
 
 .button:disabled {
+
     opacity: 0.5;
 
-    cursor: not-allowed;
+    cursor:
+        not-allowed;
 }
 
 
@@ -248,6 +308,7 @@ body {
 .admin-message,
 .loading-state,
 .empty-state {
+
     margin: 24px;
 
     padding: 16px;
@@ -259,35 +320,269 @@ body {
 
 
 .admin-message {
-    border: 1px solid var(--border);
 
-    background-color: var(--surface-secondary);
+    border:
+        1px solid var(--border);
+
+    background-color:
+        var(--surface-secondary);
 }
 
 
 .admin-message--error {
-    border-color: var(--danger);
 
-    background-color: rgba(255, 83, 100, 0.1);
+    border-color:
+        var(--danger);
 
-    color: #ffd8dc;
+    background-color:
+        rgba(
+            255,
+            83,
+            100,
+            0.1
+        );
+
+    color:
+        #ffd8dc;
 }
 
 
 .admin-message--success {
-    border-color: var(--success);
 
-    background-color: rgba(53, 196, 106, 0.1);
+    border-color:
+        var(--success);
 
-    color: #d7ffe5;
+    background-color:
+        rgba(
+            53,
+            196,
+            106,
+            0.1
+        );
+
+    color:
+        #d7ffe5;
 }
 
 
 .loading-state,
 .empty-state {
-    color: var(--text-secondary);
+
+    color:
+        var(--text-secondary);
 
     text-align: center;
+}
+
+
+/* =========================================================
+   FORMULARIO NUEVO MICRODRAMA
+   ========================================================= */
+
+.admin-form-container {
+
+    margin: 24px;
+
+    padding: 24px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 12px;
+
+    background-color:
+        var(--surface-secondary);
+}
+
+
+.admin-form-header {
+
+    margin-bottom: 24px;
+}
+
+
+.admin-form-header h3 {
+
+    margin-bottom: 6px;
+
+    font-size: 20px;
+}
+
+
+.admin-form-header p {
+
+    color:
+        var(--text-secondary);
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+.admin-form {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(
+                0,
+                1fr
+            )
+        );
+
+    gap: 20px;
+}
+
+
+.form-group {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+
+.form-group label {
+
+    color:
+        var(--text);
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+
+    width: 100%;
+
+    padding: 11px 12px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 8px;
+
+    outline: none;
+
+    background-color:
+        var(--surface);
+
+    color:
+        var(--text);
+
+    font-family:
+        inherit;
+
+    font-size: 14px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.form-group textarea {
+
+    min-height: 110px;
+
+    resize: vertical;
+}
+
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+
+    border-color:
+        var(--primary);
+
+    box-shadow:
+        0 0 0 3px rgba(
+            229,
+            9,
+            20,
+            0.15
+        );
+}
+
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+
+    color:
+        #777782;
+}
+
+
+.form-group small {
+
+    color:
+        var(--text-secondary);
+
+    font-size: 12px;
+
+    line-height: 1.4;
+}
+
+
+.form-group--checkbox {
+
+    justify-content: center;
+}
+
+
+.form-group--checkbox label {
+
+    display: flex;
+
+    min-height: 42px;
+
+    align-items: center;
+
+    gap: 10px;
+
+    cursor: pointer;
+}
+
+
+.form-group--checkbox input {
+
+    width: 18px;
+
+    height: 18px;
+
+    margin: 0;
+
+    accent-color:
+        var(--primary);
+}
+
+
+.admin-form-actions {
+
+    display: flex;
+
+    grid-column:
+        1 / -1;
+
+    justify-content:
+        flex-end;
+
+    gap: 12px;
+
+    padding-top: 8px;
+
+    border-top:
+        1px solid var(--border);
 }
 
 
@@ -296,6 +591,7 @@ body {
    ========================================================= */
 
 .table-container {
+
     width: 100%;
 
     overflow-x: auto;
@@ -303,6 +599,7 @@ body {
 
 
 .admin-table {
+
     width: 100%;
 
     border-collapse: collapse;
@@ -313,9 +610,11 @@ body {
 
 .admin-table th,
 .admin-table td {
+
     padding: 15px 16px;
 
-    border-bottom: 1px solid var(--border);
+    border-bottom:
+        1px solid var(--border);
 
     vertical-align: middle;
 
@@ -324,9 +623,12 @@ body {
 
 
 .admin-table th {
-    background-color: var(--surface-secondary);
 
-    color: #dedee4;
+    background-color:
+        var(--surface-secondary);
+
+    color:
+        #dedee4;
 
     font-size: 12px;
 
@@ -339,17 +641,26 @@ body {
 
 
 .admin-table tbody tr {
+
     transition:
         background-color 0.2s ease;
 }
 
 
 .admin-table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.025);
+
+    background-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.025
+        );
 }
 
 
 .admin-table tbody tr:last-child td {
+
     border-bottom: 0;
 }
 
@@ -359,6 +670,7 @@ body {
    ========================================================= */
 
 .drama-info {
+
     display: flex;
 
     min-width: 280px;
@@ -370,7 +682,9 @@ body {
 
 
 .drama-cover {
+
     width: 48px;
+
     height: 72px;
 
     flex-shrink: 0;
@@ -379,14 +693,17 @@ body {
 
     object-fit: cover;
 
-    background-color: #292931;
+    background-color:
+        #292931;
 }
 
 
 .drama-title {
+
     margin-bottom: 5px;
 
-    color: var(--text);
+    color:
+        var(--text);
 
     font-weight: 700;
 
@@ -395,11 +712,13 @@ body {
 
 
 .drama-slug {
+
     max-width: 320px;
 
     overflow: hidden;
 
-    color: var(--text-secondary);
+    color:
+        var(--text-secondary);
 
     font-size: 12px;
 
@@ -414,6 +733,7 @@ body {
    ========================================================= */
 
 .status-badge {
+
     display: inline-flex;
 
     padding: 5px 9px;
@@ -421,6 +741,7 @@ body {
     border-radius: 999px;
 
     align-items: center;
+
     justify-content: center;
 
     font-size: 12px;
@@ -432,31 +753,52 @@ body {
 
 
 .status-badge--published {
-    background-color: rgba(53, 196, 106, 0.14);
 
-    color: #75e69d;
+    background-color:
+        rgba(
+            53,
+            196,
+            106,
+            0.14
+        );
+
+    color:
+        #75e69d;
 }
 
 
 .status-badge--draft {
-    background-color: rgba(240, 173, 78, 0.14);
 
-    color: #ffc875;
+    background-color:
+        rgba(
+            240,
+            173,
+            78,
+            0.14
+        );
+
+    color:
+        #ffc875;
 }
 
 
 .feature-value {
+
     font-weight: 700;
 }
 
 
 .feature-value--yes {
-    color: var(--success);
+
+    color:
+        var(--success);
 }
 
 
 .feature-value--no {
-    color: var(--text-secondary);
+
+    color:
+        var(--text-secondary);
 }
 
 
@@ -465,7 +807,9 @@ body {
    ========================================================= */
 
 .action-placeholder {
-    color: var(--text-secondary);
+
+    color:
+        var(--text-secondary);
 
     font-size: 12px;
 }
@@ -478,40 +822,80 @@ body {
 @media (max-width: 760px) {
 
     .admin-header__content {
+
         min-height: auto;
 
         padding: 16px;
 
-        align-items: flex-start;
+        align-items:
+            flex-start;
     }
 
 
     .admin-header h1 {
+
         font-size: 21px;
     }
 
 
     .admin-main {
-        padding: 18px 12px;
+
+        padding:
+            18px 12px;
     }
 
 
     .admin-panel__heading {
+
         padding: 18px;
 
-        align-items: stretch;
+        align-items:
+            stretch;
 
-        flex-direction: column;
+        flex-direction:
+            column;
     }
 
 
     .admin-panel__heading .button {
+
+        width: 100%;
+    }
+
+
+    .admin-form-container {
+
+        margin: 18px;
+
+        padding: 18px;
+    }
+
+
+    .admin-form {
+
+        grid-template-columns:
+            1fr;
+
+        gap: 18px;
+    }
+
+
+    .admin-form-actions {
+
+        flex-direction:
+            column-reverse;
+    }
+
+
+    .admin-form-actions .button {
+
         width: 100%;
     }
 
 
     .admin-table th,
     .admin-table td {
+
         padding: 12px;
     }
 
@@ -519,6 +903,7 @@ body {
     .admin-message,
     .loading-state,
     .empty-state {
+
         margin: 18px;
     }
 }
@@ -531,11 +916,14 @@ body {
 @media (max-width: 480px) {
 
     .admin-header__content {
-        flex-direction: column;
+
+        flex-direction:
+            column;
     }
 
 
     .admin-header__content > .button {
+
         width: 100%;
     }
 }

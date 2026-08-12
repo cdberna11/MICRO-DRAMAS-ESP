@@ -117,6 +117,132 @@ async function cargarDramas() {
     }
 }
 
+/* =========================================================
+   MICRODRAMA NUEVO
+   Se considera nuevo durante 72 horas.
+========================================================= */
+
+function esDramaNuevo(createdAt) {
+
+    if (
+        typeof createdAt !== "string" ||
+        createdAt.trim() === ""
+    ) {
+        return false;
+    }
+
+    const valor =
+        createdAt
+            .trim()
+            .replace(" ", "T");
+
+    /*
+     * D1 utiliza CURRENT_TIMESTAMP en UTC.
+     * Añadimos Z para interpretar correctamente
+     * la fecha como UTC.
+     */
+    const fechaCreacion =
+        new Date(
+            valor.endsWith("Z")
+                ? valor
+                : `${valor}Z`
+        );
+
+    if (
+        Number.isNaN(
+            fechaCreacion.getTime()
+        )
+    ) {
+        return false;
+    }
+
+    const ahora =
+        Date.now();
+
+    const setentaDosHoras =
+        72 * 60 * 60 * 1000;
+
+    const diferencia =
+        ahora -
+        fechaCreacion.getTime();
+
+    return (
+        diferencia >= 0 &&
+        diferencia < setentaDosHoras
+    );
+}
+
+
+/* =========================================================
+   REGISTRAR REPRODUCCIÓN
+========================================================= */
+
+async function registrarVista(drama) {
+
+    if (
+        !drama ||
+        !Number.isInteger(
+            Number(drama.id)
+        )
+    ) {
+        return null;
+    }
+
+    try {
+
+        const respuesta =
+            await fetch(
+                "/api/dramas/view",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        id: Number(drama.id)
+                    })
+                }
+            );
+
+        if (!respuesta.ok) {
+            throw new Error(
+                `Error al registrar vista: ${respuesta.status}`
+            );
+        }
+
+        const datos =
+            await respuesta.json();
+
+        if (
+            !datos.success
+        ) {
+            throw new Error(
+                datos.error ||
+                "No se pudo registrar la vista."
+            );
+        }
+
+        return Number(datos.views) || 0;
+
+    } catch (error) {
+
+        /*
+         * Una falla del contador NO debe impedir
+         * que el usuario pueda ver el microdrama.
+         */
+        console.error(
+            "No se pudo registrar la reproducción:",
+            error
+        );
+
+        return null;
+    }
+}
+
+
 
 /* =========================================================
    CREAR TARJETA
@@ -140,6 +266,64 @@ function crearTarjetaDrama(drama) {
         "drama-card";
 
 
+/* -----------------------------------------------------
+   ETIQUETA RECIÉN AGREGADO
+----------------------------------------------------- */
+
+if (
+    esDramaNuevo(
+        drama.created_at
+    )
+) {
+
+    const etiquetaNuevo =
+        document.createElement("div");
+
+    etiquetaNuevo.className =
+        "drama-card__new";
+
+    etiquetaNuevo.textContent =
+        "RECIÉN AGREGADO";
+
+    etiquetaNuevo.setAttribute(
+        "aria-label",
+        "Microdrama recién agregado"
+    );
+
+    tarjeta.appendChild(
+        etiquetaNuevo
+    );
+}
+
+
+/* -----------------------------------------------------
+   ETIQUETA TOP
+   Aparece desde 3 reproducciones.
+----------------------------------------------------- */
+
+if (
+    Number(drama.views) >= 3
+) {
+
+    const etiquetaTop =
+        document.createElement("div");
+
+    etiquetaTop.className =
+        "drama-card__top";
+
+    etiquetaTop.textContent =
+        "🔥";
+
+    etiquetaTop.setAttribute(
+        "aria-label",
+        "Microdrama TOP"
+    );
+
+    tarjeta.appendChild(
+        etiquetaTop
+    );
+}
+   
     /* -----------------------------------------------------
        PORTADA
     ----------------------------------------------------- */
@@ -283,7 +467,9 @@ function crearTarjetaDrama(drama) {
 
     botonVer.className =
         "drama-card__play";
-
+   
+botonVer.dataset.dramaId =
+    String(drama.id);
 
     botonVer.innerHTML =
         `
@@ -1222,7 +1408,105 @@ function reproducirDrama(drama) {
 
     reproductorActual =
         drama;
+/* -----------------------------------------------------
+   REGISTRAR VISTA
+----------------------------------------------------- */
 
+registrarVista(
+    drama
+).then(
+    (viewsActualizadas) => {
+
+        if (
+            viewsActualizadas === null
+        ) {
+            return;
+        }
+
+        /*
+         * Actualizamos el valor local.
+         */
+        drama.views =
+            viewsActualizadas;
+
+        /*
+         * Si acaba de alcanzar 3 vistas,
+         * mostramos inmediatamente el 🔥
+         * sin esperar a recargar la página.
+         */
+        if (
+            viewsActualizadas >= 3
+        ) {
+
+            const tarjetas =
+                document.querySelectorAll(
+                    ".drama-card"
+                );
+
+            tarjetas.forEach(
+                (tarjeta) => {
+
+                    /*
+                     * Buscamos la tarjeta
+                     * correspondiente mediante
+                     * el botón Ver.
+                     */
+                    const boton =
+                        tarjeta.querySelector(
+                            ".drama-card__play"
+                        );
+
+                    if (
+                        !boton
+                    ) {
+                        return;
+                    }
+
+                    /*
+                     * La referencia al drama
+                     * se conserva en el closure
+                     * de cada botón.
+                     */
+                    if (
+                        boton.dataset.dramaId !==
+                        String(drama.id)
+                    ) {
+                        return;
+                    }
+
+                    if (
+                        tarjeta.querySelector(
+                            ".drama-card__top"
+                        )
+                    ) {
+                        return;
+                    }
+
+                    const etiquetaTop =
+                        document.createElement(
+                            "div"
+                        );
+
+                    etiquetaTop.className =
+                        "drama-card__top";
+
+                    etiquetaTop.textContent =
+                        "🔥";
+
+                    etiquetaTop.setAttribute(
+                        "aria-label",
+                        "Microdrama TOP"
+                    );
+
+                    tarjeta.appendChild(
+                        etiquetaTop
+                    );
+                }
+            );
+        }
+    }
+);
+   
 
     /* -----------------------------------------------------
        MOSTRAR

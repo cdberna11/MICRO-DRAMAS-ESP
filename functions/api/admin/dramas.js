@@ -2,20 +2,16 @@ function crearRespuestaJson(
     datos,
     estado = 200
 ) {
-
     return Response.json(
         datos,
         {
             status: estado,
-
             headers: {
-
                 "Cache-Control":
                     "no-store",
 
                 "Content-Type":
                     "application/json; charset=utf-8"
-
             }
         }
     );
@@ -28,8 +24,10 @@ function crearRespuestaJson(
 
 const DESCRIPCION_AUTOMATICA =
     "Drama doblado al español.";
+
 const PORTADA_GENERICA =
     "/portadas/generica/portada-generica.png";
+
 
 /* =========================================================
    UTILIDADES
@@ -38,7 +36,6 @@ const PORTADA_GENERICA =
 function limpiarTexto(
     valor
 ) {
-
     return typeof valor === "string"
         ? valor.trim()
         : "";
@@ -49,13 +46,11 @@ function convertirEntero(
     valor,
     predeterminado = 0
 ) {
-
     const numero =
         Number.parseInt(
             valor,
             10
         );
-
 
     return Number.isInteger(
         numero
@@ -68,16 +63,13 @@ function convertirEntero(
 function convertirDestacado(
     valor
 ) {
-
     if (
         valor === true ||
         valor === 1 ||
         valor === "1"
     ) {
-
         return 1;
     }
-
 
     return 0;
 }
@@ -86,20 +78,15 @@ function convertirDestacado(
 function esUrlHttpValida(
     valor
 ) {
-
     if (!valor) {
-
         return true;
     }
 
-
     try {
-
         const url =
             new URL(
                 valor
             );
-
 
         return (
             url.protocol === "http:" ||
@@ -107,7 +94,6 @@ function esUrlHttpValida(
         );
 
     } catch {
-
         return false;
     }
 }
@@ -116,7 +102,6 @@ function esUrlHttpValida(
 function esSlugValido(
     slug
 ) {
-
     return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(
         slug
     );
@@ -130,26 +115,21 @@ function esSlugValido(
 function normalizarDrama(
     datos
 ) {
-
     return {
-
         slug:
             limpiarTexto(
                 datos.slug
             ).toLowerCase(),
-
 
         title:
             limpiarTexto(
                 datos.title
             ),
 
-
         platform:
             limpiarTexto(
                 datos.platform
             ),
-
 
         /*
          * La descripción NO se toma del cliente.
@@ -159,24 +139,27 @@ function normalizarDrama(
         description:
             DESCRIPCION_AUTOMATICA,
 
-
         video_description:
             limpiarTexto(
                 datos.video_description
             ),
 
+        /*
+         * Si no se proporciona una portada,
+         * se utiliza automáticamente la portada genérica.
+         */
 
         cover_url:
-    limpiarTexto(
-        datos.cover_url
-    ) || PORTADA_GENERICA,
-
+            limpiarTexto(
+                datos.cover_url
+            ) || PORTADA_GENERICA,
 
         /*
          * video_url ya no se utiliza
          * en el nuevo formulario.
          *
-         * La columna permanece en D1 por compatibilidad.
+         * La columna permanece en D1
+         * por compatibilidad.
          */
 
         embed_url:
@@ -184,19 +167,16 @@ function normalizarDrama(
                 datos.embed_url
             ),
 
-
         status:
             limpiarTexto(
                 datos.status
             ).toLowerCase() ||
             "published",
 
-
         featured:
             convertirDestacado(
                 datos.featured
             )
-
     };
 }
 
@@ -208,7 +188,6 @@ function normalizarDrama(
 function validarDrama(
     drama
 ) {
-
     const errores = [];
 
 
@@ -219,7 +198,6 @@ function validarDrama(
     if (
         !drama.title
     ) {
-
         errores.push(
             "El título es obligatorio."
         );
@@ -229,7 +207,6 @@ function validarDrama(
     if (
         drama.title.length > 200
     ) {
-
         errores.push(
             "El título no puede superar 200 caracteres."
         );
@@ -243,7 +220,6 @@ function validarDrama(
     if (
         !drama.slug
     ) {
-
         errores.push(
             "El slug es obligatorio."
         );
@@ -253,7 +229,6 @@ function validarDrama(
             drama.slug
         )
     ) {
-
         errores.push(
             "El slug generado no es válido."
         );
@@ -263,7 +238,6 @@ function validarDrama(
     if (
         drama.slug.length > 200
     ) {
-
         errores.push(
             "El slug no puede superar 200 caracteres."
         );
@@ -277,7 +251,6 @@ function validarDrama(
     if (
         !drama.platform
     ) {
-
         errores.push(
             "La plataforma es obligatoria."
         );
@@ -287,7 +260,6 @@ function validarDrama(
     if (
         drama.platform.length > 100
     ) {
-
         errores.push(
             "El nombre de la plataforma no puede superar 100 caracteres."
         );
@@ -306,7 +278,6 @@ function validarDrama(
             drama.status
         )
     ) {
-
         errores.push(
             "El estado debe ser draft o published."
         );
@@ -315,16 +286,27 @@ function validarDrama(
 
     /* -----------------------------------------------------
        URL PORTADA
-    ----------------------------------------------------- */
+    -----------------------------------------------------
+
+       Se permiten:
+
+       1. URL externa HTTP/HTTPS
+       2. Ruta local que comience con "/"
+
+       La portada genérica utiliza una ruta local.
+    */
+
+    const portadaEsValida =
+        drama.cover_url.startsWith("/") ||
+        esUrlHttpValida(
+            drama.cover_url
+        );
 
     if (
-        !esUrlHttpValida(
-            drama.cover_url
-        )
+        !portadaEsValida
     ) {
-
         errores.push(
-            "La URL de portada debe comenzar con http:// o https://."
+            "La URL de portada debe comenzar con http://, https:// o utilizar una ruta local válida."
         );
     }
 
@@ -338,7 +320,6 @@ function validarDrama(
             drama.embed_url
         )
     ) {
-
         errores.push(
             "La URL de inserción debe comenzar con http:// o https://."
         );
@@ -356,7 +337,6 @@ function validarDrama(
 async function obtenerSiguienteOrden(
     database
 ) {
-
     const resultado =
         await database
             .prepare(`
@@ -392,7 +372,6 @@ async function obtenerSiguienteOrden(
 export async function onRequestGet(
     context
 ) {
-
     try {
 
         const database =
@@ -402,7 +381,6 @@ export async function onRequestGet(
         if (
             !database
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -485,7 +463,6 @@ export async function onRequestGet(
 export async function onRequestPost(
     context
 ) {
-
     try {
 
         const database =
@@ -495,7 +472,6 @@ export async function onRequestPost(
         if (
             !database
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -507,6 +483,10 @@ export async function onRequestPost(
             );
         }
 
+
+        /* -----------------------------------------------------
+           Verificar Content-Type
+        ----------------------------------------------------- */
 
         const contentType =
             context.request.headers.get(
@@ -521,7 +501,6 @@ export async function onRequestPost(
                     "application/json"
                 )
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -533,6 +512,10 @@ export async function onRequestPost(
             );
         }
 
+
+        /* -----------------------------------------------------
+           Leer JSON
+        ----------------------------------------------------- */
 
         let datos;
 
@@ -556,12 +539,15 @@ export async function onRequestPost(
         }
 
 
+        /* -----------------------------------------------------
+           Validar estructura
+        ----------------------------------------------------- */
+
         if (
             !datos ||
             typeof datos !== "object" ||
             Array.isArray(datos)
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -574,11 +560,19 @@ export async function onRequestPost(
         }
 
 
+        /* -----------------------------------------------------
+           Normalizar
+        ----------------------------------------------------- */
+
         const drama =
             normalizarDrama(
                 datos
             );
 
+
+        /* -----------------------------------------------------
+           Validar
+        ----------------------------------------------------- */
 
         const errores =
             validarDrama(
@@ -589,7 +583,6 @@ export async function onRequestPost(
         if (
             errores.length > 0
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -627,7 +620,6 @@ export async function onRequestPost(
         if (
             existente
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -706,7 +698,6 @@ export async function onRequestPost(
         if (
             !insercion.success
         ) {
-
             throw new Error(
                 "Cloudflare D1 no confirmó la inserción."
             );
@@ -749,7 +740,6 @@ export async function onRequestPost(
                 "dramas.slug"
             )
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -783,7 +773,6 @@ export async function onRequestPost(
 export async function onRequestPut(
     context
 ) {
-
     try {
 
         const database =
@@ -793,7 +782,6 @@ export async function onRequestPut(
         if (
             !database
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -805,6 +793,10 @@ export async function onRequestPut(
             );
         }
 
+
+        /* -----------------------------------------------------
+           Verificar Content-Type
+        ----------------------------------------------------- */
 
         const contentType =
             context.request.headers.get(
@@ -819,7 +811,6 @@ export async function onRequestPut(
                     "application/json"
                 )
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -831,6 +822,10 @@ export async function onRequestPut(
             );
         }
 
+
+        /* -----------------------------------------------------
+           Leer JSON
+        ----------------------------------------------------- */
 
         let datos;
 
@@ -854,6 +849,10 @@ export async function onRequestPut(
         }
 
 
+        /* -----------------------------------------------------
+           ID
+        ----------------------------------------------------- */
+
         const id =
             convertirEntero(
                 datos?.id,
@@ -864,7 +863,6 @@ export async function onRequestPut(
         if (
             id <= 0
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -877,11 +875,19 @@ export async function onRequestPut(
         }
 
 
+        /* -----------------------------------------------------
+           Normalizar
+        ----------------------------------------------------- */
+
         const drama =
             normalizarDrama(
                 datos
             );
 
+
+        /* -----------------------------------------------------
+           Validar
+        ----------------------------------------------------- */
 
         const errores =
             validarDrama(
@@ -892,7 +898,6 @@ export async function onRequestPut(
         if (
             errores.length > 0
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -930,7 +935,6 @@ export async function onRequestPut(
         if (
             !registro
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -967,7 +971,6 @@ export async function onRequestPut(
         if (
             slugDuplicado
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -982,7 +985,7 @@ export async function onRequestPut(
 
         /* -----------------------------------------------------
            Actualizar
-           
+
            IMPORTANTE:
            sort_order NO se toca.
            El orden actual del microdrama se conserva.
@@ -1023,7 +1026,6 @@ export async function onRequestPut(
         if (
             !actualizacion.success
         ) {
-
             throw new Error(
                 "Cloudflare D1 no confirmó la actualización."
             );
@@ -1062,7 +1064,6 @@ export async function onRequestPut(
                 "dramas.slug"
             )
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -1096,7 +1097,6 @@ export async function onRequestPut(
 export async function onRequestDelete(
     context
 ) {
-
     try {
 
         const database =
@@ -1106,7 +1106,6 @@ export async function onRequestDelete(
         if (
             !database
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -1118,6 +1117,10 @@ export async function onRequestDelete(
             );
         }
 
+
+        /* -----------------------------------------------------
+           Verificar Content-Type
+        ----------------------------------------------------- */
 
         const contentType =
             context.request.headers.get(
@@ -1132,7 +1135,6 @@ export async function onRequestDelete(
                     "application/json"
                 )
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -1144,6 +1146,10 @@ export async function onRequestDelete(
             );
         }
 
+
+        /* -----------------------------------------------------
+           Leer JSON
+        ----------------------------------------------------- */
 
         let datos;
 
@@ -1166,6 +1172,10 @@ export async function onRequestDelete(
             );
         }
 
+
+        /* -----------------------------------------------------
+           Obtener IDs
+        ----------------------------------------------------- */
 
         const ids =
             Array.isArray(
@@ -1193,7 +1203,6 @@ export async function onRequestDelete(
         if (
             ids.length === 0
         ) {
-
             return crearRespuestaJson(
                 {
                     success: false,
@@ -1237,7 +1246,6 @@ export async function onRequestDelete(
         if (
             !eliminacion.success
         ) {
-
             throw new Error(
                 "Cloudflare D1 no confirmó la eliminación."
             );

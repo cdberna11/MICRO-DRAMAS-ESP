@@ -43,11 +43,9 @@ body.video-player-open {
 .site-header {
     width: 100%;
 
-    padding:
-        24px 32px;
+    padding: 24px 32px;
 
-    background-color:
-        #0b0b0f;
+    background-color: #0b0b0f;
 
     border-bottom:
         1px solid #1e1e24;
@@ -57,26 +55,20 @@ body.video-player-open {
 .site-header__content {
     width: 100%;
 
-    max-width:
-        1500px;
+    max-width: 1500px;
 
-    margin:
-        0 auto;
+    margin: 0 auto;
 }
 
 
 .site-header h1 {
-    color:
-        #ffffff;
+    color: #ffffff;
 
-    font-size:
-        28px;
+    font-size: 28px;
 
-    font-weight:
-        800;
+    font-weight: 800;
 
-    letter-spacing:
-        -0.5px;
+    letter-spacing: -0.5px;
 }
 
 
@@ -85,17 +77,13 @@ body.video-player-open {
 ========================================================= */
 
 .site-main {
-    width:
-        100%;
+    width: 100%;
 
-    max-width:
-        1500px;
+    max-width: 1500px;
 
-    margin:
-        0 auto;
+    margin: 0 auto;
 
-    padding:
-        28px 32px 50px;
+    padding: 28px 32px 50px;
 }
 
 
@@ -104,62 +92,44 @@ body.video-player-open {
 ========================================================= */
 
 .catalog-carousel {
-    display:
-        flex;
+    display: flex;
 
-    flex-wrap:
-        nowrap;
+    flex-wrap: nowrap;
 
-    gap:
-        18px;
+    gap: 18px;
 
-    width:
-        100%;
+    width: 100%;
 
-    overflow-x:
-        auto;
+    overflow-x: auto;
 
-    overflow-y:
-        visible;
+    overflow-y: visible;
 
-    padding:
-        20px 8px 40px;
+    padding: 20px 8px 40px;
 
-    scroll-behavior:
-        smooth;
+    scroll-behavior: smooth;
 
-    scrollbar-width:
-        thin;
+    scrollbar-width: thin;
 
     scrollbar-color:
-        #44444d transparent;
-}
-
-
-.catalog-carousel::-webkit-scrollbar {
-    height:
-        7px;
-}
-
-
-.catalog-carousel::-webkit-scrollbar-track {
-    background:
+        #44444d
         transparent;
 }
 
 
-.catalog-carousel::-webkit-scrollbar-thumb {
-    background:
-        #3a3a42;
-
-    border-radius:
-        20px;
+.catalog-carousel::-webkit-scrollbar {
+    height: 7px;
 }
 
 
-.catalog-carousel::-webkit-scrollbar-thumb:hover {
-    background:
-        #55555f;
+.catalog-carousel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+.catalog-carousel::-webkit-scrollbar-thumb {
+    background: #3a3a42;
+
+    border-radius: 20px;
 }
 
 
@@ -168,26 +138,20 @@ body.video-player-open {
 ========================================================= */
 
 .drama-card {
-    position:
-        relative;
+    position: relative;
 
     flex:
         0 0 240px;
 
-    width:
-        240px;
+    width: 240px;
 
-    height:
-        360px;
+    height: 360px;
 
-    border-radius:
-        12px;
+    border-radius: 12px;
 
-    overflow:
-        hidden;
+    overflow: hidden;
 
-    background:
-        #18181e;
+    background: #18181e;
 
     border:
         1px solid #292930;
@@ -196,8 +160,7 @@ body.video-player-open {
         0 8px 22px
         rgba(0, 0, 0, 0.40);
 
-    cursor:
-        pointer;
+    cursor: pointer;
 
     transition:
         transform 0.28s ease,
@@ -207,14 +170,11 @@ body.video-player-open {
 
 
 .drama-card:hover {
-    transform:
-        scale(1.08);
+    transform: scale(1.08);
 
-    z-index:
-        20;
+    z-index: 20;
 
-    border-color:
-        #3c3c45;
+    border-color: #3c3c45;
 
     box-shadow:
         0 20px 45px
@@ -227,32 +187,17 @@ body.video-player-open {
 ========================================================= */
 
 .drama-card > img {
-    display:
-        block;
+    display: block;
 
-    width:
-        100%;
+    width: 100%;
 
-    height:
-        100%;
+    height: 100%;
 
-    object-fit:
-        cover;
+    object-fit: cover;
 
-    object-position:
-        center;
+    object-position: center;
 
-    background:
-        #25252c;
-
-    transition:
-        transform 0.35s ease;
-}
-
-
-.drama-card:hover > img {
-    transform:
-        scale(1.03);
+    background: #25252c;
 }
 
 
@@ -261,17 +206,13 @@ body.video-player-open {
 ========================================================= */
 
 .drama-card__overlay {
-    position:
-        absolute;
+    position: absolute;
 
-    left:
-        0;
+    left: 0;
 
-    right:
-        0;
+    right: 0;
 
-    bottom:
-        0;
+    bottom: 0;
 
     padding:
         60px 15px 15px;
@@ -281,7 +222,7 @@ body.video-player-open {
             to top,
             rgba(10, 10, 13, 0.98) 0%,
             rgba(10, 10, 13, 0.92) 45%,
-            rgba(10, 10, 13, 0.00) 100%
+            rgba(10, 10, 13, 0) 100%
         );
 
     transform:
@@ -300,83 +241,54 @@ body.video-player-open {
 
 
 /* =========================================================
-   TÍTULO
+   INFORMACIÓN TARJETA
 ========================================================= */
 
 .drama-card__title {
-    margin:
-        0 0 6px;
+    margin-bottom: 6px;
 
-    color:
-        #ffffff;
+    color: #ffffff;
 
-    font-size:
-        17px;
+    font-size: 17px;
 
-    line-height:
-        1.25;
+    line-height: 1.25;
 
-    font-weight:
-        800;
+    font-weight: 800;
 
-    display:
-        -webkit-box;
+    display: -webkit-box;
 
-    -webkit-box-orient:
-        vertical;
+    -webkit-box-orient: vertical;
 
-    -webkit-line-clamp:
-        2;
+    -webkit-line-clamp: 2;
 
-    overflow:
-        hidden;
+    overflow: hidden;
 }
 
-
-/* =========================================================
-   TIPO
-========================================================= */
 
 .drama-card__type {
-    margin:
-        0 0 6px;
+    margin-bottom: 6px;
 
-    color:
-        #d4d4d8;
+    color: #d4d4d8;
 
-    font-size:
-        12px;
+    font-size: 12px;
 
-    line-height:
-        1.35;
+    line-height: 1.35;
 }
 
 
-/* =========================================================
-   PLATAFORMA
-========================================================= */
-
 .drama-card__platform {
-    margin:
-        0 0 12px;
+    margin-bottom: 12px;
 
-    color:
-        #d4d4d8;
+    color: #d4d4d8;
 
-    font-size:
-        12px;
+    font-size: 12px;
 
-    line-height:
-        1.35;
+    line-height: 1.35;
 }
 
 
 .drama-card__platform strong {
-    color:
-        #ffffff;
-
-    font-weight:
-        700;
+    color: #ffffff;
 }
 
 
@@ -385,14 +297,11 @@ body.video-player-open {
 ========================================================= */
 
 .drama-card__controls {
-    display:
-        flex;
+    display: flex;
 
-    align-items:
-        center;
+    align-items: center;
 
-    gap:
-        8px;
+    gap: 8px;
 }
 
 
@@ -401,44 +310,32 @@ body.video-player-open {
 ========================================================= */
 
 .drama-card__play {
-    display:
-        inline-flex;
+    display: inline-flex;
 
-    align-items:
-        center;
+    align-items: center;
 
-    justify-content:
-        center;
+    justify-content: center;
 
-    gap:
-        7px;
+    gap: 7px;
 
-    min-height:
-        36px;
+    min-height: 36px;
 
     padding:
         8px 15px;
 
-    border:
-        none;
+    border: none;
 
-    border-radius:
-        5px;
+    border-radius: 5px;
 
-    background:
-        #ffffff;
+    background: #ffffff;
 
-    color:
-        #111111;
+    color: #111111;
 
-    font-size:
-        14px;
+    font-size: 14px;
 
-    font-weight:
-        800;
+    font-weight: 800;
 
-    cursor:
-        pointer;
+    cursor: pointer;
 
     transition:
         transform 0.18s ease,
@@ -447,17 +344,9 @@ body.video-player-open {
 
 
 .drama-card__play:hover {
-    background:
-        #e6e6e6;
+    background: #e6e6e6;
 
-    transform:
-        scale(1.04);
-}
-
-
-.drama-card__play-icon {
-    font-size:
-        14px;
+    transform: scale(1.04);
 }
 
 
@@ -466,86 +355,58 @@ body.video-player-open {
 ========================================================= */
 
 .drama-card__more {
-    display:
-        inline-flex;
+    display: inline-flex;
 
-    align-items:
-        center;
+    align-items: center;
 
-    justify-content:
-        center;
+    justify-content: center;
 
-    width:
-        36px;
+    width: 36px;
 
-    height:
-        36px;
+    height: 36px;
 
     border:
         1px solid
         rgba(255, 255, 255, 0.70);
 
-    border-radius:
-        50%;
+    border-radius: 50%;
 
     background:
-        rgba(20, 20, 23, 0.85);
+        rgba(20, 20, 20, 0.85);
 
-    color:
-        #ffffff;
+    color: #ffffff;
 
-    font-size:
-        24px;
+    font-size: 24px;
 
-    line-height:
-        1;
-
-    cursor:
-        pointer;
-
-    transition:
-        background-color 0.18s ease,
-        transform 0.18s ease;
+    cursor: pointer;
 }
 
 
 .drama-card__more:hover {
-    background:
-        #ffffff;
+    background: #ffffff;
 
-    color:
-        #111111;
-
-    transform:
-        scale(1.06);
+    color: #111111;
 }
 
 
 /* =========================================================
-   DESCRIPCIÓN DESKTOP
+   DESCRIPCIÓN
 ========================================================= */
 
 .drama-card__description {
-    max-height:
-        0;
+    max-height: 0;
 
-    margin-top:
-        0;
+    margin-top: 0;
 
-    overflow:
-        hidden;
+    overflow: hidden;
 
-    color:
-        #dddddf;
+    color: #dddddf;
 
-    font-size:
-        12px;
+    font-size: 12px;
 
-    line-height:
-        1.45;
+    line-height: 1.45;
 
-    opacity:
-        0;
+    opacity: 0;
 
     transition:
         max-height 0.28s ease,
@@ -556,17 +417,14 @@ body.video-player-open {
 
 .drama-card.is-description-open
 .drama-card__description {
-    max-height:
-        130px;
 
-    margin-top:
-        12px;
+    max-height: 130px;
 
-    opacity:
-        1;
+    margin-top: 12px;
 
-    overflow-y:
-        auto;
+    opacity: 1;
+
+    overflow-y: auto;
 }
 
 
@@ -576,23 +434,17 @@ body.video-player-open {
 
 .mensaje-error,
 .mensaje-vacio {
-    flex:
-        0 0 100%;
 
-    padding:
-        20px;
+    padding: 20px;
 
-    border-radius:
-        8px;
+    border-radius: 8px;
 
-    background:
-        #18181e;
+    background: #18181e;
 
     border:
         1px solid #2c2c34;
 
-    color:
-        #ffffff;
+    color: #ffffff;
 }
 
 
@@ -601,35 +453,27 @@ body.video-player-open {
 ========================================================= */
 
 .mobile-detail {
-    display:
-        none;
+    display: none;
 
-    position:
-        fixed;
+    position: fixed;
 
-    inset:
-        0;
+    inset: 0;
 
-    z-index:
-        9999;
+    z-index: 9000;
 
-    background:
-        #000000;
+    background: #000000;
 }
 
 
 .mobile-detail.is-open {
-    display:
-        block;
+    display: block;
 }
 
 
 .mobile-detail__backdrop {
-    position:
-        absolute;
+    position: absolute;
 
-    inset:
-        0;
+    inset: 0;
 
     background:
         rgba(0, 0, 0, 0.96);
@@ -637,29 +481,19 @@ body.video-player-open {
 
 
 .mobile-detail__panel {
-    position:
-        relative;
+    position: relative;
 
-    z-index:
-        2;
+    z-index: 2;
 
-    width:
-        100%;
+    width: 100%;
 
-    height:
-        100%;
+    height: 100%;
 
-    overflow-y:
-        auto;
+    overflow-y: auto;
 
-    overflow-x:
-        hidden;
+    overflow-x: hidden;
 
-    background:
-        #000000;
-
-    overscroll-behavior:
-        contain;
+    background: #000000;
 }
 
 
@@ -668,53 +502,37 @@ body.video-player-open {
 ========================================================= */
 
 .mobile-detail__close {
-    position:
-        fixed;
 
-    top:
-        12px;
+    position: fixed;
 
-    right:
-        14px;
+    top: 12px;
 
-    z-index:
-        10;
+    right: 14px;
 
-    display:
-        flex;
+    z-index: 10;
 
-    align-items:
-        center;
+    display: flex;
 
-    justify-content:
-        center;
+    align-items: center;
 
-    width:
-        40px;
+    justify-content: center;
 
-    height:
-        40px;
+    width: 40px;
 
-    border:
-        none;
+    height: 40px;
 
-    border-radius:
-        50%;
+    border: none;
+
+    border-radius: 50%;
 
     background:
-        rgba(20, 20, 20, 0.80);
+        rgba(20, 20, 20, 0.85);
 
-    color:
-        #ffffff;
+    color: #ffffff;
 
-    font-size:
-        30px;
+    font-size: 30px;
 
-    line-height:
-        1;
-
-    cursor:
-        pointer;
+    cursor: pointer;
 }
 
 
@@ -723,26 +541,16 @@ body.video-player-open {
 ========================================================= */
 
 .mobile-detail__image {
-    display:
-        block;
 
-    width:
-        100%;
+    display: block;
 
-    height:
-        auto;
+    width: 100%;
 
-    max-height:
-        58vh;
+    max-height: 58vh;
 
-    object-fit:
-        cover;
+    object-fit: cover;
 
-    object-position:
-        center;
-
-    background:
-        #111111;
+    background: #050505;
 }
 
 
@@ -751,65 +559,51 @@ body.video-player-open {
 ========================================================= */
 
 .mobile-detail__content {
+
     padding:
         22px 20px 40px;
 }
 
 
 .mobile-detail__title {
-    margin:
-        0 0 8px;
 
-    color:
-        #ffffff;
+    margin-bottom: 8px;
 
-    font-size:
-        28px;
+    color: #ffffff;
 
-    line-height:
-        1.15;
+    font-size: 28px;
 
-    font-weight:
-        800;
+    line-height: 1.15;
+
+    font-weight: 800;
 }
 
 
 .mobile-detail__type {
-    margin:
-        0 0 7px;
 
-    color:
-        #d4d4d4;
+    margin-bottom: 7px;
 
-    font-size:
-        15px;
+    color: #d4d4d4;
 
-    line-height:
-        1.4;
+    font-size: 15px;
 }
 
 
 .mobile-detail__platform {
-    margin:
-        0 0 20px;
 
-    color:
-        #a9a9af;
+    margin-bottom: 20px;
 
-    font-size:
-        14px;
+    color: #a9a9af;
 
-    line-height:
-        1.4;
+    font-size: 14px;
 }
 
 
 .mobile-detail__actions {
-    width:
-        100%;
 
-    margin:
-        0 0 26px;
+    width: 100%;
+
+    margin-bottom: 26px;
 }
 
 
@@ -818,59 +612,34 @@ body.video-player-open {
 ========================================================= */
 
 .mobile-detail__play {
-    display:
-        flex;
 
-    align-items:
-        center;
+    display: flex;
 
-    justify-content:
-        center;
+    align-items: center;
 
-    gap:
-        10px;
+    justify-content: center;
 
-    width:
-        100%;
+    gap: 10px;
 
-    min-height:
-        52px;
+    width: 100%;
 
-    padding:
-        13px 20px;
+    min-height: 52px;
 
-    border:
-        none;
+    padding: 13px 20px;
 
-    border-radius:
-        5px;
+    border: none;
 
-    background:
-        #ffffff;
+    border-radius: 5px;
 
-    color:
-        #111111;
+    background: #ffffff;
 
-    font-size:
-        18px;
+    color: #111111;
 
-    font-weight:
-        800;
+    font-size: 18px;
 
-    cursor:
-        pointer;
-}
+    font-weight: 800;
 
-
-.mobile-detail__play:active {
-    transform:
-        scale(0.98);
-}
-
-
-.mobile-detail__play-icon {
-    font-size:
-        18px;
+    cursor: pointer;
 }
 
 
@@ -879,120 +648,109 @@ body.video-player-open {
 ========================================================= */
 
 .mobile-detail__description-title {
-    margin:
-        0 0 10px;
 
-    color:
-        #ffffff;
+    margin-bottom: 10px;
 
-    font-size:
-        20px;
+    color: #ffffff;
 
-    line-height:
-        1.3;
-
-    font-weight:
-        700;
+    font-size: 20px;
 }
 
 
 .mobile-detail__description {
-    margin:
-        0;
 
-    color:
-        #dddddd;
+    color: #dddddd;
 
-    font-size:
-        16px;
+    font-size: 16px;
 
-    line-height:
-        1.6;
+    line-height: 1.6;
 }
 
 
 /* =========================================================
+   =========================================================
    REPRODUCTOR INTERNO
-========================================================= */
+   =========================================================
+   ========================================================= */
 
 .video-player {
-    display:
-        none;
 
-    position:
-        fixed;
+    display: none;
 
-    inset:
-        0;
+    position: fixed;
 
-    z-index:
-        10000;
+    inset: 0;
 
-    background:
-        #000000;
+    width: 100vw;
+
+    height: 100vh;
+
+    z-index: 20000;
+
+    background: #000000;
 }
 
 
 .video-player.is-open {
-    display:
-        flex;
 
-    align-items:
-        center;
+    display: flex;
 
-    justify-content:
-        center;
+    align-items: center;
+
+    justify-content: center;
 }
 
 
 /* =========================================================
-   FONDO REPRODUCTOR
+   FONDO NEGRO
 ========================================================= */
 
 .video-player__backdrop {
-    position:
-        absolute;
 
-    inset:
-        0;
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+
+    height: 100%;
 
     background:
-        rgba(0, 0, 0, 0.94);
+        rgba(0, 0, 0, 0.96);
 }
 
 
 /* =========================================================
-   VENTANA REPRODUCTOR
+   VENTANA DEL REPRODUCTOR
 ========================================================= */
 
 .video-player__window {
-    position:
-        relative;
 
-    z-index:
-        2;
+    position: relative;
 
-    width:
-        min(1200px, 94vw);
+    z-index: 2;
 
-    max-height:
-        94vh;
+    width: 96vw;
 
-    background:
-        #111116;
+    height: 92vh;
+
+    max-width: 1600px;
+
+    max-height: 900px;
+
+    background: #000000;
 
     border:
         1px solid #29292f;
 
-    border-radius:
-        10px;
+    border-radius: 8px;
 
-    overflow:
-        hidden;
+    overflow: hidden;
 
     box-shadow:
-        0 25px 80px
-        rgba(0, 0, 0, 0.80);
+        0 25px 90px
+        rgba(0, 0, 0, 0.90);
+
 }
 
 
@@ -1001,102 +759,85 @@ body.video-player-open {
 ========================================================= */
 
 .video-player__header {
-    display:
-        flex;
 
-    align-items:
-        center;
+    position: relative;
 
-    justify-content:
-        space-between;
+    display: flex;
 
-    gap:
-        15px;
+    align-items: center;
 
-    min-height:
-        54px;
+    justify-content: space-between;
+
+    width: 100%;
+
+    height: 52px;
 
     padding:
-        8px 12px 8px 18px;
+        7px 10px 7px 18px;
 
     background:
         #111116;
 
     border-bottom:
         1px solid #29292f;
-}
 
-
-.video-player__title {
-    min-width:
-        0;
-
-    color:
-        #ffffff;
-
-    font-size:
-        17px;
-
-    line-height:
-        1.3;
-
-    font-weight:
-        700;
-
-    white-space:
-        nowrap;
-
-    overflow:
-        hidden;
-
-    text-overflow:
-        ellipsis;
 }
 
 
 /* =========================================================
-   CERRAR REPRODUCTOR
+   TÍTULO REPRODUCTOR
+========================================================= */
+
+.video-player__title {
+
+    min-width: 0;
+
+    color: #ffffff;
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   BOTÓN X
 ========================================================= */
 
 .video-player__close {
-    flex:
-        0 0 auto;
 
-    display:
-        flex;
+    flex: 0 0 auto;
 
-    align-items:
-        center;
+    display: flex;
 
-    justify-content:
-        center;
+    align-items: center;
 
-    width:
-        38px;
+    justify-content: center;
 
-    height:
-        38px;
+    width: 38px;
 
-    border:
-        none;
+    height: 38px;
 
-    border-radius:
-        50%;
+    border: none;
+
+    border-radius: 50%;
 
     background:
         #29292f;
 
-    color:
-        #ffffff;
+    color: #ffffff;
 
-    font-size:
-        27px;
+    font-size: 27px;
 
-    line-height:
-        1;
+    line-height: 1;
 
-    cursor:
-        pointer;
+    cursor: pointer;
 
     transition:
         background-color 0.18s ease,
@@ -1105,80 +846,89 @@ body.video-player-open {
 
 
 .video-player__close:hover {
+
     background:
-        #3a3a43;
+        #e50914;
 
     transform:
-        scale(1.05);
+        scale(1.06);
 }
 
 
 /* =========================================================
-   ÁREA DEL VIDEO
+   ÁREA REAL DEL VIDEO
 ========================================================= */
 
 .video-player__area {
-    position:
-        relative;
 
-    width:
-        100%;
+    position: relative;
 
-    aspect-ratio:
-        16 / 9;
+    width: 100%;
 
-    background:
-        #000000;
+    height:
+        calc(100% - 52px);
+
+    background: #000000;
+
+    overflow: hidden;
 }
 
 
 /* =========================================================
-   IFRAME
+   IFRAME MEGA
 ========================================================= */
 
 .video-player__iframe {
-    display:
-        block;
 
-    width:
-        100%;
+    display: block;
 
-    height:
-        100%;
+    position: absolute;
 
-    border:
-        none;
+    top: 0;
 
-    background:
-        #000000;
+    left: 0;
+
+    width: 100% !important;
+
+    height: 100% !important;
+
+    min-width: 100%;
+
+    min-height: 100%;
+
+    max-width: none;
+
+    max-height: none;
+
+    border: 0;
+
+    margin: 0;
+
+    padding: 0;
+
+    background: #000000;
 }
 
 
 /* =========================================================
-   VIDEO SIN CONFIGURAR
+   MENSAJE VIDEO NO DISPONIBLE
 ========================================================= */
 
 .video-missing-message {
-    position:
-        fixed;
 
-    inset:
-        0;
+    position: fixed;
 
-    z-index:
-        11000;
+    inset: 0;
 
-    display:
-        flex;
+    z-index: 30000;
 
-    align-items:
-        center;
+    display: flex;
 
-    justify-content:
-        center;
+    align-items: center;
 
-    padding:
-        20px;
+    justify-content: center;
+
+    padding: 20px;
 
     background:
         rgba(0, 0, 0, 0.88);
@@ -1186,72 +936,57 @@ body.video-player-open {
 
 
 .video-missing-message__box {
+
     width:
         min(460px, 100%);
 
-    padding:
-        28px;
+    padding: 28px;
 
     border:
         1px solid #303039;
 
-    border-radius:
-        12px;
+    border-radius: 12px;
 
-    background:
-        #18181e;
+    background: #18181e;
 
-    box-shadow:
-        0 20px 60px
-        rgba(0, 0, 0, 0.70);
-
-    text-align:
-        center;
+    text-align: center;
 }
 
 
 .video-missing-message__box h2 {
-    margin:
-        0 0 12px;
 
-    font-size:
-        22px;
+    margin-bottom: 12px;
+
+    font-size: 22px;
 }
 
 
 .video-missing-message__box p {
-    margin:
-        0 0 22px;
 
-    color:
-        #cfcfd4;
+    margin-bottom: 22px;
 
-    line-height:
-        1.5;
+    color: #cfcfd4;
+
+    line-height: 1.5;
 }
 
 
 .video-missing-message__close {
+
     padding:
         10px 20px;
 
-    border:
-        none;
+    border: none;
 
-    border-radius:
-        5px;
+    border-radius: 5px;
 
-    background:
-        #ffffff;
+    background: #ffffff;
 
-    color:
-        #111111;
+    color: #111111;
 
-    font-weight:
-        700;
+    font-weight: 700;
 
-    cursor:
-        pointer;
+    cursor: pointer;
 }
 
 
@@ -1262,40 +997,41 @@ body.video-player-open {
 @media (max-width: 900px) {
 
     .site-header {
+
         padding:
             20px 22px;
     }
 
 
     .site-header h1 {
-        font-size:
-            24px;
+
+        font-size: 24px;
     }
 
 
     .site-main {
+
         padding:
             22px 18px 40px;
     }
 
 
     .drama-card {
-        flex-basis:
-            220px;
 
-        width:
-            220px;
+        flex-basis: 220px;
 
-        height:
-            330px;
+        width: 220px;
+
+        height: 330px;
     }
 
 
     .video-player__window {
-        width:
-            94vw;
-    }
 
+        width: 96vw;
+
+        height: 92vh;
+    }
 }
 
 
@@ -1306,18 +1042,20 @@ body.video-player-open {
 @media (max-width: 600px) {
 
     .site-header {
+
         padding:
             18px 16px;
     }
 
 
     .site-header h1 {
-        font-size:
-            21px;
+
+        font-size: 21px;
     }
 
 
     .site-main {
+
         padding:
             14px 12px 30px;
     }
@@ -1328,117 +1066,106 @@ body.video-player-open {
     ----------------------------------------------------- */
 
     .catalog-carousel {
-        display:
-            grid;
+
+        display: grid;
 
         grid-template-columns:
             repeat(2, minmax(0, 1fr));
 
-        gap:
-            12px;
+        gap: 12px;
 
-        width:
-            100%;
+        width: 100%;
 
         padding:
             12px 4px 28px;
 
-        overflow:
-            visible;
-
-        scrollbar-width:
-            auto;
+        overflow: visible;
     }
 
 
     .drama-card {
-        width:
-            100%;
 
-        height:
-            auto;
+        width: 100%;
 
-        aspect-ratio:
-            2 / 3;
+        height: auto;
 
-        border-radius:
-            9px;
+        aspect-ratio: 2 / 3;
+
+        border-radius: 9px;
     }
 
 
     .drama-card:hover {
-        transform:
-            none;
 
-        z-index:
-            auto;
+        transform: none;
+
+        z-index: auto;
     }
 
 
-    .drama-card:hover > img {
-        transform:
-            none;
+    .drama-card:hover
+    > img {
+
+        transform: none;
     }
 
 
     .drama-card__overlay {
-        display:
-            none;
+
+        display: none;
     }
 
 
     /* -----------------------------------------------------
-       DETALLE MÓVIL
+       DETALLE
     ----------------------------------------------------- */
 
     .mobile-detail__image {
-        max-height:
-            52vh;
 
-        object-fit:
-            contain;
+        max-height: 52vh;
 
-        background:
-            #050505;
+        object-fit: contain;
+
+        background: #050505;
     }
 
 
     .mobile-detail__content {
+
         padding:
             20px 18px 36px;
     }
 
 
     .mobile-detail__title {
-        font-size:
-            25px;
+
+        font-size: 25px;
     }
 
 
     .mobile-detail__type {
-        font-size:
-            14px;
+
+        font-size: 14px;
     }
 
 
     .mobile-detail__platform {
-        font-size:
-            13px;
+
+        font-size: 13px;
     }
 
 
     .mobile-detail__description-title {
-        font-size:
-            19px;
+
+        font-size: 19px;
     }
 
 
     .mobile-detail__description {
-        font-size:
-            15px;
 
-        line-height:
-            1.55;
+        font-size: 15px;
+
+        line-height: 1.55;
     }
 
 
@@ -1447,6 +1174,7 @@ body.video-player-open {
     ----------------------------------------------------- */
 
     .video-player {
+
         align-items:
             flex-start;
 
@@ -1456,66 +1184,59 @@ body.video-player-open {
 
 
     .video-player__window {
-        width:
-            100%;
 
-        height:
-            100%;
+        width: 100vw;
 
-        max-height:
-            none;
+        height: 100vh;
 
-        border:
-            none;
+        max-width: none;
 
-        border-radius:
-            0;
+        max-height: none;
 
-        background:
-            #000000;
+        border: none;
+
+        border-radius: 0;
     }
 
 
     .video-player__header {
-        min-height:
-            52px;
+
+        height: 50px;
 
         padding:
-            7px 10px 7px 14px;
+            6px 8px 6px 14px;
     }
 
 
     .video-player__title {
-        font-size:
-            15px;
+
+        font-size: 15px;
     }
 
 
     .video-player__close {
-        width:
-            36px;
 
-        height:
-            36px;
+        width: 36px;
 
-        font-size:
-            25px;
+        height: 36px;
+
+        font-size: 25px;
     }
 
-
-    /*
-     * El video ocupa una relación
-     * 16:9 en la parte superior.
-     */
 
     .video-player__area {
-        width:
-            100%;
 
-        aspect-ratio:
-            16 / 9;
+        height:
+            calc(100% - 50px);
     }
 
+
+    .video-player__iframe {
+
+        width: 100% !important;
+
+        height: 100% !important;
+    }
 }
 
 
@@ -1525,16 +1246,9 @@ body.video-player-open {
 
 @media (max-width: 360px) {
 
-    .drama-card {
-        aspect-ratio:
-            2 / 3;
-    }
-
-
     .mobile-detail__title {
-        font-size:
-            23px;
-    }
 
+        font-size: 23px;
+    }
 }
 

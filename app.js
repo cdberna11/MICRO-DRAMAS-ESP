@@ -442,16 +442,20 @@ plataforma.appendChild(
     ----------------------------------------------------- */
 
     overlay.appendChild(
-        titulo
-    );
+    titulo
+);
 
-    overlay.appendChild(
-        tipo
-    );
+overlay.appendChild(
+    tipo
+);
 
-    overlay.appendChild(
-        controles
-    );
+overlay.appendChild(
+    plataforma
+);
+
+overlay.appendChild(
+    controles
+);
 
     overlay.appendChild(
         descripcion

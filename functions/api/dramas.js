@@ -29,12 +29,13 @@ export async function onRequestGet(context) {
         views,
         video_url,
         embed_url,
+        status,
         featured,
         sort_order,
         created_at,
         updated_at
       FROM dramas
-      WHERE status = 'published'
+      WHERE status IN ('published', 'draft')
       ORDER BY
         featured DESC,
         sort_order ASC,
@@ -74,4 +75,3 @@ export async function onRequestGet(context) {
     );
   }
 }
-``

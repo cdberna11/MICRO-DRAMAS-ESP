@@ -30,6 +30,11 @@ body {
 }
 
 
+body.mobile-detail-open {
+    overflow: hidden;
+}
+
+
 /* =========================================================
    CABECERA
 ========================================================= */
@@ -130,10 +135,6 @@ body {
 }
 
 
-/*
- * Barra de desplazamiento Chromium
- */
-
 .catalog-carousel::-webkit-scrollbar {
     height:
         7px;
@@ -204,11 +205,6 @@ body {
 }
 
 
-/*
- * La tarjeta sobresale al pasar
- * el cursor.
- */
-
 .drama-card:hover {
     transform:
         scale(1.08);
@@ -260,7 +256,7 @@ body {
 
 
 /* =========================================================
-   DEGRADADO INFERIOR
+   INFORMACIÓN SUPERPUESTA
 ========================================================= */
 
 .drama-card__overlay {
@@ -294,11 +290,6 @@ body {
         transform 0.28s ease;
 }
 
-
-/*
- * Al pasar el mouse aparece
- * la información.
- */
 
 .drama-card:hover
 .drama-card__overlay {
@@ -347,7 +338,7 @@ body {
 
 .drama-card__type {
     margin:
-        0 0 12px;
+        0 0 6px;
 
     color:
         #d4d4d8;
@@ -358,6 +349,7 @@ body {
     line-height:
         1.35;
 }
+
 
 /* =========================================================
    PLATAFORMA
@@ -385,6 +377,7 @@ body {
     font-weight:
         700;
 }
+
 
 /* =========================================================
    CONTROLES
@@ -528,7 +521,7 @@ body {
 
 
 /* =========================================================
-   DESCRIPCIÓN
+   DESCRIPCIÓN DESKTOP
 ========================================================= */
 
 .drama-card__description {
@@ -577,7 +570,7 @@ body {
 
 
 /* =========================================================
-   ESTADOS
+   MENSAJES
 ========================================================= */
 
 .mensaje-error,
@@ -599,6 +592,349 @@ body {
 
     color:
         #ffffff;
+}
+
+
+/* =========================================================
+   VISTA DE DETALLE MÓVIL
+========================================================= */
+
+.mobile-detail {
+    display:
+        none;
+
+    position:
+        fixed;
+
+    inset:
+        0;
+
+    z-index:
+        9999;
+
+    background:
+        #000000;
+}
+
+
+.mobile-detail.is-open {
+    display:
+        block;
+}
+
+
+/* =========================================================
+   FONDO OSCURO
+========================================================= */
+
+.mobile-detail__backdrop {
+    position:
+        absolute;
+
+    inset:
+        0;
+
+    background:
+        rgba(0, 0, 0, 0.96);
+}
+
+
+/* =========================================================
+   PANEL
+========================================================= */
+
+.mobile-detail__panel {
+    position:
+        relative;
+
+    z-index:
+        2;
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    overflow-y:
+        auto;
+
+    overflow-x:
+        hidden;
+
+    background:
+        #000000;
+
+    overscroll-behavior:
+        contain;
+}
+
+
+/* =========================================================
+   BOTÓN CERRAR
+========================================================= */
+
+.mobile-detail__close {
+    position:
+        fixed;
+
+    top:
+        12px;
+
+    right:
+        14px;
+
+    z-index:
+        10;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    width:
+        40px;
+
+    height:
+        40px;
+
+    border:
+        none;
+
+    border-radius:
+        50%;
+
+    background:
+        rgba(20, 20, 20, 0.80);
+
+    color:
+        #ffffff;
+
+    font-size:
+        30px;
+
+    line-height:
+        1;
+
+    cursor:
+        pointer;
+}
+
+
+/* =========================================================
+   IMAGEN DE DETALLE
+========================================================= */
+
+.mobile-detail__image {
+    display:
+        block;
+
+    width:
+        100%;
+
+    height:
+        auto;
+
+    max-height:
+        58vh;
+
+    object-fit:
+        cover;
+
+    object-position:
+        center;
+
+    background:
+        #111111;
+}
+
+
+/* =========================================================
+   CONTENIDO
+========================================================= */
+
+.mobile-detail__content {
+    padding:
+        22px 20px 40px;
+}
+
+
+/* =========================================================
+   TÍTULO
+========================================================= */
+
+.mobile-detail__title {
+    margin:
+        0 0 8px;
+
+    color:
+        #ffffff;
+
+    font-size:
+        28px;
+
+    line-height:
+        1.15;
+
+    font-weight:
+        800;
+}
+
+
+/* =========================================================
+   TIPO
+========================================================= */
+
+.mobile-detail__type {
+    margin:
+        0 0 7px;
+
+    color:
+        #d4d4d4;
+
+    font-size:
+        15px;
+
+    line-height:
+        1.4;
+}
+
+
+/* =========================================================
+   PLATAFORMA
+========================================================= */
+
+.mobile-detail__platform {
+    margin:
+        0 0 20px;
+
+    color:
+        #a9a9af;
+
+    font-size:
+        14px;
+
+    line-height:
+        1.4;
+}
+
+
+/* =========================================================
+   ACCIONES
+========================================================= */
+
+.mobile-detail__actions {
+    width:
+        100%;
+
+    margin:
+        0 0 26px;
+}
+
+
+/* =========================================================
+   BOTÓN VER MÓVIL
+========================================================= */
+
+.mobile-detail__play {
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    gap:
+        10px;
+
+    width:
+        100%;
+
+    min-height:
+        52px;
+
+    padding:
+        13px 20px;
+
+    border:
+        none;
+
+    border-radius:
+        5px;
+
+    background:
+        #ffffff;
+
+    color:
+        #111111;
+
+    font-size:
+        18px;
+
+    font-weight:
+        800;
+
+    cursor:
+        pointer;
+}
+
+
+.mobile-detail__play:active {
+    transform:
+        scale(0.98);
+}
+
+
+.mobile-detail__play-icon {
+    font-size:
+        18px;
+}
+
+
+/* =========================================================
+   TÍTULO DESCRIPCIÓN
+========================================================= */
+
+.mobile-detail__description-title {
+    margin:
+        0 0 10px;
+
+    color:
+        #ffffff;
+
+    font-size:
+        20px;
+
+    line-height:
+        1.3;
+
+    font-weight:
+        700;
+}
+
+
+/* =========================================================
+   DESCRIPCIÓN
+========================================================= */
+
+.mobile-detail__description {
+    margin:
+        0;
+
+    color:
+        #dddddd;
+
+    font-size:
+        16px;
+
+    line-height:
+        1.6;
 }
 
 
@@ -682,6 +1018,10 @@ body {
     }
 
 
+    /*
+     * Tarjetas verticales.
+     */
+
     .drama-card {
         flex-basis:
             170px;
@@ -722,6 +1062,62 @@ body {
             none;
     }
 
+
+    /*
+     * El detalle móvil ocupa
+     * toda la pantalla.
+     */
+
+    .mobile-detail__image {
+        max-height:
+            52vh;
+
+        object-fit:
+            contain;
+
+        background:
+            #050505;
+    }
+
+
+    .mobile-detail__content {
+        padding:
+            20px 18px 36px;
+    }
+
+
+    .mobile-detail__title {
+        font-size:
+            25px;
+    }
+
+
+    .mobile-detail__type {
+        font-size:
+            14px;
+    }
+
+
+    .mobile-detail__platform {
+        font-size:
+            13px;
+    }
+
+
+    .mobile-detail__description-title {
+        font-size:
+            19px;
+    }
+
+
+    .mobile-detail__description {
+        font-size:
+            15px;
+
+        line-height:
+            1.55;
+    }
+
 }
 
 
@@ -740,6 +1136,12 @@ body {
 
         height:
             232px;
+    }
+
+
+    .mobile-detail__title {
+        font-size:
+            23px;
     }
 
 }

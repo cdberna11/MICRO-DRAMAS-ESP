@@ -9,7 +9,10 @@ export async function onRequestGet(context) {
           error: "El binding DB no está disponible."
         },
         {
-          status: 500
+          status: 500,
+          headers: {
+            "Cache-Control": "no-store"
+          }
         }
       );
     }
@@ -42,12 +45,14 @@ export async function onRequestGet(context) {
     return Response.json(
       {
         success: true,
-        dramas: result.results
+        dramas: Array.isArray(result.results)
+          ? result.results
+          : []
       },
       {
         status: 200,
         headers: {
-          "Cache-Control": "public, max-age=60"
+          "Cache-Control": "no-store"
         }
       }
     );
@@ -60,8 +65,12 @@ export async function onRequestGet(context) {
         error: "No se pudieron obtener los dramas."
       },
       {
-        status: 500
+        status: 500,
+        headers: {
+          "Cache-Control": "no-store"
+        }
       }
     );
   }
 }
+``

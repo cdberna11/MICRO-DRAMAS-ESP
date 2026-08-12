@@ -1,1655 +1,622 @@
-"use strict";
+<!DOCTYPE html>
+<html lang="es">
 
+<head>
 
-/* =========================================================
-   CONFIGURACIÓN
-   ========================================================= */
+    <meta charset="UTF-8">
 
-const API_ADMIN_DRAMAS =
-    "/api/admin/dramas";
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
+    <meta
+        name="robots"
+        content="noindex, nofollow, noarchive"
+    >
 
-const DESCRIPCION_AUTOMATICA =
-    "Drama doblado al español.";
+    <title>
+        Administración | Micro Dramas ESP
+    </title>
 
+    <link
+        rel="stylesheet"
+        href="/admin/admin.css"
+    >
 
-const OPCION_NUEVA_PLATAFORMA =
-    "__agregar_nueva__";
+</head>
 
 
-/* =========================================================
-   INICIO
-   ========================================================= */
+<body>
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
+    <!-- =====================================================
+         CABECERA
+    ====================================================== -->
 
-        inicializarFormularioNuevoDrama();
+    <header class="admin-header">
 
-        cargarDramasAdministrativos();
+        <div class="admin-header__content">
 
-    }
-);
+            <div>
 
+                <p class="admin-header__label">
+                    Panel administrativo
+                </p>
 
-/* =========================================================
-   INICIALIZAR FORMULARIO
-   ========================================================= */
+                <h1>
+                    Micro Dramas ESP
+                </h1>
 
-function inicializarFormularioNuevoDrama() {
+            </div>
 
-    const botonNuevo =
-        document.getElementById(
-            "boton-nuevo"
-        );
 
-    const formularioContenedor =
-        document.getElementById(
-            "formulario-nuevo"
-        );
+            <a
+                href="/"
+                class="button button--secondary"
+            >
+                Ver catálogo
+            </a>
 
-    const formulario =
-        document.getElementById(
-            "form-nuevo-drama"
-        );
+        </div>
 
-    const botonCancelar =
-        document.getElementById(
-            "boton-cancelar"
-        );
+    </header>
 
-    const campoTitulo =
-        document.getElementById(
-            "title"
-        );
 
-    const campoSlug =
-        document.getElementById(
-            "slug"
-        );
+    <!-- =====================================================
+         CONTENIDO PRINCIPAL
+    ====================================================== -->
 
-    const campoPlataforma =
-        document.getElementById(
-            "platform"
-        );
+    <main class="admin-main">
 
+        <section class="admin-panel">
 
-    if (
-        !botonNuevo ||
-        !formularioContenedor ||
-        !formulario ||
-        !botonCancelar ||
-        !campoTitulo ||
-        !campoSlug ||
-        !campoPlataforma
-    ) {
 
-        console.error(
-            "No se pudieron inicializar correctamente los controles del formulario."
-        );
+            <!-- =================================================
+                 ENCABEZADO
+            ================================================== -->
 
-        return;
-    }
+            <div class="admin-panel__heading">
 
+                <div>
 
-    /* -----------------------------------------------------
-       ABRIR FORMULARIO
-       ----------------------------------------------------- */
+                    <h2>
+                        Gestión de microdramas
+                    </h2>
 
-    botonNuevo.addEventListener(
-        "click",
-        async () => {
+                    <p>
+                        Administra los registros almacenados
+                        en Cloudflare D1.
+                    </p>
 
-            formularioContenedor.hidden =
-                false;
+                </div>
 
-            botonNuevo.disabled =
-                true;
 
+                <div class="admin-panel__actions">
 
-            establecerDescripcionAutomatica();
+                    <button
+                        id="boton-eliminar-seleccionados"
+                        class="button button--danger"
+                        type="button"
+                        disabled
+                    >
+                        Eliminar seleccionados
+                    </button>
 
 
-            await establecerSiguienteOrden();
+                    <button
+                        id="boton-nuevo"
+                        class="button button--primary"
+                        type="button"
+                    >
+                        Nuevo microdrama
+                    </button>
 
+                </div>
 
-            campoTitulo.focus();
+            </div>
 
-        }
-    );
 
+            <!-- =================================================
+                 MENSAJES
+            ================================================== -->
 
-    /* -----------------------------------------------------
-       GENERAR SLUG AUTOMÁTICAMENTE
-       ----------------------------------------------------- */
+            <div
+                id="mensaje-admin"
+                class="admin-message"
+                role="status"
+                aria-live="polite"
+                hidden
+            ></div>
 
-    campoTitulo.addEventListener(
-        "input",
-        () => {
 
-            campoSlug.value =
-                generarSlug(
-                    campoTitulo.value
-                );
+            <!-- =================================================
+                 FORMULARIO
+            ================================================== -->
 
-        }
-    );
+            <div
+                id="formulario-nuevo"
+                class="admin-form-container"
+                hidden
+            >
 
+                <div class="admin-form-header">
 
-    /* -----------------------------------------------------
-       CAMBIAR PLATAFORMA
-       ----------------------------------------------------- */
+                    <div>
 
-    campoPlataforma.addEventListener(
-        "change",
-        manejarCambioPlataforma
-    );
+                        <h3 id="titulo-formulario">
+                            Nuevo microdrama
+                        </h3>
 
+                        <p id="descripcion-formulario">
+                            Completa los datos del microdrama
+                            que deseas registrar.
+                        </p>
 
-    /* -----------------------------------------------------
-       CANCELAR
-       ----------------------------------------------------- */
+                    </div>
 
-    botonCancelar.addEventListener(
-        "click",
-        () => {
+                </div>
 
-            cerrarFormularioNuevoDrama();
 
-        }
-    );
+                <form
+                    id="form-nuevo-drama"
+                    class="admin-form"
+                    novalidate
+                >
 
+                    <!-- ID interno -->
 
-    /* -----------------------------------------------------
-       GUARDAR
-       ----------------------------------------------------- */
+                    <input
+                        type="hidden"
+                        id="drama-id"
+                        name="drama_id"
+                    >
 
-    formulario.addEventListener(
-        "submit",
-        async (evento) => {
 
-            evento.preventDefault();
+                    <!-- =================================================
+                         TÍTULO
+                    ================================================== -->
 
-            await guardarNuevoDrama(
-                formulario,
-                botonNuevo
-            );
+                    <div class="form-group">
 
-        }
-    );
-}
+                        <label for="title">
+                            Título
+                        </label>
 
+                        <input
+                            type="text"
+                            id="title"
+                            name="title"
+                            autocomplete="off"
+                            maxlength="200"
+                            placeholder="Ejemplo: Camino de la gloria celestial"
+                            required
+                        >
 
-/* =========================================================
-   DESCRIPCIÓN AUTOMÁTICA
-   ========================================================= */
+                    </div>
 
-function establecerDescripcionAutomatica() {
 
-    const campoDescripcion =
-        document.getElementById(
-            "description"
-        );
+                    <!-- =================================================
+                         SLUG
+                    ================================================== -->
 
+                    <div class="form-group">
 
-    if (!campoDescripcion) {
+                        <label for="slug">
+                            Slug
+                        </label>
 
-        return;
-    }
+                        <input
+                            type="text"
+                            id="slug"
+                            name="slug"
+                            autocomplete="off"
+                            maxlength="200"
+                            placeholder="Se generará automáticamente"
+                            readonly
+                            required
+                        >
 
+                        <small>
+                            Se genera automáticamente a partir del título.
+                        </small>
 
-    campoDescripcion.value =
-        DESCRIPCION_AUTOMATICA;
-}
+                    </div>
 
 
-/* =========================================================
-   MANEJAR PLATAFORMA
-   ========================================================= */
+                    <!-- =================================================
+                         PLATAFORMA
+                    ================================================== -->
 
-function manejarCambioPlataforma(
-    evento
-) {
+                    <div class="form-group">
 
-    const valor =
-        evento.target.value;
+                        <label for="platform">
+                            Plataforma
+                        </label>
 
+                        <select
+                            id="platform"
+                            name="platform"
+                        >
 
-    const contenedorNuevaPlataforma =
-        document.getElementById(
-            "nueva-plataforma-container"
-        );
+                            <option
+                                value=""
+                                selected
+                            >
+                                Seleccione una plataforma
+                            </option>
 
-    const campoNuevaPlataforma =
-        document.getElementById(
-            "nueva-plataforma"
-        );
+                            <option value="DramaBox">
+                                DramaBox
+                            </option>
 
+                            <option value="DramaWave">
+                                DramaWave
+                            </option>
 
-    if (
-        !contenedorNuevaPlataforma ||
-        !campoNuevaPlataforma
-    ) {
+                            <option value="GoodShort">
+                                GoodShort
+                            </option>
 
-        return;
-    }
+                            <option value="FlickReel">
+                                FlickReel
+                            </option>
 
+                            <option value="Melolo">
+                                Melolo
+                            </option>
 
-    if (
-        valor === OPCION_NUEVA_PLATAFORMA
-    ) {
+                            <option value="NetShort">
+                                NetShort
+                            </option>
 
-        contenedorNuevaPlataforma.hidden =
-            false;
+                            <option value="ReelShort">
+                                ReelShort
+                            </option>
 
-        campoNuevaPlataforma.required =
-            true;
+                        </select>
 
-        campoNuevaPlataforma.focus();
 
-    } else {
+                        <!-- =============================================
+                             PLATAFORMA PERSONALIZADA
+                        ============================================== -->
 
-        contenedorNuevaPlataforma.hidden =
-            true;
+                        <div
+                            id="nueva-plataforma-container"
+                            class="new-platform-container"
+                        >
 
-        campoNuevaPlataforma.required =
-            false;
+                            <label for="nueva-plataforma">
+                                Nombre de la nueva plataforma
+                            </label>
 
-        campoNuevaPlataforma.value =
-            "";
-    }
-}
+                            <input
+                                type="text"
+                                id="nueva-plataforma"
+                                name="nueva_plataforma"
+                                maxlength="100"
+                                autocomplete="off"
+                                placeholder="Escribe el nombre de la plataforma"
+                            >
 
+                            <small>
+                                Utiliza este campo solamente cuando
+                                la plataforma no aparezca en la lista.
+                            </small>
 
-/* =========================================================
-   OBTENER PLATAFORMA FINAL
-   ========================================================= */
+                        </div>
 
-function obtenerPlataformaSeleccionada() {
+                    </div>
 
-    const campoPlataforma =
-        document.getElementById(
-            "platform"
-        );
 
-    const campoNuevaPlataforma =
-        document.getElementById(
-            "nueva-plataforma"
-        );
+                    <!-- =================================================
+                         DESCRIPCIÓN
+                    ================================================== -->
 
+                    <div class="form-group">
 
-    if (
-        !campoPlataforma
-    ) {
+                        <label for="description">
+                            Descripción
+                        </label>
 
-        return "";
-    }
+                        <textarea
+                            id="description"
+                            name="description"
+                            rows="4"
+                            readonly
+                        >Drama doblado al español.</textarea>
 
+                        <small>
+                            Texto automático del sistema.
+                        </small>
 
-    if (
-        campoPlataforma.value ===
-        OPCION_NUEVA_PLATAFORMA
-    ) {
+                    </div>
 
-        return String(
-            campoNuevaPlataforma?.value ||
-            ""
-        ).trim();
-    }
 
+                    <!-- =================================================
+                         DESCRIPCIÓN DEL VIDEO
+                    ================================================== -->
 
-    return String(
-        campoPlataforma.value ||
-        ""
-    ).trim();
-}
+                    <div class="form-group">
 
+                        <label for="video_description">
+                            Descripción del video
+                        </label>
 
-/* =========================================================
-   GENERAR SLUG
-   ========================================================= */
+                        <textarea
+                            id="video_description"
+                            name="video_description"
+                            rows="4"
+                            placeholder="Descripción que aparecerá asociada al video..."
+                        ></textarea>
 
-function generarSlug(
-    texto
-) {
+                    </div>
 
-    if (
-        typeof texto !== "string"
-    ) {
 
-        return "";
-    }
+                    <!-- =================================================
+                         PORTADA
+                    ================================================== -->
 
+                    <div class="form-group">
 
-    return texto
+                        <label for="cover_url">
+                            URL de portada
+                        </label>
 
-        .normalize(
-            "NFD"
-        )
+                        <input
+                            type="url"
+                            id="cover_url"
+                            name="cover_url"
+                            placeholder="https://..."
+                            autocomplete="off"
+                        >
 
-        .replace(
-            /[\u0300-\u036f]/g,
-            ""
-        )
+                    </div>
 
-        .toLowerCase()
 
-        .replace(
-            /&/g,
-            " y "
-        )
+                    <!-- =================================================
+                         EMBED
+                    ================================================== -->
 
-        .replace(
-            /[^a-z0-9]+/g,
-            "-"
-        )
+                    <div class="form-group">
 
-        .replace(
-            /^-+/,
-            ""
-        )
+                        <label for="embed_url">
+                            URL de inserción / Embed
+                        </label>
 
-        .replace(
-            /-+$/,
-            ""
-        )
+                        <input
+                            type="url"
+                            id="embed_url"
+                            name="embed_url"
+                            placeholder="https://..."
+                            autocomplete="off"
+                        >
 
-        .slice(
-            0,
-            200
-        )
+                        <small>
+                            Esta URL será utilizada posteriormente
+                            por el reproductor integrado.
+                        </small>
 
-        .replace(
-            /-+$/,
-            ""
-        );
-}
+                    </div>
 
 
-/* =========================================================
-   OBTENER SIGUIENTE ORDEN
-   ========================================================= */
+                    <!-- =================================================
+                         ESTADO
+                    ================================================== -->
 
-async function establecerSiguienteOrden() {
+                    <div class="form-group">
 
-    const campoOrden =
-        document.getElementById(
-            "sort_order"
-        );
+                        <label for="status">
+                            Estado
+                        </label>
 
+                        <select
+                            id="status"
+                            name="status"
+                            required
+                        >
 
-    if (!campoOrden) {
+                            <option value="published">
+                                Publicado
+                            </option>
 
-        return;
-    }
+                            <option value="draft">
+                                Borrador
+                            </option>
 
+                        </select>
 
-    campoOrden.value =
-        "1";
+                        <small>
+                            Publicado permite mostrar el microdrama
+                            en el catálogo. Borrador lo mantiene
+                            almacenado sin publicarlo.
+                        </small>
 
+                    </div>
 
-    try {
 
-        const respuesta =
-            await fetch(
-                API_ADMIN_DRAMAS,
-                {
-                    method: "GET",
+                    <!-- =================================================
+                         DESTACADO
+                    ================================================== -->
 
-                    credentials:
-                        "same-origin",
+                    <div class="form-group form-group--checkbox">
 
-                    headers: {
-                        Accept:
-                            "application/json"
-                    },
+                        <label>
 
-                    cache:
-                        "no-store"
-                }
-            );
+                            <input
+                                type="checkbox"
+                                id="featured"
+                                name="featured"
+                            >
 
+                            <span>
+                                Marcar como destacado
+                            </span>
 
-        if (
-            !respuesta.ok
-        ) {
+                        </label>
 
-            return;
-        }
+                    </div>
 
 
-        const datos =
-            await respuesta.json();
+                    <!-- =================================================
+                         ORDEN
+                    ================================================== -->
 
+                    <div class="form-group">
 
-        if (
-            !datos.success ||
-            !Array.isArray(
-                datos.dramas
-            )
-        ) {
+                        <label for="sort_order">
+                            Orden
+                        </label>
 
-            return;
-        }
+                        <input
+                            type="number"
+                            id="sort_order"
+                            name="sort_order"
+                            min="1"
+                            step="1"
+                            readonly
+                        >
 
+                        <small>
+                            El sistema asigna el orden automáticamente.
+                        </small>
 
-        let mayorOrden =
-            0;
+                    </div>
 
 
-        datos.dramas.forEach(
-            (drama) => {
+                    <!-- =================================================
+                         BOTONES
+                    ================================================== -->
 
-                const orden =
-                    Number(
-                        drama.sort_order
-                    );
+                    <div class="admin-form-actions">
 
+                        <button
+                            id="boton-cancelar"
+                            class="button button--secondary"
+                            type="button"
+                        >
+                            Cancelar
+                        </button>
 
-                if (
-                    Number.isInteger(
-                        orden
-                    ) &&
-                    orden > mayorOrden
-                ) {
 
-                    mayorOrden =
-                        orden;
-                }
-            }
-        );
+                        <button
+                            id="boton-guardar"
+                            class="button button--primary"
+                            type="submit"
+                        >
+                            Guardar microdrama
+                        </button>
 
+                    </div>
 
-        campoOrden.value =
-            String(
-                mayorOrden + 1
-            );
+                </form>
 
+            </div>
 
-    } catch (error) {
 
-        console.error(
-            "No se pudo calcular el siguiente orden:",
-            error
-        );
-    }
-}
+            <!-- =================================================
+                 ESTADO DE CARGA
+            ================================================== -->
 
+            <div
+                id="estado-carga"
+                class="loading-state"
+            >
+                Cargando microdramas...
+            </div>
 
-/* =========================================================
-   CERRAR FORMULARIO
-   ========================================================= */
 
-function cerrarFormularioNuevoDrama() {
+            <!-- =================================================
+                 TABLA
+            ================================================== -->
 
-    const formularioContenedor =
-        document.getElementById(
-            "formulario-nuevo"
-        );
+            <div
+                id="contenedor-tabla"
+                class="table-container"
+                hidden
+            >
 
-    const formulario =
-        document.getElementById(
-            "form-nuevo-drama"
-        );
+                <table class="admin-table">
 
-    const botonNuevo =
-        document.getElementById(
-            "boton-nuevo"
-        );
+                    <thead>
 
-    const campoDescripcion =
-        document.getElementById(
-            "description"
-        );
+                        <tr>
 
-    const campoNuevaPlataforma =
-        document.getElementById(
-            "nueva-plataforma"
-        );
+                            <th scope="col">
 
-    const contenedorNuevaPlataforma =
-        document.getElementById(
-            "nueva-plataforma-container"
-        );
+                                <input
+                                    type="checkbox"
+                                    id="seleccionar-todos"
+                                    title="Seleccionar todos"
+                                >
 
-    const campoPlataforma =
-        document.getElementById(
-            "platform"
-        );
+                            </th>
 
+                            <th scope="col">
+                                ID
+                            </th>
 
-    if (formulario) {
+                            <th scope="col">
+                                Microdrama
+                            </th>
 
-        formulario.reset();
-    }
+                            <th scope="col">
+                                Plataforma
+                            </th>
 
+                            <th scope="col">
+                                Estado
+                            </th>
 
-    if (campoDescripcion) {
+                            <th scope="col">
+                                Destacado
+                            </th>
 
-        campoDescripcion.value =
-            DESCRIPCION_AUTOMATICA;
-    }
+                            <th scope="col">
+                                Orden
+                            </th>
 
+                            <th scope="col">
+                                Actualización
+                            </th>
 
-    if (campoPlataforma) {
+                            <th scope="col">
+                                Acciones
+                            </th>
 
-        campoPlataforma.value =
-            "";
-    }
+                        </tr>
 
+                    </thead>
 
-    if (campoNuevaPlataforma) {
 
-        campoNuevaPlataforma.value =
-            "";
+                    <tbody id="lista-dramas"></tbody>
 
-        campoNuevaPlataforma.required =
-            false;
-    }
+                </table>
 
+            </div>
 
-    if (contenedorNuevaPlataforma) {
 
-        contenedorNuevaPlataforma.hidden =
-            true;
-    }
+            <!-- =================================================
+                 ESTADO VACÍO
+            ================================================== -->
 
+            <div
+                id="estado-vacio"
+                class="empty-state"
+                hidden
+            >
+                No hay microdramas registrados.
+            </div>
 
-    if (formularioContenedor) {
+        </section>
 
-        formularioContenedor.hidden =
-            true;
-    }
+    </main>
 
 
-    if (botonNuevo) {
+    <script
+        src="/admin/admin.js"
+        defer
+    ></script>
 
-        botonNuevo.disabled =
-            false;
-    }
-}
+</body>
 
-
-/* =========================================================
-   GUARDAR NUEVO MICRODRAMA
-   ========================================================= */
-
-async function guardarNuevoDrama(
-    formulario,
-    botonNuevo
-) {
-
-    const botonGuardar =
-        document.getElementById(
-            "boton-guardar"
-        );
-
-
-    if (!botonGuardar) {
-
-        console.error(
-            "No se encontró el botón Guardar microdrama."
-        );
-
-        return;
-    }
-
-
-    /* -----------------------------------------------------
-       VALIDACIÓN HTML
-       ----------------------------------------------------- */
-
-    if (
-        !formulario.checkValidity()
-    ) {
-
-        formulario.reportValidity();
-
-        return;
-    }
-
-
-    const plataforma =
-        obtenerPlataformaSeleccionada();
-
-
-    if (!plataforma) {
-
-        mostrarMensajeAdmin(
-            "Debes seleccionar una plataforma.",
-            "error"
-        );
-
-        return;
-    }
-
-
-    const campoOrden =
-        document.getElementById(
-            "sort_order"
-        );
-
-
-    const datosFormulario =
-        new FormData(
-            formulario
-        );
-
-
-    const datos = {
-
-        title:
-            String(
-                datosFormulario.get(
-                    "title"
-                ) || ""
-            ).trim(),
-
-
-        slug:
-            String(
-                datosFormulario.get(
-                    "slug"
-                ) || ""
-            ).trim()
-            .toLowerCase(),
-
-
-        platform:
-            plataforma,
-
-
-        description:
-            DESCRIPCION_AUTOMATICA,
-
-
-        video_description:
-            String(
-                datosFormulario.get(
-                    "video_description"
-                ) || ""
-            ).trim(),
-
-
-        cover_url:
-            String(
-                datosFormulario.get(
-                    "cover_url"
-                ) || ""
-            ).trim(),
-
-
-        embed_url:
-            String(
-                datosFormulario.get(
-                    "embed_url"
-                ) || ""
-            ).trim(),
-
-
-        status:
-            String(
-                datosFormulario.get(
-                    "status"
-                ) || "draft"
-            ).trim(),
-
-
-        featured:
-            datosFormulario.has(
-                "featured"
-            ),
-
-
-        sort_order:
-            Number(
-                campoOrden?.value || 1
-            )
-
-    };
-
-
-    /* -----------------------------------------------------
-       BOTÓN
-       ----------------------------------------------------- */
-
-    botonGuardar.disabled =
-        true;
-
-    botonGuardar.textContent =
-        "Guardando...";
-
-
-    try {
-
-        const respuesta =
-            await fetch(
-                API_ADMIN_DRAMAS,
-                {
-                    method: "POST",
-
-                    credentials:
-                        "same-origin",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json",
-
-                        "Accept":
-                            "application/json"
-
-                    },
-
-                    body:
-                        JSON.stringify(
-                            datos
-                        )
-                }
-            );
-
-
-        let resultado =
-            null;
-
-
-        try {
-
-            resultado =
-                await respuesta.json();
-
-        } catch {
-
-            resultado =
-                null;
-        }
-
-
-        if (
-            !respuesta.ok
-        ) {
-
-            const mensaje =
-                resultado &&
-                typeof resultado.error ===
-                    "string"
-
-                    ? resultado.error
-
-                    : `La API respondió con el estado ${respuesta.status}.`;
-
-
-            throw new Error(
-                mensaje
-            );
-        }
-
-
-        if (
-            !resultado ||
-            resultado.success !== true
-        ) {
-
-            throw new Error(
-
-                resultado &&
-                typeof resultado.error ===
-                    "string"
-
-                    ? resultado.error
-
-                    : "La API no confirmó el registro del microdrama."
-            );
-        }
-
-
-        cerrarFormularioNuevoDrama();
-
-
-        await cargarDramasAdministrativos();
-
-
-        mostrarMensajeAdmin(
-            "Microdrama guardado correctamente.",
-            "success"
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Error al guardar el nuevo microdrama:",
-            error
-        );
-
-
-        mostrarMensajeAdmin(
-            error.message ||
-            "No se pudo guardar el microdrama.",
-            "error"
-        );
-
-
-    } finally {
-
-        botonGuardar.disabled =
-            false;
-
-        botonGuardar.textContent =
-            "Guardar microdrama";
-
-
-        if (botonNuevo) {
-
-            botonNuevo.disabled =
-                false;
-        }
-    }
-}
-
-
-/* =========================================================
-   CARGAR MICRODRAMAS
-   ========================================================= */
-
-async function cargarDramasAdministrativos() {
-
-    const elementos =
-        obtenerElementos();
-
-
-    if (!elementos) {
-
-        return;
-    }
-
-
-    mostrarEstadoCarga(
-        elementos
-    );
-
-
-    try {
-
-        const respuesta =
-            await fetch(
-                API_ADMIN_DRAMAS,
-                {
-                    method: "GET",
-
-                    credentials:
-                        "same-origin",
-
-                    headers: {
-                        Accept:
-                            "application/json"
-                    },
-
-                    cache:
-                        "no-store"
-                }
-            );
-
-
-        if (
-            !respuesta.ok
-        ) {
-
-            throw new Error(
-                `La API respondió con el estado ${respuesta.status}.`
-            );
-        }
-
-
-        const datos =
-            await respuesta.json();
-
-
-        if (
-            !datos.success ||
-            !Array.isArray(
-                datos.dramas
-            )
-        ) {
-
-            throw new Error(
-                "La API administrativa devolvió una respuesta no válida."
-            );
-        }
-
-
-        renderizarDramas(
-            datos.dramas,
-            elementos
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Error al cargar los microdramas administrativos:",
-            error
-        );
-
-
-        mostrarError(
-            elementos,
-            "No se pudieron cargar los microdramas. Recarga la página e inténtalo nuevamente."
-        );
-    }
-}
-
-
-/* =========================================================
-   OBTENER ELEMENTOS
-   ========================================================= */
-
-function obtenerElementos() {
-
-    const elementos = {
-
-        estadoCarga:
-            document.getElementById(
-                "estado-carga"
-            ),
-
-        estadoVacio:
-            document.getElementById(
-                "estado-vacio"
-            ),
-
-        contenedorTabla:
-            document.getElementById(
-                "contenedor-tabla"
-            ),
-
-        listaDramas:
-            document.getElementById(
-                "lista-dramas"
-            ),
-
-        mensajeAdmin:
-            document.getElementById(
-                "mensaje-admin"
-            )
-
-    };
-
-
-    const elementoFaltante =
-        Object.entries(
-            elementos
-        ).find(
-            ([, elemento]) =>
-                !elemento
-        );
-
-
-    if (
-        elementoFaltante
-    ) {
-
-        console.error(
-            `No se encontró el elemento administrativo: ${elementoFaltante[0]}.`
-        );
-
-
-        return null;
-    }
-
-
-    return elementos;
-}
-
-
-/* =========================================================
-   ESTADO DE CARGA
-   ========================================================= */
-
-function mostrarEstadoCarga(
-    elementos
-) {
-
-    elementos.estadoCarga.hidden =
-        false;
-
-    elementos.estadoVacio.hidden =
-        true;
-
-    elementos.contenedorTabla.hidden =
-        true;
-
-    elementos.mensajeAdmin.hidden =
-        true;
-
-    elementos.listaDramas.replaceChildren();
-}
-
-
-/* =========================================================
-   RENDERIZAR DRAMAS
-   ========================================================= */
-
-function renderizarDramas(
-    dramas,
-    elementos
-) {
-
-    elementos.estadoCarga.hidden =
-        true;
-
-    elementos.mensajeAdmin.hidden =
-        true;
-
-    elementos.listaDramas.replaceChildren();
-
-
-    if (
-        dramas.length === 0
-    ) {
-
-        elementos.estadoVacio.hidden =
-            false;
-
-        elementos.contenedorTabla.hidden =
-            true;
-
-        return;
-    }
-
-
-    const fragmento =
-        document.createDocumentFragment();
-
-
-    dramas.forEach(
-        (drama) => {
-
-            fragmento.appendChild(
-                crearFilaDrama(
-                    drama
-                )
-            );
-        }
-    );
-
-
-    elementos.listaDramas.appendChild(
-        fragmento
-    );
-
-
-    elementos.estadoVacio.hidden =
-        true;
-
-    elementos.contenedorTabla.hidden =
-        false;
-}
-
-
-/* =========================================================
-   CREAR FILA
-   ========================================================= */
-
-function crearFilaDrama(
-    drama
-) {
-
-    const fila =
-        document.createElement(
-            "tr"
-        );
-
-
-    fila.appendChild(
-        crearCelda(
-            normalizarTexto(
-                drama.id,
-                "—"
-            )
-        )
-    );
-
-
-    fila.appendChild(
-        crearCeldaInformacionDrama(
-            drama
-        )
-    );
-
-
-    fila.appendChild(
-        crearCelda(
-            normalizarTexto(
-                drama.platform,
-                "—"
-            )
-        )
-    );
-
-
-    fila.appendChild(
-        crearCeldaEstado(
-            drama.status
-        )
-    );
-
-
-    fila.appendChild(
-        crearCeldaDestacado(
-            drama.featured
-        )
-    );
-
-
-    fila.appendChild(
-        crearCelda(
-            normalizarTexto(
-                drama.sort_order,
-                "0"
-            )
-        )
-    );
-
-
-    fila.appendChild(
-        crearCelda(
-            formatearFecha(
-                drama.updated_at
-            )
-        )
-    );
-
-
-    fila.appendChild(
-        crearCeldaAcciones()
-    );
-
-
-    return fila;
-}
-
-
-/* =========================================================
-   CELDA SIMPLE
-   ========================================================= */
-
-function crearCelda(
-    contenido
-) {
-
-    const celda =
-        document.createElement(
-            "td"
-        );
-
-
-    celda.textContent =
-        contenido;
-
-
-    return celda;
-}
-
-
-/* =========================================================
-   INFORMACIÓN DEL MICRODRAMA
-   ========================================================= */
-
-function crearCeldaInformacionDrama(
-    drama
-) {
-
-    const celda =
-        document.createElement(
-            "td"
-        );
-
-
-    const contenedor =
-        document.createElement(
-            "div"
-        );
-
-
-    contenedor.className =
-        "drama-info";
-
-
-    const portada =
-        document.createElement(
-            "img"
-        );
-
-
-    portada.className =
-        "drama-cover";
-
-
-    portada.src =
-        obtenerRutaPortada(
-            drama.cover_url
-        );
-
-
-    portada.alt =
-        `Portada de ${normalizarTexto(
-            drama.title,
-            "microdrama"
-        )}`;
-
-
-    portada.loading =
-        "lazy";
-
-
-    portada.width =
-        48;
-
-
-    portada.height =
-        72;
-
-
-    portada.addEventListener(
-        "error",
-        () => {
-
-            portada.hidden =
-                true;
-
-        },
-        {
-            once: true
-        }
-    );
-
-
-    const textos =
-        document.createElement(
-            "div"
-        );
-
-
-    const titulo =
-        document.createElement(
-            "p"
-        );
-
-
-    titulo.className =
-        "drama-title";
-
-
-    titulo.textContent =
-        normalizarTexto(
-            drama.title,
-            "Sin título"
-        );
-
-
-    const slug =
-        document.createElement(
-            "p"
-        );
-
-
-    slug.className =
-        "drama-slug";
-
-
-    slug.textContent =
-        normalizarTexto(
-            drama.slug,
-            "Sin slug"
-        );
-
-
-    slug.title =
-        slug.textContent;
-
-
-    textos.appendChild(
-        titulo
-    );
-
-
-    textos.appendChild(
-        slug
-    );
-
-
-    contenedor.appendChild(
-        portada
-    );
-
-
-    contenedor.appendChild(
-        textos
-    );
-
-
-    celda.appendChild(
-        contenedor
-    );
-
-
-    return celda;
-}
-
-
-/* =========================================================
-   ESTADO
-   ========================================================= */
-
-function crearCeldaEstado(
-    estadoOriginal
-) {
-
-    const celda =
-        document.createElement(
-            "td"
-        );
-
-
-    const indicador =
-        document.createElement(
-            "span"
-        );
-
-
-    const estado =
-        normalizarTexto(
-            estadoOriginal,
-            "draft"
-        ).toLowerCase();
-
-
-    indicador.className =
-        "status-badge";
-
-
-    if (
-        estado === "published"
-    ) {
-
-        indicador.classList.add(
-            "status-badge--published"
-        );
-
-
-        indicador.textContent =
-            "Publicado";
-
-    } else {
-
-        indicador.classList.add(
-            "status-badge--draft"
-        );
-
-
-        indicador.textContent =
-            "Borrador";
-    }
-
-
-    celda.appendChild(
-        indicador
-    );
-
-
-    return celda;
-}
-
-
-/* =========================================================
-   DESTACADO
-   ========================================================= */
-
-function crearCeldaDestacado(
-    valor
-) {
-
-    const celda =
-        document.createElement(
-            "td"
-        );
-
-
-    const indicador =
-        document.createElement(
-            "span"
-        );
-
-
-    const destacado =
-        valor === true ||
-        valor === 1 ||
-        valor === "1";
-
-
-    indicador.className =
-        destacado
-            ? "feature-value feature-value--yes"
-            : "feature-value feature-value--no";
-
-
-    indicador.textContent =
-        destacado
-            ? "Sí"
-            : "No";
-
-
-    celda.appendChild(
-        indicador
-    );
-
-
-    return celda;
-}
-
-
-/* =========================================================
-   ACCIONES
-   ========================================================= */
-
-function crearCeldaAcciones() {
-
-    const celda =
-        document.createElement(
-            "td"
-        );
-
-
-    const mensaje =
-        document.createElement(
-            "span"
-        );
-
-
-    mensaje.className =
-        "action-placeholder";
-
-
-    mensaje.textContent =
-        "Próximamente";
-
-
-    mensaje.title =
-        "Las acciones de edición se habilitarán próximamente.";
-
-
-    celda.appendChild(
-        mensaje
-    );
-
-
-    return celda;
-}
-
-
-/* =========================================================
-   PORTADA
-   ========================================================= */
-
-function obtenerRutaPortada(
-    coverUrl
-) {
-
-    const portada =
-        normalizarTexto(
-            coverUrl,
-            ""
-        ).trim();
-
-
-    if (!portada) {
-
-        return "";
-    }
-
-
-    return portada;
-}
-
-
-/* =========================================================
-   NORMALIZAR TEXTO
-   ========================================================= */
-
-function normalizarTexto(
-    valor,
-    valorPorDefecto
-) {
-
-    if (
-        valor === null ||
-        valor === undefined ||
-        valor === ""
-    ) {
-
-        return valorPorDefecto;
-    }
-
-
-    return String(
-        valor
-    );
-}
-
-
-/* =========================================================
-   FECHA
-   ========================================================= */
-
-function formatearFecha(
-    fechaOriginal
-) {
-
-    if (
-        fechaOriginal === null ||
-        fechaOriginal === undefined ||
-        fechaOriginal === ""
-    ) {
-
-        return "—";
-    }
-
-
-    const fecha =
-        new Date(
-            fechaOriginal
-        );
-
-
-    if (
-        Number.isNaN(
-            fecha.getTime()
-        )
-    ) {
-
-        return String(
-            fechaOriginal
-        );
-    }
-
-
-    return new Intl.DateTimeFormat(
-        "es-PA",
-        {
-            dateStyle:
-                "short",
-
-            timeStyle:
-                "short"
-        }
-    ).format(
-        fecha
-    );
-}
-
-
-/* =========================================================
-   MOSTRAR MENSAJE
-   ========================================================= */
-
-function mostrarMensajeAdmin(
-    mensaje,
-    tipo
-) {
-
-    const mensajeAdmin =
-        document.getElementById(
-            "mensaje-admin"
-        );
-
-
-    if (!mensajeAdmin) {
-
-        return;
-    }
-
-
-    mensajeAdmin.textContent =
-        mensaje;
-
-
-    mensajeAdmin.className =
-        tipo === "success"
-            ? "admin-message admin-message--success"
-            : "admin-message admin-message--error";
-
-
-    mensajeAdmin.hidden =
-        false;
-}
-
-
-/* =========================================================
-   MOSTRAR ERROR
-   ========================================================= */
-
-function mostrarError(
-    elementos,
-    mensaje
-) {
-
-    elementos.estadoCarga.hidden =
-        true;
-
-    elementos.estadoVacio.hidden =
-        true;
-
-    elementos.contenedorTabla.hidden =
-        true;
-
-    elementos.mensajeAdmin.textContent =
-        mensaje;
-
-    elementos.mensajeAdmin.className =
-        "admin-message admin-message--error";
-
-    elementos.mensajeAdmin.hidden =
-        false;
-}
+</html>

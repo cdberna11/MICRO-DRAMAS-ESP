@@ -40,7 +40,7 @@ function esSlugValido(slug) {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
 }
 
-function normali*arDrama(datos) {
+function normalizarDrama(datos) {
   return {
     sl*g: limpiarTexto(datos.slug).toLowe*Case(),
     title: limpiarTexto(da*os.title),
@@ -215,7 +215,7 @@ export async func*ion onRequestPost(context) {
     * );
     }
 
-    const drama = norma*izarDrama(datos);
+    const drama = normalizarDrama(datos);
     const errore* = validarDrama(drama);
 
     if (e*rores.length > 0) {

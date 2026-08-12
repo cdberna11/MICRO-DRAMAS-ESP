@@ -140,6 +140,21 @@ function esSlugValido(
 
 
 /* =========================================================
+   PLATAFORMAS PERMITIDAS
+   ========================================================= */
+
+const PLATAFORMAS_PERMITIDAS = [
+    "DramaBox",
+    "DramaWave",
+    "GoodShort",
+    "FlickReel",
+    "Melolo",
+    "NetShort",
+    "ReelShort"
+];
+
+
+/* =========================================================
    NORMALIZAR MICRODRAMA
    ========================================================= */
 
@@ -296,6 +311,16 @@ function validarDrama(
 
         errores.push(
             "La plataforma es obligatoria."
+        );
+
+    } else if (
+        !PLATAFORMAS_PERMITIDAS.includes(
+            drama.platform
+        )
+    ) {
+
+        errores.push(
+            "La plataforma seleccionada no es válida."
         );
     }
 
@@ -479,10 +504,6 @@ export async function onRequestPost(
             context.env.DB;
 
 
-        /* -------------------------------------------------
-           VERIFICAR BASE DE DATOS
-           ------------------------------------------------- */
-
         if (!database) {
 
             return crearRespuestaJson(
@@ -499,8 +520,8 @@ export async function onRequestPost(
 
 
         /* -------------------------------------------------
-           VERIFICAR CONTENT-TYPE
-           ------------------------------------------------- */
+           CONTENT-TYPE
+        ------------------------------------------------- */
 
         const contentType =
             context.request.headers.get(
@@ -531,7 +552,7 @@ export async function onRequestPost(
 
         /* -------------------------------------------------
            LEER JSON
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         let datos;
 
@@ -558,7 +579,7 @@ export async function onRequestPost(
 
         /* -------------------------------------------------
            VALIDAR ESTRUCTURA
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         if (
             !datos ||
@@ -581,7 +602,7 @@ export async function onRequestPost(
 
         /* -------------------------------------------------
            NORMALIZAR
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         const drama =
             normalizarDrama(
@@ -591,7 +612,7 @@ export async function onRequestPost(
 
         /* -------------------------------------------------
            VALIDAR
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         const errores =
             validarDrama(
@@ -621,7 +642,7 @@ export async function onRequestPost(
 
         /* -------------------------------------------------
            COMPROBAR SLUG DUPLICADO
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         const existente =
             await database
@@ -654,7 +675,7 @@ export async function onRequestPost(
 
         /* -------------------------------------------------
            INSERTAR EN D1
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         const insercion =
             await database
@@ -708,7 +729,7 @@ export async function onRequestPost(
 
         /* -------------------------------------------------
            CONFIRMAR INSERCIÓN
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         if (
             !insercion.success
@@ -721,8 +742,8 @@ export async function onRequestPost(
 
 
         /* -------------------------------------------------
-           OBTENER ID CREADO
-           ------------------------------------------------- */
+           OBTENER ID
+        ------------------------------------------------- */
 
         const idCreado =
             insercion.meta?.last_row_id;
@@ -741,7 +762,7 @@ export async function onRequestPost(
 
         /* -------------------------------------------------
            OBTENER REGISTRO CREADO
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         const nuevoDrama =
             await database
@@ -773,7 +794,7 @@ export async function onRequestPost(
 
         /* -------------------------------------------------
            RESPUESTA
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         return crearRespuestaJson(
             {
@@ -806,7 +827,7 @@ export async function onRequestPost(
 
         /* -------------------------------------------------
            SLUG DUPLICADO
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         if (
             mensaje.includes(
@@ -832,7 +853,7 @@ export async function onRequestPost(
 
         /* -------------------------------------------------
            ERROR GENERAL
-           ------------------------------------------------- */
+        ------------------------------------------------- */
 
         return crearRespuestaJson(
             {

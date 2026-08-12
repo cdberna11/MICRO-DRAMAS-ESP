@@ -37,9 +37,7 @@ function esVistaMovil() {
 async function cargarDramas() {
 
     const catalogo =
-        document.getElementById(
-            "catalogo"
-        );
+        document.getElementById("catalogo");
 
 
     if (!catalogo) {
@@ -55,9 +53,7 @@ async function cargarDramas() {
     try {
 
         const respuesta =
-            await fetch(
-                "/api/dramas"
-            );
+            await fetch("/api/dramas");
 
 
         if (!respuesta.ok) {
@@ -74,9 +70,7 @@ async function cargarDramas() {
 
         if (
             !datos.success ||
-            !Array.isArray(
-                datos.dramas
-            )
+            !Array.isArray(datos.dramas)
         ) {
 
             throw new Error(
@@ -88,9 +82,7 @@ async function cargarDramas() {
         catalogo.innerHTML = "";
 
 
-        if (
-            datos.dramas.length === 0
-        ) {
+        if (datos.dramas.length === 0) {
 
             catalogo.innerHTML =
                 `
@@ -130,14 +122,10 @@ async function cargarDramas() {
    CREAR TARJETA
 ========================================================= */
 
-function crearTarjetaDrama(
-    drama
-) {
+function crearTarjetaDrama(drama) {
 
     const catalogo =
-        document.getElementById(
-            "catalogo"
-        );
+        document.getElementById("catalogo");
 
 
     if (!catalogo) {
@@ -145,14 +133,8 @@ function crearTarjetaDrama(
     }
 
 
-    /* -----------------------------------------------------
-       TARJETA
-    ----------------------------------------------------- */
-
     const tarjeta =
-        document.createElement(
-            "article"
-        );
+        document.createElement("article");
 
     tarjeta.className =
         "drama-card";
@@ -163,9 +145,7 @@ function crearTarjetaDrama(
     ----------------------------------------------------- */
 
     const portada =
-        document.createElement(
-            "img"
-        );
+        document.createElement("img");
 
 
     const portadaUrl =
@@ -192,16 +172,15 @@ function crearTarjetaDrama(
         () => {
 
             if (
-                portada.src.endsWith(
+                !portada.src.endsWith(
                     PORTADA_GENERICA
                 )
             ) {
-                return;
+
+                portada.src =
+                    PORTADA_GENERICA;
             }
 
-
-            portada.src =
-                PORTADA_GENERICA;
         },
         {
             once: true
@@ -210,13 +189,11 @@ function crearTarjetaDrama(
 
 
     /* -----------------------------------------------------
-       OVERLAY ESCRITORIO
+       OVERLAY
     ----------------------------------------------------- */
 
     const overlay =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     overlay.className =
         "drama-card__overlay";
@@ -227,9 +204,7 @@ function crearTarjetaDrama(
     ----------------------------------------------------- */
 
     const titulo =
-        document.createElement(
-            "h2"
-        );
+        document.createElement("h2");
 
     titulo.className =
         "drama-card__title";
@@ -243,9 +218,7 @@ function crearTarjetaDrama(
     ----------------------------------------------------- */
 
     const tipo =
-        document.createElement(
-            "p"
-        );
+        document.createElement("p");
 
     tipo.className =
         "drama-card__type";
@@ -259,18 +232,14 @@ function crearTarjetaDrama(
     ----------------------------------------------------- */
 
     const plataforma =
-        document.createElement(
-            "p"
-        );
+        document.createElement("p");
 
     plataforma.className =
         "drama-card__platform";
 
 
     const etiquetaPlataforma =
-        document.createElement(
-            "strong"
-        );
+        document.createElement("strong");
 
     etiquetaPlataforma.textContent =
         "Plataforma: ";
@@ -296,9 +265,7 @@ function crearTarjetaDrama(
     ----------------------------------------------------- */
 
     const controles =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     controles.className =
         "drama-card__controls";
@@ -309,15 +276,14 @@ function crearTarjetaDrama(
     ----------------------------------------------------- */
 
     const botonVer =
-        document.createElement(
-            "button"
-        );
+        document.createElement("button");
 
     botonVer.type =
         "button";
 
     botonVer.className =
         "drama-card__play";
+
 
     botonVer.innerHTML =
         `
@@ -339,6 +305,7 @@ function crearTarjetaDrama(
         (evento) => {
 
             evento.preventDefault();
+
             evento.stopPropagation();
 
 
@@ -354,9 +321,7 @@ function crearTarjetaDrama(
     ----------------------------------------------------- */
 
     const botonMas =
-        document.createElement(
-            "button"
-        );
+        document.createElement("button");
 
     botonMas.type =
         "button";
@@ -385,9 +350,7 @@ function crearTarjetaDrama(
     ----------------------------------------------------- */
 
     const descripcion =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     descripcion.className =
         "drama-card__description";
@@ -409,6 +372,7 @@ function crearTarjetaDrama(
         (evento) => {
 
             evento.preventDefault();
+
             evento.stopPropagation();
 
 
@@ -442,7 +406,6 @@ function crearTarjetaDrama(
         botonVer
     );
 
-
     controles.appendChild(
         botonMas
     );
@@ -456,21 +419,17 @@ function crearTarjetaDrama(
         titulo
     );
 
-
     overlay.appendChild(
         tipo
     );
-
 
     overlay.appendChild(
         plataforma
     );
 
-
     overlay.appendChild(
         controles
     );
-
 
     overlay.appendChild(
         descripcion
@@ -485,14 +444,13 @@ function crearTarjetaDrama(
         portada
     );
 
-
     tarjeta.appendChild(
         overlay
     );
 
 
     /* -----------------------------------------------------
-       INTERACCIÓN MÓVIL
+       DETALLE MÓVIL
     ----------------------------------------------------- */
 
     tarjeta.addEventListener(
@@ -507,9 +465,7 @@ function crearTarjetaDrama(
 
 
             if (
-                evento.target.closest(
-                    "button"
-                )
+                evento.target.closest("button")
             ) {
                 return;
             }
@@ -529,7 +485,7 @@ function crearTarjetaDrama(
 
 
 /* =========================================================
-   CREAR DETALLE MÓVIL
+   DETALLE MÓVIL
 ========================================================= */
 
 function crearDetalleMovil() {
@@ -544,15 +500,14 @@ function crearDetalleMovil() {
 
 
     const detalle =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     detalle.id =
         "detalle-movil";
 
     detalle.className =
         "mobile-detail";
+
 
     detalle.setAttribute(
         "aria-hidden",
@@ -561,35 +516,28 @@ function crearDetalleMovil() {
 
 
     const fondo =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     fondo.className =
         "mobile-detail__backdrop";
 
 
     const panel =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     panel.className =
         "mobile-detail__panel";
+
 
     panel.setAttribute(
         "role",
         "dialog"
     );
 
+
     panel.setAttribute(
         "aria-modal",
         "true"
-    );
-
-    panel.setAttribute(
-        "aria-labelledby",
-        "detalle-movil-titulo"
     );
 
 
@@ -598,9 +546,7 @@ function crearDetalleMovil() {
     ----------------------------------------------------- */
 
     const cerrar =
-        document.createElement(
-            "button"
-        );
+        document.createElement("button");
 
     cerrar.type =
         "button";
@@ -610,6 +556,7 @@ function crearDetalleMovil() {
 
     cerrar.innerHTML =
         "×";
+
 
     cerrar.setAttribute(
         "aria-label",
@@ -622,15 +569,10 @@ function crearDetalleMovil() {
     ----------------------------------------------------- */
 
     const imagen =
-        document.createElement(
-            "img"
-        );
+        document.createElement("img");
 
     imagen.className =
         "mobile-detail__image";
-
-    imagen.alt =
-        "";
 
 
     /* -----------------------------------------------------
@@ -638,9 +580,7 @@ function crearDetalleMovil() {
     ----------------------------------------------------- */
 
     const contenido =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     contenido.className =
         "mobile-detail__content";
@@ -651,12 +591,7 @@ function crearDetalleMovil() {
     ----------------------------------------------------- */
 
     const titulo =
-        document.createElement(
-            "h2"
-        );
-
-    titulo.id =
-        "detalle-movil-titulo";
+        document.createElement("h2");
 
     titulo.className =
         "mobile-detail__title";
@@ -667,9 +602,7 @@ function crearDetalleMovil() {
     ----------------------------------------------------- */
 
     const tipo =
-        document.createElement(
-            "p"
-        );
+        document.createElement("p");
 
     tipo.className =
         "mobile-detail__type";
@@ -683,9 +616,7 @@ function crearDetalleMovil() {
     ----------------------------------------------------- */
 
     const plataforma =
-        document.createElement(
-            "p"
-        );
+        document.createElement("p");
 
     plataforma.className =
         "mobile-detail__platform";
@@ -696,15 +627,14 @@ function crearDetalleMovil() {
     ----------------------------------------------------- */
 
     const botonVer =
-        document.createElement(
-            "button"
-        );
+        document.createElement("button");
 
     botonVer.type =
         "button";
 
     botonVer.className =
         "mobile-detail__play";
+
 
     botonVer.innerHTML =
         `
@@ -746,22 +676,18 @@ function crearDetalleMovil() {
        DESCRIPCIÓN
     ----------------------------------------------------- */
 
-    const etiquetaDescripcion =
-        document.createElement(
-            "h3"
-        );
+    const tituloDescripcion =
+        document.createElement("h3");
 
-    etiquetaDescripcion.className =
+    tituloDescripcion.className =
         "mobile-detail__description-title";
 
-    etiquetaDescripcion.textContent =
+    tituloDescripcion.textContent =
         "Descripción";
 
 
     const descripcion =
-        document.createElement(
-            "p"
-        );
+        document.createElement("p");
 
     descripcion.className =
         "mobile-detail__description";
@@ -772,9 +698,7 @@ function crearDetalleMovil() {
     ----------------------------------------------------- */
 
     const acciones =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     acciones.className =
         "mobile-detail__actions";
@@ -786,7 +710,7 @@ function crearDetalleMovil() {
 
 
     /* -----------------------------------------------------
-       CONSTRUIR CONTENIDO
+       CONSTRUIR
     ----------------------------------------------------- */
 
     contenido.appendChild(
@@ -806,17 +730,13 @@ function crearDetalleMovil() {
     );
 
     contenido.appendChild(
-        etiquetaDescripcion
+        tituloDescripcion
     );
 
     contenido.appendChild(
         descripcion
     );
 
-
-    /* -----------------------------------------------------
-       CONSTRUIR PANEL
-    ----------------------------------------------------- */
 
     panel.appendChild(
         cerrar
@@ -845,10 +765,6 @@ function crearDetalleMovil() {
     );
 
 
-    /* -----------------------------------------------------
-       EVENTOS CERRAR
-    ----------------------------------------------------- */
-
     cerrar.addEventListener(
         "click",
         cerrarDetalleMovil
@@ -866,16 +782,7 @@ function crearDetalleMovil() {
    ABRIR DETALLE MÓVIL
 ========================================================= */
 
-function abrirDetalleMovil(
-    drama
-) {
-
-    if (
-        !esVistaMovil()
-    ) {
-        return;
-    }
-
+function abrirDetalleMovil(drama) {
 
     crearDetalleMovil();
 
@@ -949,15 +856,13 @@ function abrirDetalleMovil(
         drama.title;
 
 
-    const nombrePlataforma =
-        typeof drama.platform === "string" &&
-        drama.platform.trim() !== ""
-            ? drama.platform.trim()
-            : "No especificada";
-
-
     plataforma.textContent =
-        `Plataforma: ${nombrePlataforma}`;
+        `Plataforma: ${
+            typeof drama.platform === "string" &&
+            drama.platform.trim() !== ""
+                ? drama.platform.trim()
+                : "No especificada"
+        }`;
 
 
     const descripcionTexto =
@@ -990,19 +895,6 @@ function abrirDetalleMovil(
     document.body.classList.add(
         "mobile-detail-open"
     );
-
-
-    const panel =
-        detalle.querySelector(
-            ".mobile-detail__panel"
-        );
-
-
-    if (panel) {
-
-        panel.scrollTop =
-            0;
-    }
 }
 
 
@@ -1045,7 +937,7 @@ function cerrarDetalleMovil() {
 
 
 /* =========================================================
-   REPRODUCTOR INTERNO
+   CREAR REPRODUCTOR
 ========================================================= */
 
 function crearReproductor() {
@@ -1059,20 +951,15 @@ function crearReproductor() {
     }
 
 
-    /* -----------------------------------------------------
-       CONTENEDOR PRINCIPAL
-    ----------------------------------------------------- */
-
     const reproductor =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     reproductor.id =
         "reproductor";
 
     reproductor.className =
         "video-player";
+
 
     reproductor.setAttribute(
         "aria-hidden",
@@ -1085,9 +972,7 @@ function crearReproductor() {
     ----------------------------------------------------- */
 
     const fondo =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     fondo.className =
         "video-player__backdrop";
@@ -1098,26 +983,21 @@ function crearReproductor() {
     ----------------------------------------------------- */
 
     const ventana =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     ventana.className =
         "video-player__window";
+
 
     ventana.setAttribute(
         "role",
         "dialog"
     );
 
+
     ventana.setAttribute(
         "aria-modal",
         "true"
-    );
-
-    ventana.setAttribute(
-        "aria-labelledby",
-        "video-player-title"
     );
 
 
@@ -1126,30 +1006,21 @@ function crearReproductor() {
     ----------------------------------------------------- */
 
     const cabecera =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     cabecera.className =
         "video-player__header";
 
 
     const titulo =
-        document.createElement(
-            "h2"
-        );
-
-    titulo.id =
-        "video-player-title";
+        document.createElement("h2");
 
     titulo.className =
         "video-player__title";
 
 
     const cerrar =
-        document.createElement(
-            "button"
-        );
+        document.createElement("button");
 
     cerrar.type =
         "button";
@@ -1157,8 +1028,9 @@ function crearReproductor() {
     cerrar.className =
         "video-player__close";
 
-    cerrar.innerHTML =
+    cerrar.textContent =
         "×";
+
 
     cerrar.setAttribute(
         "aria-label",
@@ -1180,9 +1052,7 @@ function crearReproductor() {
     ----------------------------------------------------- */
 
     const videoArea =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     videoArea.className =
         "video-player__area";
@@ -1193,25 +1063,34 @@ function crearReproductor() {
     ----------------------------------------------------- */
 
     const iframe =
-        document.createElement(
-            "iframe"
-        );
+        document.createElement("iframe");
+
 
     iframe.className =
         "video-player__iframe";
 
+
     iframe.title =
         "Reproductor del microdrama";
+
 
     iframe.setAttribute(
         "allow",
         "autoplay; fullscreen; encrypted-media; picture-in-picture"
     );
 
+
     iframe.setAttribute(
         "allowfullscreen",
         ""
     );
+
+
+    iframe.setAttribute(
+        "frameborder",
+        "0"
+    );
+
 
     iframe.setAttribute(
         "referrerpolicy",
@@ -1272,13 +1151,9 @@ function crearReproductor() {
    ABRIR REPRODUCTOR
 ========================================================= */
 
-function reproducirDrama(
-    drama
-) {
+function reproducirDrama(drama) {
 
-    if (
-        !drama
-    ) {
+    if (!drama) {
         return;
     }
 
@@ -1289,20 +1164,7 @@ function reproducirDrama(
             : "";
 
 
-    /*
-     * Sin embed no podemos abrir
-     * el reproductor.
-     */
-
-    if (
-        !embedUrl
-    ) {
-
-        console.warn(
-            "El microdrama no tiene una URL de embed.",
-            drama
-        );
-
+    if (!embedUrl) {
 
         mostrarMensajeSinVideo(
             drama.title
@@ -1319,11 +1181,6 @@ function reproducirDrama(
         document.getElementById(
             "reproductor"
         );
-
-
-    if (!reproductor) {
-        return;
-    }
 
 
     const iframe =
@@ -1351,8 +1208,12 @@ function reproducirDrama(
 
 
     /*
-     * Utilizamos directamente el embed_url
+     * IMPORTANTE:
+     *
+     * Se utiliza exactamente el embed_url
      * almacenado en D1.
+     *
+     * No se modifica el fragmento # de Mega.
      */
 
     iframe.src =
@@ -1362,6 +1223,10 @@ function reproducirDrama(
     reproductorActual =
         drama;
 
+
+    /* -----------------------------------------------------
+       MOSTRAR
+    ----------------------------------------------------- */
 
     reproductor.classList.add(
         "is-open"
@@ -1376,6 +1241,22 @@ function reproducirDrama(
 
     document.body.classList.add(
         "video-player-open"
+    );
+
+
+    /*
+     * Intentamos llevar el foco al iframe.
+     *
+     * Esto no controla el reproductor
+     * interno de Mega, pero deja el iframe
+     * preparado para recibir la interacción.
+     */
+
+    requestAnimationFrame(
+        () => {
+
+            iframe.focus();
+        }
     );
 }
 
@@ -1404,10 +1285,7 @@ function cerrarReproductor() {
 
 
     /*
-     * Quitamos el src al cerrar.
-     *
-     * Esto detiene completamente
-     * la reproducción del iframe.
+     * Destruimos la reproducción.
      */
 
     if (iframe) {
@@ -1447,9 +1325,7 @@ function mostrarMensajeSinVideo(
 ) {
 
     const mensaje =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     mensaje.className =
         "video-missing-message";
@@ -1486,11 +1362,8 @@ function mostrarMensajeSinVideo(
         );
 
 
-    if (titulo) {
-
-        titulo.textContent =
-            tituloDrama;
-    }
+    titulo.textContent =
+        tituloDrama;
 
 
     const cerrar =
@@ -1499,16 +1372,13 @@ function mostrarMensajeSinVideo(
         );
 
 
-    if (cerrar) {
+    cerrar.addEventListener(
+        "click",
+        () => {
 
-        cerrar.addEventListener(
-            "click",
-            () => {
-
-                mensaje.remove();
-            }
-        );
-    }
+            mensaje.remove();
+        }
+    );
 
 
     document.body.appendChild(

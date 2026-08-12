@@ -10,14 +10,16 @@ const PORTADA_GENERICA =
 
 
 /* =========================================================
-   REFERENCIAS
+   ESTADO
 ========================================================= */
 
 let detalleMovilActual = null;
 
+let reproductorActual = null;
+
 
 /* =========================================================
-   DETECTAR DISPOSITIVO / VISTA MÓVIL
+   DETECTAR VISTA MÓVIL
 ========================================================= */
 
 function esVistaMovil() {
@@ -185,11 +187,6 @@ function crearTarjetaDrama(
         "lazy";
 
 
-    /*
-     * Si una portada externa deja de funcionar,
-     * se utiliza automáticamente la portada genérica.
-     */
-
     portada.addEventListener(
         "error",
         () => {
@@ -213,7 +210,7 @@ function crearTarjetaDrama(
 
 
     /* -----------------------------------------------------
-       INFORMACIÓN SUPERPUESTA — ESCRITORIO
+       OVERLAY ESCRITORIO
     ----------------------------------------------------- */
 
     const overlay =
@@ -345,14 +342,8 @@ function crearTarjetaDrama(
             evento.stopPropagation();
 
 
-            /*
-             * El reproductor interno será
-             * implementado en la Etapa 3.
-             */
-
-            console.log(
-                "Reproducir microdrama:",
-                drama.title
+            reproducirDrama(
+                drama
             );
         }
     );
@@ -508,22 +499,12 @@ function crearTarjetaDrama(
         "click",
         (evento) => {
 
-            /*
-             * En escritorio no hacemos nada.
-             * La interacción continúa siendo mediante hover.
-             */
-
             if (
                 !esVistaMovil()
             ) {
                 return;
             }
 
-
-            /*
-             * Si se tocó un botón,
-             * no abrimos nuevamente el detalle.
-             */
 
             if (
                 evento.target.closest(
@@ -548,14 +529,10 @@ function crearTarjetaDrama(
 
 
 /* =========================================================
-   CREAR VISTA DE DETALLE MÓVIL
+   CREAR DETALLE MÓVIL
 ========================================================= */
 
 function crearDetalleMovil() {
-
-    /*
-     * Evitamos crear el elemento más de una vez.
-     */
 
     if (
         document.getElementById(
@@ -583,10 +560,6 @@ function crearDetalleMovil() {
     );
 
 
-    /* -----------------------------------------------------
-       FONDO
-    ----------------------------------------------------- */
-
     const fondo =
         document.createElement(
             "div"
@@ -595,10 +568,6 @@ function crearDetalleMovil() {
     fondo.className =
         "mobile-detail__backdrop";
 
-
-    /* -----------------------------------------------------
-       PANEL
-    ----------------------------------------------------- */
 
     const panel =
         document.createElement(
@@ -625,7 +594,7 @@ function crearDetalleMovil() {
 
 
     /* -----------------------------------------------------
-       BOTÓN CERRAR
+       CERRAR
     ----------------------------------------------------- */
 
     const cerrar =
@@ -766,21 +735,15 @@ function crearDetalleMovil() {
             }
 
 
-            /*
-             * El reproductor interno se agregará
-             * en la Etapa 3.
-             */
-
-            console.log(
-                "Reproducir:",
-                detalleMovilActual.title
+            reproducirDrama(
+                detalleMovilActual
             );
         }
     );
 
 
     /* -----------------------------------------------------
-       DESCRIPCIÓN DEL VIDEO
+       DESCRIPCIÓN
     ----------------------------------------------------- */
 
     const etiquetaDescripcion =
@@ -805,7 +768,7 @@ function crearDetalleMovil() {
 
 
     /* -----------------------------------------------------
-       CONTROLES
+       ACCIONES
     ----------------------------------------------------- */
 
     const acciones =
@@ -830,26 +793,21 @@ function crearDetalleMovil() {
         titulo
     );
 
-
     contenido.appendChild(
         tipo
     );
-
 
     contenido.appendChild(
         plataforma
     );
 
-
     contenido.appendChild(
         acciones
     );
 
-
     contenido.appendChild(
         etiquetaDescripcion
     );
-
 
     contenido.appendChild(
         descripcion
@@ -864,25 +822,18 @@ function crearDetalleMovil() {
         cerrar
     );
 
-
     panel.appendChild(
         imagen
     );
-
 
     panel.appendChild(
         contenido
     );
 
 
-    /* -----------------------------------------------------
-       CONSTRUIR DETALLE
-    ----------------------------------------------------- */
-
     detalle.appendChild(
         fondo
     );
-
 
     detalle.appendChild(
         panel
@@ -895,7 +846,7 @@ function crearDetalleMovil() {
 
 
     /* -----------------------------------------------------
-       CERRAR
+       EVENTOS CERRAR
     ----------------------------------------------------- */
 
     cerrar.addEventListener(
@@ -907,18 +858,6 @@ function crearDetalleMovil() {
     fondo.addEventListener(
         "click",
         cerrarDetalleMovil
-    );
-
-
-    /*
-     * ESC también permite cerrar
-     * la ventana cuando se utiliza
-     * un teclado.
-     */
-
-    document.addEventListener(
-        "keydown",
-        manejarTeclaEscape
     );
 }
 
@@ -991,10 +930,6 @@ function abrirDetalleMovil(
         `Portada de ${drama.title}`;
 
 
-    /*
-     * Fallback de portada.
-     */
-
     imagen.onerror =
         () => {
 
@@ -1033,7 +968,8 @@ function abrirDetalleMovil(
 
 
     descripcion.textContent =
-        descripcionTexto || "Sin descripción disponible.";
+        descripcionTexto ||
+        "Sin descripción disponible.";
 
 
     detalleMovilActual =
@@ -1055,11 +991,6 @@ function abrirDetalleMovil(
         "mobile-detail-open"
     );
 
-
-    /*
-     * Comenzamos arriba de la vista
-     * cuando se abre.
-     */
 
     const panel =
         detalle.querySelector(
@@ -1114,26 +1045,519 @@ function cerrarDetalleMovil() {
 
 
 /* =========================================================
-   TECLA ESC
+   REPRODUCTOR INTERNO
 ========================================================= */
 
-function manejarTeclaEscape(
-    evento
-) {
+function crearReproductor() {
 
     if (
-        evento.key !== "Escape"
+        document.getElementById(
+            "reproductor"
+        )
     ) {
         return;
     }
 
 
-    cerrarDetalleMovil();
+    /* -----------------------------------------------------
+       CONTENEDOR PRINCIPAL
+    ----------------------------------------------------- */
+
+    const reproductor =
+        document.createElement(
+            "div"
+        );
+
+    reproductor.id =
+        "reproductor";
+
+    reproductor.className =
+        "video-player";
+
+    reproductor.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+
+    /* -----------------------------------------------------
+       FONDO
+    ----------------------------------------------------- */
+
+    const fondo =
+        document.createElement(
+            "div"
+        );
+
+    fondo.className =
+        "video-player__backdrop";
+
+
+    /* -----------------------------------------------------
+       VENTANA
+    ----------------------------------------------------- */
+
+    const ventana =
+        document.createElement(
+            "div"
+        );
+
+    ventana.className =
+        "video-player__window";
+
+    ventana.setAttribute(
+        "role",
+        "dialog"
+    );
+
+    ventana.setAttribute(
+        "aria-modal",
+        "true"
+    );
+
+    ventana.setAttribute(
+        "aria-labelledby",
+        "video-player-title"
+    );
+
+
+    /* -----------------------------------------------------
+       CABECERA
+    ----------------------------------------------------- */
+
+    const cabecera =
+        document.createElement(
+            "div"
+        );
+
+    cabecera.className =
+        "video-player__header";
+
+
+    const titulo =
+        document.createElement(
+            "h2"
+        );
+
+    titulo.id =
+        "video-player-title";
+
+    titulo.className =
+        "video-player__title";
+
+
+    const cerrar =
+        document.createElement(
+            "button"
+        );
+
+    cerrar.type =
+        "button";
+
+    cerrar.className =
+        "video-player__close";
+
+    cerrar.innerHTML =
+        "×";
+
+    cerrar.setAttribute(
+        "aria-label",
+        "Cerrar reproductor"
+    );
+
+
+    cabecera.appendChild(
+        titulo
+    );
+
+    cabecera.appendChild(
+        cerrar
+    );
+
+
+    /* -----------------------------------------------------
+       ÁREA DEL VIDEO
+    ----------------------------------------------------- */
+
+    const videoArea =
+        document.createElement(
+            "div"
+        );
+
+    videoArea.className =
+        "video-player__area";
+
+
+    /* -----------------------------------------------------
+       IFRAME
+    ----------------------------------------------------- */
+
+    const iframe =
+        document.createElement(
+            "iframe"
+        );
+
+    iframe.className =
+        "video-player__iframe";
+
+    iframe.title =
+        "Reproductor del microdrama";
+
+    iframe.setAttribute(
+        "allow",
+        "autoplay; fullscreen; encrypted-media; picture-in-picture"
+    );
+
+    iframe.setAttribute(
+        "allowfullscreen",
+        ""
+    );
+
+    iframe.setAttribute(
+        "referrerpolicy",
+        "strict-origin-when-cross-origin"
+    );
+
+
+    videoArea.appendChild(
+        iframe
+    );
+
+
+    /* -----------------------------------------------------
+       CONSTRUIR
+    ----------------------------------------------------- */
+
+    ventana.appendChild(
+        cabecera
+    );
+
+    ventana.appendChild(
+        videoArea
+    );
+
+
+    reproductor.appendChild(
+        fondo
+    );
+
+    reproductor.appendChild(
+        ventana
+    );
+
+
+    document.body.appendChild(
+        reproductor
+    );
+
+
+    /* -----------------------------------------------------
+       EVENTOS
+    ----------------------------------------------------- */
+
+    cerrar.addEventListener(
+        "click",
+        cerrarReproductor
+    );
+
+
+    fondo.addEventListener(
+        "click",
+        cerrarReproductor
+    );
 }
 
 
 /* =========================================================
-   CERRAR SI CAMBIAMOS DE MÓVIL A ESCRITORIO
+   ABRIR REPRODUCTOR
+========================================================= */
+
+function reproducirDrama(
+    drama
+) {
+
+    if (
+        !drama
+    ) {
+        return;
+    }
+
+
+    const embedUrl =
+        typeof drama.embed_url === "string"
+            ? drama.embed_url.trim()
+            : "";
+
+
+    /*
+     * Sin embed no podemos abrir
+     * el reproductor.
+     */
+
+    if (
+        !embedUrl
+    ) {
+
+        console.warn(
+            "El microdrama no tiene una URL de embed.",
+            drama
+        );
+
+
+        mostrarMensajeSinVideo(
+            drama.title
+        );
+
+        return;
+    }
+
+
+    crearReproductor();
+
+
+    const reproductor =
+        document.getElementById(
+            "reproductor"
+        );
+
+
+    if (!reproductor) {
+        return;
+    }
+
+
+    const iframe =
+        reproductor.querySelector(
+            ".video-player__iframe"
+        );
+
+
+    const titulo =
+        reproductor.querySelector(
+            ".video-player__title"
+        );
+
+
+    if (
+        !iframe ||
+        !titulo
+    ) {
+        return;
+    }
+
+
+    titulo.textContent =
+        drama.title;
+
+
+    /*
+     * Utilizamos directamente el embed_url
+     * almacenado en D1.
+     */
+
+    iframe.src =
+        embedUrl;
+
+
+    reproductorActual =
+        drama;
+
+
+    reproductor.classList.add(
+        "is-open"
+    );
+
+
+    reproductor.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+
+    document.body.classList.add(
+        "video-player-open"
+    );
+}
+
+
+/* =========================================================
+   CERRAR REPRODUCTOR
+========================================================= */
+
+function cerrarReproductor() {
+
+    const reproductor =
+        document.getElementById(
+            "reproductor"
+        );
+
+
+    if (!reproductor) {
+        return;
+    }
+
+
+    const iframe =
+        reproductor.querySelector(
+            ".video-player__iframe"
+        );
+
+
+    /*
+     * Quitamos el src al cerrar.
+     *
+     * Esto detiene completamente
+     * la reproducción del iframe.
+     */
+
+    if (iframe) {
+
+        iframe.src =
+            "about:blank";
+    }
+
+
+    reproductor.classList.remove(
+        "is-open"
+    );
+
+
+    reproductor.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+
+    document.body.classList.remove(
+        "video-player-open"
+    );
+
+
+    reproductorActual =
+        null;
+}
+
+
+/* =========================================================
+   MENSAJE SIN VIDEO
+========================================================= */
+
+function mostrarMensajeSinVideo(
+    tituloDrama
+) {
+
+    const mensaje =
+        document.createElement(
+            "div"
+        );
+
+    mensaje.className =
+        "video-missing-message";
+
+
+    mensaje.innerHTML =
+        `
+        <div class="video-missing-message__box">
+
+            <h2>
+                Video no disponible
+            </h2>
+
+            <p>
+                El microdrama
+                <strong></strong>
+                todavía no tiene un reproductor configurado.
+            </p>
+
+            <button
+                type="button"
+                class="video-missing-message__close"
+            >
+                Cerrar
+            </button>
+
+        </div>
+        `;
+
+
+    const titulo =
+        mensaje.querySelector(
+            "strong"
+        );
+
+
+    if (titulo) {
+
+        titulo.textContent =
+            tituloDrama;
+    }
+
+
+    const cerrar =
+        mensaje.querySelector(
+            ".video-missing-message__close"
+        );
+
+
+    if (cerrar) {
+
+        cerrar.addEventListener(
+            "click",
+            () => {
+
+                mensaje.remove();
+            }
+        );
+    }
+
+
+    document.body.appendChild(
+        mensaje
+    );
+}
+
+
+/* =========================================================
+   TECLA ESC
+========================================================= */
+
+document.addEventListener(
+    "keydown",
+    (evento) => {
+
+        if (
+            evento.key !== "Escape"
+        ) {
+            return;
+        }
+
+
+        const reproductor =
+            document.getElementById(
+                "reproductor"
+            );
+
+
+        if (
+            reproductor &&
+            reproductor.classList.contains(
+                "is-open"
+            )
+        ) {
+
+            cerrarReproductor();
+
+            return;
+        }
+
+
+        cerrarDetalleMovil();
+    }
+);
+
+
+/* =========================================================
+   CAMBIO DE TAMAÑO
 ========================================================= */
 
 window.addEventListener(

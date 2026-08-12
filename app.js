@@ -12,7 +12,7 @@ async function cargarDramas() {
         catalogo.innerHTML += `
             <div class="card">
 
-                drama.portada}" alt="${drama.titulo}">
+                ${drama.portada}
 
                 <div class="card-content">
 

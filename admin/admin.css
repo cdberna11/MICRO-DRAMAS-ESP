@@ -1,20 +1,35 @@
-/* Configuración general */
+/* =========================================================
+   CONFIGURACIÓN GENERAL
+   ========================================================= */
+
 :root {
     color-scheme: dark;
-    font-family: Arial, Helvetica, sans-serif;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
     --background: #0b0b0f;
     --surface: #15151b;
     --surface-secondary: #1c1c24;
     --border: #2d2d37;
+
     --text: #ffffff;
     --text-secondary: #b9b9c2;
+
     --primary: #e50914;
     --primary-hover: #ff1824;
+
     --success: #35c46a;
     --warning: #f0ad4e;
     --danger: #ff5364;
 }
+
+
+/* =========================================================
+   RESET
+   ========================================================= */
 
 * {
     box-sizing: border-box;
@@ -22,96 +37,159 @@
     padding: 0;
 }
 
+
+/* =========================================================
+   BODY
+   ========================================================= */
+
 body {
     min-height: 100vh;
+
     background-color: var(--background);
+
     color: var(--text);
 }
 
-/* Encabezado */
+
+/* =========================================================
+   ENCABEZADO
+   ========================================================= */
+
 .admin-header {
     border-bottom: 1px solid var(--border);
+
     background-color: #111116;
 }
 
+
 .admin-header__content {
     display: flex;
+
     width: 100%;
     max-width: 1500px;
+
     min-height: 88px;
+
     margin: 0 auto;
+
     padding: 18px 32px;
+
     align-items: center;
     justify-content: space-between;
+
     gap: 24px;
 }
 
+
 .admin-header__label {
     margin-bottom: 5px;
+
     color: var(--primary);
+
     font-size: 13px;
     font-weight: 700;
+
     letter-spacing: 0.08em;
+
     text-transform: uppercase;
 }
+
 
 .admin-header h1 {
     font-size: 26px;
     line-height: 1.2;
 }
 
-/* Contenido principal */
+
+/* =========================================================
+   CONTENIDO PRINCIPAL
+   ========================================================= */
+
 .admin-main {
     width: 100%;
     max-width: 1500px;
+
     margin: 0 auto;
+
     padding: 32px;
 }
 
+
 .admin-panel {
     overflow: hidden;
+
     border: 1px solid var(--border);
+
     border-radius: 14px;
+
     background-color: var(--surface);
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+
+    box-shadow:
+        0 14px 34px rgba(0, 0, 0, 0.35);
 }
+
 
 .admin-panel__heading {
     display: flex;
+
     padding: 24px;
+
     align-items: center;
     justify-content: space-between;
+
     gap: 24px;
+
     border-bottom: 1px solid var(--border);
 }
 
+
 .admin-panel__heading h2 {
     margin-bottom: 7px;
+
     font-size: 22px;
 }
 
+
 .admin-panel__heading p {
     color: var(--text-secondary);
+
     font-size: 14px;
+
     line-height: 1.5;
 }
 
-/* Botones */
+
+/* =========================================================
+   BOTONES
+   ========================================================= */
+
 .button {
     display: inline-flex;
+
     min-height: 42px;
+
     padding: 10px 16px;
+
     border: 1px solid transparent;
+
     border-radius: 8px;
+
     align-items: center;
     justify-content: center;
+
     gap: 8px;
+
     color: var(--text);
+
     font-size: 14px;
     font-weight: 700;
+
     text-align: center;
+
     text-decoration: none;
+
     cursor: pointer;
+
     transition:
         background-color 0.2s ease,
         border-color 0.2s ease,
@@ -119,213 +197,324 @@ body {
         opacity 0.2s ease;
 }
 
+
 .button:hover:not(:disabled) {
     transform: translateY(-1px);
 }
 
+
 .button:focus-visible {
     outline: 3px solid rgba(229, 9, 20, 0.35);
+
     outline-offset: 2px;
 }
+
 
 .button--primary {
     background-color: var(--primary);
 }
 
+
 .button--primary:hover:not(:disabled) {
     background-color: var(--primary-hover);
 }
 
+
 .button--secondary {
     border-color: var(--border);
+
     background-color: var(--surface-secondary);
 }
 
+
 .button--secondary:hover {
     border-color: #484854;
+
     background-color: #272730;
 }
 
+
 .button:disabled {
     opacity: 0.5;
+
     cursor: not-allowed;
 }
 
-/* Mensajes y estados */
+
+/* =========================================================
+   MENSAJES Y ESTADOS
+   ========================================================= */
+
 .admin-message,
 .loading-state,
 .empty-state {
     margin: 24px;
+
     padding: 16px;
+
     border-radius: 9px;
+
     line-height: 1.5;
 }
 
+
 .admin-message {
     border: 1px solid var(--border);
+
     background-color: var(--surface-secondary);
 }
 
+
 .admin-message--error {
     border-color: var(--danger);
+
     background-color: rgba(255, 83, 100, 0.1);
+
     color: #ffd8dc;
 }
 
+
 .admin-message--success {
     border-color: var(--success);
+
     background-color: rgba(53, 196, 106, 0.1);
+
     color: #d7ffe5;
 }
+
 
 .loading-state,
 .empty-state {
     color: var(--text-secondary);
+
     text-align: center;
 }
 
-/* Tabla */
+
+/* =========================================================
+   TABLA
+   ========================================================= */
+
 .table-container {
     width: 100%;
+
     overflow-x: auto;
 }
 
+
 .admin-table {
     width: 100%;
+
     border-collapse: collapse;
+
     font-size: 14px;
 }
+
 
 .admin-table th,
 .admin-table td {
     padding: 15px 16px;
+
     border-bottom: 1px solid var(--border);
+
     vertical-align: middle;
+
     text-align: left;
 }
 
+
 .admin-table th {
     background-color: var(--surface-secondary);
+
     color: #dedee4;
+
     font-size: 12px;
+
     letter-spacing: 0.04em;
+
     text-transform: uppercase;
+
     white-space: nowrap;
 }
 
+
 .admin-table tbody tr {
-    transition: background-color 0.2s ease;
+    transition:
+        background-color 0.2s ease;
 }
+
 
 .admin-table tbody tr:hover {
     background-color: rgba(255, 255, 255, 0.025);
 }
 
+
 .admin-table tbody tr:last-child td {
     border-bottom: 0;
 }
 
+
+/* =========================================================
+   INFORMACIÓN DEL MICRODRAMA
+   ========================================================= */
+
 .drama-info {
     display: flex;
+
     min-width: 280px;
+
     align-items: center;
+
     gap: 12px;
 }
+
 
 .drama-cover {
     width: 48px;
     height: 72px;
+
     flex-shrink: 0;
+
     border-radius: 6px;
+
     object-fit: cover;
+
     background-color: #292931;
 }
 
+
 .drama-title {
     margin-bottom: 5px;
+
     color: var(--text);
+
     font-weight: 700;
+
     line-height: 1.35;
 }
 
+
 .drama-slug {
     max-width: 320px;
+
     overflow: hidden;
+
     color: var(--text-secondary);
+
     font-size: 12px;
+
     text-overflow: ellipsis;
+
     white-space: nowrap;
 }
 
-/* Indicadores */
+
+/* =========================================================
+   INDICADORES
+   ========================================================= */
+
 .status-badge {
     display: inline-flex;
+
     padding: 5px 9px;
+
     border-radius: 999px;
+
     align-items: center;
     justify-content: center;
+
     font-size: 12px;
+
     font-weight: 700;
+
     white-space: nowrap;
 }
+
 
 .status-badge--published {
     background-color: rgba(53, 196, 106, 0.14);
+
     color: #75e69d;
 }
 
+
 .status-badge--draft {
     background-color: rgba(240, 173, 78, 0.14);
+
     color: #ffc875;
 }
+
 
 .feature-value {
     font-weight: 700;
 }
 
+
 .feature-value--yes {
     color: var(--success);
 }
+
 
 .feature-value--no {
     color: var(--text-secondary);
 }
 
+
+/* =========================================================
+   ACCIONES
+   ========================================================= */
+
 .action-placeholder {
     color: var(--text-secondary);
+
     font-size: 12px;
 }
 
-/* Adaptación para teléfonos y tabletas */
+
+/* =========================================================
+   TABLETAS Y TELÉFONOS
+   ========================================================= */
+
 @media (max-width: 760px) {
+
     .admin-header__content {
         min-height: auto;
+
         padding: 16px;
+
         align-items: flex-start;
     }
+
 
     .admin-header h1 {
         font-size: 21px;
     }
 
+
     .admin-main {
         padding: 18px 12px;
     }
 
+
     .admin-panel__heading {
         padding: 18px;
+
         align-items: stretch;
+
         flex-direction: column;
     }
+
 
     .admin-panel__heading .button {
         width: 100%;
     }
 
+
     .admin-table th,
     .admin-table td {
         padding: 12px;
     }
+
 
     .admin-message,
     .loading-state,
@@ -334,10 +523,17 @@ body {
     }
 }
 
+
+/* =========================================================
+   TELÉFONOS PEQUEÑOS
+   ========================================================= */
+
 @media (max-width: 480px) {
+
     .admin-header__content {
         flex-direction: column;
     }
+
 
     .admin-header__content > .button {
         width: 100%;

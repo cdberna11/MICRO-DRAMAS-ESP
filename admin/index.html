@@ -72,7 +72,7 @@
 
 
             <!-- =================================================
-                 ENCABEZADO DEL PANEL
+                 ENCABEZADO
             ================================================== -->
 
             <div class="admin-panel__heading">
@@ -91,19 +91,33 @@
                 </div>
 
 
-                <button
-                    id="boton-nuevo"
-                    class="button button--primary"
-                    type="button"
-                >
-                    Nuevo microdrama
-                </button>
+                <div class="admin-panel__actions">
+
+                    <button
+                        id="boton-eliminar-seleccionados"
+                        class="button button--danger"
+                        type="button"
+                        disabled
+                    >
+                        Eliminar seleccionados
+                    </button>
+
+
+                    <button
+                        id="boton-nuevo"
+                        class="button button--primary"
+                        type="button"
+                    >
+                        Nuevo microdrama
+                    </button>
+
+                </div>
 
             </div>
 
 
             <!-- =================================================
-                 MENSAJES DEL PANEL
+                 MENSAJES
             ================================================== -->
 
             <div
@@ -116,7 +130,7 @@
 
 
             <!-- =================================================
-                 FORMULARIO NUEVO MICRODRAMA
+                 FORMULARIO
             ================================================== -->
 
             <div
@@ -129,11 +143,11 @@
 
                     <div>
 
-                        <h3>
+                        <h3 id="titulo-formulario">
                             Nuevo microdrama
                         </h3>
 
-                        <p>
+                        <p id="descripcion-formulario">
                             Completa los datos del microdrama
                             que deseas registrar.
                         </p>
@@ -149,10 +163,18 @@
                     novalidate
                 >
 
+                    <!-- ID interno -->
 
-                    <!-- =========================================
+                    <input
+                        type="hidden"
+                        id="drama-id"
+                        name="drama_id"
+                    >
+
+
+                    <!-- =================================================
                          TÍTULO
-                    ========================================== -->
+                    ================================================== -->
 
                     <div class="form-group">
 
@@ -166,16 +188,16 @@
                             name="title"
                             autocomplete="off"
                             maxlength="200"
-                            placeholder="Ejemplo: La esposa del millonario"
+                            placeholder="Ejemplo: Camino de la gloria celestial"
                             required
                         >
 
                     </div>
 
 
-                    <!-- =========================================
-                         SLUG AUTOMÁTICO
-                    ========================================== -->
+                    <!-- =================================================
+                         SLUG
+                    ================================================== -->
 
                     <div class="form-group">
 
@@ -195,15 +217,15 @@
                         >
 
                         <small>
-                            Generado automáticamente a partir del título.
+                            Se genera automáticamente a partir del título.
                         </small>
 
                     </div>
 
 
-                    <!-- =========================================
+                    <!-- =================================================
                          PLATAFORMA
-                    ========================================== -->
+                    ================================================== -->
 
                     <div class="form-group">
 
@@ -214,15 +236,13 @@
                         <select
                             id="platform"
                             name="platform"
-                            required
                         >
 
                             <option
                                 value=""
                                 selected
-                                disabled
                             >
-                                Selecciona una plataforma
+                                Seleccione una plataforma
                             </option>
 
                             <option value="DramaBox">
@@ -253,28 +273,19 @@
                                 ReelShort
                             </option>
 
-                            <option
-                                value="__agregar_nueva__"
-                            >
-                                ➕ Agregar nueva plataforma...
-                            </option>
-
                         </select>
 
 
-                        <!-- =====================================
-                             NUEVA PLATAFORMA
-                        ====================================== -->
+                        <!-- =============================================
+                             PLATAFORMA PERSONALIZADA
+                        ============================================== -->
 
                         <div
                             id="nueva-plataforma-container"
                             class="new-platform-container"
-                            hidden
                         >
 
-                            <label
-                                for="nueva-plataforma"
-                            >
+                            <label for="nueva-plataforma">
                                 Nombre de la nueva plataforma
                             </label>
 
@@ -284,12 +295,12 @@
                                 name="nueva_plataforma"
                                 maxlength="100"
                                 autocomplete="off"
-                                placeholder="Ejemplo: StarDrama"
+                                placeholder="Escribe el nombre de la plataforma"
                             >
 
                             <small>
-                                La nueva plataforma se utilizará
-                                para este microdrama.
+                                Utiliza este campo solamente cuando
+                                la plataforma no aparezca en la lista.
                             </small>
 
                         </div>
@@ -297,9 +308,9 @@
                     </div>
 
 
-                    <!-- =========================================
+                    <!-- =================================================
                          DESCRIPCIÓN
-                    ========================================== -->
+                    ================================================== -->
 
                     <div class="form-group">
 
@@ -310,7 +321,7 @@
                         <textarea
                             id="description"
                             name="description"
-                            rows="5"
+                            rows="4"
                             readonly
                         >Drama doblado al español.</textarea>
 
@@ -321,9 +332,9 @@
                     </div>
 
 
-                    <!-- =========================================
+                    <!-- =================================================
                          DESCRIPCIÓN DEL VIDEO
-                    ========================================== -->
+                    ================================================== -->
 
                     <div class="form-group">
 
@@ -335,14 +346,15 @@
                             id="video_description"
                             name="video_description"
                             rows="4"
+                            placeholder="Descripción que aparecerá asociada al video..."
                         ></textarea>
 
                     </div>
 
 
-                    <!-- =========================================
+                    <!-- =================================================
                          PORTADA
-                    ========================================== -->
+                    ================================================== -->
 
                     <div class="form-group">
 
@@ -361,9 +373,9 @@
                     </div>
 
 
-                    <!-- =========================================
-                         URL EMBED
-                    ========================================== -->
+                    <!-- =================================================
+                         EMBED
+                    ================================================== -->
 
                     <div class="form-group">
 
@@ -380,16 +392,16 @@
                         >
 
                         <small>
-                            Este será el enlace utilizado por
-                            el reproductor de video de Mega.
+                            Esta URL será utilizada posteriormente
+                            por el reproductor integrado.
                         </small>
 
                     </div>
 
 
-                    <!-- =========================================
+                    <!-- =================================================
                          ESTADO
-                    ========================================== -->
+                    ================================================== -->
 
                     <div class="form-group">
 
@@ -413,12 +425,18 @@
 
                         </select>
 
+                        <small>
+                            Publicado permite mostrar el microdrama
+                            en el catálogo. Borrador lo mantiene
+                            almacenado sin publicarlo.
+                        </small>
+
                     </div>
 
 
-                    <!-- =========================================
+                    <!-- =================================================
                          DESTACADO
-                    ========================================== -->
+                    ================================================== -->
 
                     <div class="form-group form-group--checkbox">
 
@@ -439,9 +457,9 @@
                     </div>
 
 
-                    <!-- =========================================
-                         ORDEN AUTOMÁTICO
-                    ========================================== -->
+                    <!-- =================================================
+                         ORDEN
+                    ================================================== -->
 
                     <div class="form-group">
 
@@ -453,23 +471,21 @@
                             type="number"
                             id="sort_order"
                             name="sort_order"
-                            value="1"
                             min="1"
                             step="1"
-                            inputmode="numeric"
                             readonly
                         >
 
                         <small>
-                            Asignado automáticamente por el sistema.
+                            El sistema asigna el orden automáticamente.
                         </small>
 
                     </div>
 
 
-                    <!-- =========================================
+                    <!-- =================================================
                          BOTONES
-                    ========================================== -->
+                    ================================================== -->
 
                     <div class="admin-form-actions">
 
@@ -491,7 +507,6 @@
                         </button>
 
                     </div>
-
 
                 </form>
 
@@ -525,6 +540,16 @@
                     <thead>
 
                         <tr>
+
+                            <th scope="col">
+
+                                <input
+                                    type="checkbox"
+                                    id="seleccionar-todos"
+                                    title="Seleccionar todos"
+                                >
+
+                            </th>
 
                             <th scope="col">
                                 ID
@@ -582,15 +607,10 @@
                 No hay microdramas registrados.
             </div>
 
-
         </section>
 
     </main>
 
-
-    <!-- =====================================================
-         JAVASCRIPT
-    ====================================================== -->
 
     <script
         src="/admin/admin.js"

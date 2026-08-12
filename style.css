@@ -159,6 +159,7 @@ body.video-player-open {
         rgba(0, 0, 0, 0.75);
 }
 
+
 /* =========================================================
    ETIQUETA RECIÉN AGREGADO
 ========================================================= */
@@ -174,11 +175,13 @@ body.video-player-open {
     padding: 8px 0;
 
     background: #e50914;
+
     color: #ffffff;
 
     text-align: center;
 
     font-size: 11px;
+
     font-weight: 800;
 
     letter-spacing: 0.4px;
@@ -191,6 +194,55 @@ body.video-player-open {
         0 3px 8px
         rgba(0, 0, 0, 0.45);
 }
+
+
+/* =========================================================
+   ETIQUETA PRÓXIMO ESTRENO
+   Borradores
+   Banda horizontal azul
+========================================================= */
+
+.drama-card__upcoming {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    width: 100%;
+
+    padding:
+        9px 10px;
+
+    background:
+        #1976d2;
+
+    color:
+        #ffffff;
+
+    text-align:
+        center;
+
+    font-size:
+        11px;
+
+    font-weight:
+        800;
+
+    letter-spacing:
+        0.5px;
+
+    line-height:
+        1.2;
+
+    z-index:
+        9;
+
+    box-shadow:
+        0 3px 8px
+        rgba(0, 0, 0, 0.45);
+}
+
 
 /* =========================================================
    INDICADOR TOP
@@ -222,6 +274,7 @@ body.video-player-open {
     border-radius: 6px;
 
     font-size: 12px;
+
     font-weight: 800;
 
     line-height: 1;
@@ -234,9 +287,9 @@ body.video-player-open {
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
    ICONO DEL FUEGO
---------------------------------------------------------- */
+========================================================= */
 
 .drama-card__top span {
     display: inline-flex;
@@ -711,6 +764,11 @@ body.video-player-open {
 }
 
 
+.mobile-detail__play[hidden] {
+    display: none;
+}
+
+
 /* =========================================================
    DESCRIPCIÓN MÓVIL
 ========================================================= */
@@ -736,10 +794,8 @@ body.video-player-open {
 
 
 /* =========================================================
-   =========================================================
    REPRODUCTOR INTERNO
-   =========================================================
-   ========================================================= */
+========================================================= */
 
 .video-player {
 
@@ -1186,6 +1242,23 @@ body.video-player-open {
     .drama-card__overlay {
 
         display: none;
+    }
+
+
+    /* -----------------------------------------------------
+       BANDA PRÓXIMO ESTRENO MÓVIL
+    ----------------------------------------------------- */
+
+    .drama-card__upcoming {
+
+        padding:
+            8px 6px;
+
+        font-size:
+            9px;
+
+        letter-spacing:
+            0.4px;
     }
 
 

@@ -12,7 +12,7 @@ async function cargarDramas() {
         catalogo.innerHTML += `
             <div class="card">
 
-                ${drama.portada}
+                ${drama.portada}ama.titulo}">
 
                 <div class="card-content">
 
@@ -22,13 +22,17 @@ async function cargarDramas() {
 
                     <p>${drama.descripcion}</p>
 
-                    ${drama.video}
+                    ${drama.video}">
+                        Ver ahora
+                    </a>
 
                 </div>
 
             </div>
         `;
+
     });
+
 }
 
 cargarDramas();

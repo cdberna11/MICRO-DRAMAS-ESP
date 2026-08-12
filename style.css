@@ -5,18 +5,14 @@
 }
 
 body{
-    background:#0d0d0d;
+    background:#111;
     color:white;
     font-family:Arial,sans-serif;
 }
 
 header{
-    background:#e60012;
+    background:#e50914;
     padding:20px;
-}
-
-header h1{
-    font-size:2rem;
 }
 
 #catalogo{
@@ -27,7 +23,7 @@ header h1{
 }
 
 .card{
-    background:#1c1c1c;
+    background:#222;
     border-radius:10px;
     overflow:hidden;
 }
@@ -42,22 +38,13 @@ header h1{
     padding:15px;
 }
 
-.card h2{
-    margin-bottom:10px;
-    font-size:18px;
-}
-
-.card p{
-    margin-bottom:10px;
-    color:#ccc;
-}
-
 .btn{
     display:block;
     text-align:center;
-    text-decoration:none;
-    background:#e60012;
+    background:#e50914;
     color:white;
+    text-decoration:none;
     padding:10px;
     border-radius:5px;
+    margin-top:10px;
 }

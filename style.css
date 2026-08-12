@@ -185,3 +185,46 @@ main {
         margin: 0 auto;
     }
 }
+.video-details {
+    margin: 12px 0 16px;
+    border-top: 1px solid #2d2d35;
+    border-bottom: 1px solid #2d2d35;
+}
+
+.video-details summary {
+    position: relative;
+    padding: 12px 32px 12px 0;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.video-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.video-details summary::after {
+    content: "+";
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    color: #f20d24;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.video-details[open] summary::after {
+    content: "−";
+}
+
+.video-description {
+    margin: 0;
+    padding: 0 0 14px;
+    color: #d7d7dc;
+    line-height: 1.5;
+}
+

@@ -1,6 +1,5 @@
 "use strict";
 
-
 /* =========================================================
    CONFIGURACIÓN
 ========================================================= */
@@ -119,6 +118,32 @@ async function cargarDramas() {
 
 
 /* =========================================================
+   ESTADO BORRADOR
+   Los borradores permanecen como PRÓXIMO ESTRENO
+   hasta que su estado cambie a publicado.
+========================================================= */
+
+function esDramaBorrador(drama) {
+
+    if (!drama) {
+        return false;
+    }
+
+
+    const estado =
+        typeof drama.status === "string"
+            ? drama.status.trim().toLowerCase()
+            : "";
+
+
+    return (
+        estado === "borrador" ||
+        estado === "draft"
+    );
+}
+
+
+/* =========================================================
    MICRODRAMA NUEVO
    Se considera nuevo durante 72 horas.
 ========================================================= */
@@ -129,6 +154,7 @@ function esDramaNuevo(createdAt) {
         typeof createdAt !== "string" ||
         createdAt.trim() === ""
     ) {
+
         return false;
     }
 
@@ -158,6 +184,7 @@ function esDramaNuevo(createdAt) {
             fechaCreacion.getTime()
         )
     ) {
+
         return false;
     }
 
@@ -194,6 +221,7 @@ async function registrarVista(drama) {
             Number(drama.id)
         )
     ) {
+
         return null;
     }
 
@@ -286,10 +314,43 @@ function crearTarjetaDrama(drama) {
 
 
     /* -----------------------------------------------------
-       ETIQUETA RECIÉN AGREGADO
+       ESTADO DEL DRAMA
     ----------------------------------------------------- */
 
-    if (
+    const esBorrador =
+        esDramaBorrador(drama);
+
+
+    /* -----------------------------------------------------
+       ETIQUETA PRÓXIMO ESTRENO / RECIÉN AGREGADO
+    ----------------------------------------------------- */
+
+    if (esBorrador) {
+
+        const etiquetaProximo =
+            document.createElement("div");
+
+
+        etiquetaProximo.className =
+            "drama-card__upcoming";
+
+
+        etiquetaProximo.textContent =
+            "PRÓXIMO ESTRENO";
+
+
+        etiquetaProximo.setAttribute(
+            "aria-label",
+            "Microdrama próximo estreno"
+        );
+
+
+        tarjeta.appendChild(
+            etiquetaProximo
+        );
+
+
+    } else if (
         esDramaNuevo(
             drama.created_at
         )
@@ -496,53 +557,60 @@ function crearTarjetaDrama(drama) {
 
     /* -----------------------------------------------------
        BOTÓN VER
+       Los borradores NO pueden reproducirse.
     ----------------------------------------------------- */
 
-    const botonVer =
-        document.createElement("button");
+    let botonVer = null;
 
 
-    botonVer.type =
-        "button";
+    if (!esBorrador) {
+
+        botonVer =
+            document.createElement("button");
 
 
-    botonVer.className =
-        "drama-card__play";
+        botonVer.type =
+            "button";
 
 
-    botonVer.dataset.dramaId =
-        String(drama.id);
+        botonVer.className =
+            "drama-card__play";
 
 
-    botonVer.innerHTML =
-        `
-        <span
-            class="drama-card__play-icon"
-            aria-hidden="true"
-        >
-            ▶
-        </span>
-
-        <span>
-            Ver
-        </span>
-        `;
+        botonVer.dataset.dramaId =
+            String(drama.id);
 
 
-    botonVer.addEventListener(
-        "click",
-        (evento) => {
+        botonVer.innerHTML =
+            `
+            <span
+                class="drama-card__play-icon"
+                aria-hidden="true"
+            >
+                ▶
+            </span>
 
-            evento.preventDefault();
+            <span>
+                Ver
+            </span>
+            `;
 
-            evento.stopPropagation();
+
+        botonVer.addEventListener(
+            "click",
+            (evento) => {
+
+                evento.preventDefault();
+
+                evento.stopPropagation();
 
 
-            reproducirDrama(
-                drama
-            );
-        }
-    );
+                reproducirDrama(
+                    drama
+                );
+            }
+        );
+    }
 
 
     /* -----------------------------------------------------
@@ -635,9 +703,12 @@ function crearTarjetaDrama(drama) {
        CONSTRUIR CONTROLES
     ----------------------------------------------------- */
 
-    controles.appendChild(
-        botonVer
-    );
+    if (botonVer) {
+
+        controles.appendChild(
+            botonVer
+        );
+    }
 
 
     controles.appendChild(
@@ -1031,6 +1102,10 @@ function crearDetalleMovil() {
     );
 
 
+    /* -----------------------------------------------------
+       EVENTOS
+    ----------------------------------------------------- */
+
     cerrar.addEventListener(
         "click",
         cerrarDetalleMovil
@@ -1088,6 +1163,12 @@ function abrirDetalleMovil(drama) {
         );
 
 
+    const botonVer =
+        detalle.querySelector(
+            ".mobile-detail__play"
+        );
+
+
     const portadaUrl =
         typeof drama.cover_url === "string" &&
         drama.cover_url.trim() !== ""
@@ -1141,6 +1222,20 @@ function abrirDetalleMovil(drama) {
     descripcion.textContent =
         descripcionTexto ||
         "Sin descripción disponible.";
+
+
+    /* -----------------------------------------------------
+       BOTÓN VER MÓVIL
+       Ocultar para microdramas en Borrador.
+    ----------------------------------------------------- */
+
+    if (
+        botonVer
+    ) {
+
+        botonVer.hidden =
+            esDramaBorrador(drama);
+    }
 
 
     detalleMovilActual =
@@ -1433,6 +1528,23 @@ function crearReproductor() {
 function reproducirDrama(drama) {
 
     if (!drama) {
+        return;
+    }
+
+
+    /* -----------------------------------------------------
+       SEGURIDAD:
+       Un microdrama en Borrador nunca puede reproducirse.
+    ----------------------------------------------------- */
+
+    if (
+        esDramaBorrador(drama)
+    ) {
+
+        console.warn(
+            "El microdrama está en Borrador y no puede reproducirse."
+        );
+
         return;
     }
 

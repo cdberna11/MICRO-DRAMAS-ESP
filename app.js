@@ -1,5 +1,4 @@
 async function cargarDramas() {
-
     const respuesta = await fetch("dramas.json");
     const dramas = await respuesta.json();
 
@@ -9,20 +8,20 @@ async function cargarDramas() {
 
     dramas.forEach(drama => {
 
-        catalogo.innerHTML += `
+        const card = `
             <div class="card">
 
-                }" alt="${drama.titulo}">
+                drama.portada}" alt="${drama.titulo}">
 
                 <div class="card-content">
 
                     <h2>${drama.titulo}</h2>
 
-                    <p>${drama.plataforma}</p>
+                    <p><strong>Plataforma:</strong> ${drama.plataforma}</p>
 
                     <p>${drama.descripcion}</p>
 
-                    }" class="btn" target="_blank">
+                    ${drama.video}
                         Ver ahora
                     </a>
 
@@ -31,8 +30,8 @@ async function cargarDramas() {
             </div>
         `;
 
+        catalogo.innerHTML += card;
     });
-
 }
 
 cargarDramas();

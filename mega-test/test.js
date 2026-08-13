@@ -38,7 +38,7 @@ const VIDEOS = {
             "EL OJO DE LA RIQUEZA",
 
         url:
-            "https://mega.nz/file/ulBR1aaC#90sGdNoolQrZyf_1T9uTht2qB9Kjb7bQGV0ycxXSlg"
+            "https://mega.nz/file/ulBR1aaC#90sGdNoolQrZyf_1T9uTht2qB9kKjb7bQGV0ycxXSlg"
     },
 
 

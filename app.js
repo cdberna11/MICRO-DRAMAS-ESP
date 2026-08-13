@@ -6,7 +6,19 @@
    MEGAJS + MP4Box.js + MediaSource
 
    VERSIÓN:
-   REPRODUCTOR + SEEK DINÁMICO
+   - Catálogo
+   - Descripciones
+   - Vistas
+   - TOP
+   - RECIÉN AGREGADO
+   - PRÓXIMO ESTRENO
+   - Detalle móvil
+   - Reproductor MEGA privado
+   - Buffer dinámico
+   - SEEK REAL
+   - Barra de progreso
+   - +/- 10 segundos
+   - Teclado +/- 5 segundos
 
    ========================================================= */
 
@@ -27,33 +39,60 @@ const MP4BOX_URL =
     "https://cdn.jsdelivr.net/npm/mp4box@2.4.1/dist/mp4box.all.mjs";
 
 
+/*
+ * Primer bloque utilizado para encontrar MOOV.
+ */
+
 const RANGO_INICIAL =
     4 * 1024 * 1024;
 
+
+/*
+ * Bloques multimedia.
+ */
 
 const RANGO_MEDIA =
     8 * 1024 * 1024;
 
 
+/*
+ * Muestras aproximadas por segmento.
+ */
+
 const MUESTRAS_POR_SEGMENTO =
     60;
 
+
+/*
+ * Buffer mínimo para iniciar.
+ */
 
 const BUFFER_INICIAL =
     4;
 
 
+/*
+ * Buffer objetivo.
+ */
+
 const BUFFER_OBJETIVO =
     45;
 
+
+/*
+ * Cuando baja de este valor
+ * seguimos descargando.
+ */
 
 const BUFFER_BAJO =
     8;
 
 
 /*
- * Ya no existe el límite artificial
- * de 512 MB utilizado durante el laboratorio.
+ * IMPORTANTE:
+ *
+ * Eliminamos el límite artificial
+ * utilizado durante el laboratorio.
  */
 
 const LIMITE_DESCARGA_SESION =
@@ -62,6 +101,17 @@ const LIMITE_DESCARGA_SESION =
 
 const TIMEOUT_SOURCEBUFFER =
     30000;
+
+
+/*
+ * Al hacer SEEK remoto podemos
+ * volver a leer el encabezado necesario.
+ *
+ * Esto es intencional.
+ */
+
+const SEEK_REINICIO_MAX =
+    16 * 1024 * 1024;
 
 
 /* =========================================================
@@ -92,6 +142,9 @@ let playerState = {
         false,
 
     operationId:
+        0,
+
+    streamGeneration:
         0,
 
     drama:
@@ -169,13 +222,10 @@ let playerState = {
     metadataReject:
         null,
 
-    diagnosticsTimer:
+    playerElements:
         null,
 
-    loadingPromise:
-        null,
-
-    pendingRead:
+    playAttempt:
         false,
 
     /*
@@ -198,37 +248,33 @@ let playerState = {
         true,
 
     /*
-     * Segmentos iniciales.
+     * Datos iniciales del MP4.
      *
      * Se conservan para poder reconstruir
-     * el buffer después de un seek.
+     * MP4Box después de un SEEK.
+     */
+
+    bootstrapBuffers:
+        [],
+
+    bootstrapEnd:
+        0,
+
+    bootstrapReady:
+        false,
+
+    /*
+     * Información de segmentación.
      */
 
     initSegments:
-        new Map(),
-
-    /*
-     * Evita que el streaming anterior
-     * vuelva a colocar datos después
-     * de un seek.
-     */
-
-    streamGeneration:
-        0,
-
-    /*
-     * Evita múltiples llamadas simultáneas
-     * a intentarReproduccion().
-     */
-
-    playAttempt:
-        false
+        new Map()
 
 };
 
 
 /* =========================================================
-   ESTADO DE CARGA DE LIBRERÍAS
+   LIBRERÍAS
 ========================================================= */
 
 let libreriasPromise =
@@ -244,7 +290,7 @@ let MP4BoxAPI =
 
 
 /* =========================================================
-   DETECTAR VISTA MÓVIL
+   VISTA MÓVIL
 ========================================================= */
 
 function esVistaMovil() {
@@ -386,7 +432,7 @@ async function cargarDramas() {
     ) {
 
         console.error(
-            'No se encontró el elemento con id "catalogo".'
+            'No se encontró #catalogo.'
         );
 
         return;
@@ -407,7 +453,7 @@ async function cargarDramas() {
         ) {
 
             throw new Error(
-                `Error al consultar la API: ${respuesta.status}`
+                `Error API: ${respuesta.status}`
             );
 
         }
@@ -425,7 +471,7 @@ async function cargarDramas() {
         ) {
 
             throw new Error(
-                "La API devolvió una respuesta no válida."
+                "Respuesta inválida de /api/dramas."
             );
 
         }
@@ -462,7 +508,7 @@ async function cargarDramas() {
     ) {
 
         console.error(
-            "Error al cargar el catálogo:",
+            "Error al cargar catálogo:",
             error
         );
 
@@ -480,7 +526,7 @@ async function cargarDramas() {
 
 
 /* =========================================================
-   ESTADO BORRADOR
+   BORRADOR
 ========================================================= */
 
 function esDramaBorrador(
@@ -514,7 +560,7 @@ function esDramaBorrador(
 
 
 /* =========================================================
-   MICRODRAMA NUEVO
+   DRAMA NUEVO
 ========================================================= */
 
 function esDramaNuevo(
@@ -567,7 +613,8 @@ function esDramaNuevo(
 
 
     return (
-        diferencia >= 0 &&
+        diferencia >=
+        0 &&
         diferencia <
         72 *
         60 *
@@ -621,6 +668,7 @@ async function registrarVista(
                                     drama.id
                                 )
                         })
+
                 }
             );
 
@@ -713,9 +761,9 @@ function crearTarjetaDrama(
         );
 
 
-    /*
-     * PRÓXIMO ESTRENO
-     */
+    /* -----------------------------------------------------
+       PRÓXIMO ESTRENO
+    ----------------------------------------------------- */
 
     if (
         esBorrador
@@ -767,9 +815,9 @@ function crearTarjetaDrama(
     }
 
 
-    /*
-     * TOP
-     */
+    /* -----------------------------------------------------
+       TOP
+    ----------------------------------------------------- */
 
     if (
         Number(
@@ -778,33 +826,35 @@ function crearTarjetaDrama(
         3
     ) {
 
-        const etiquetaTop =
+        const top =
             document.createElement(
                 "div"
             );
 
 
-        etiquetaTop.className =
+        top.className =
             "drama-card__top";
 
 
-        etiquetaTop.innerHTML =
+        top.innerHTML =
             `
-            <span aria-hidden="true">🔥</span>
+            <span aria-hidden="true">
+                🔥
+            </span>
             TOP
             `;
 
 
         tarjeta.appendChild(
-            etiquetaTop
+            top
         );
 
     }
 
 
-    /*
-     * PORTADA
-     */
+    /* -----------------------------------------------------
+       PORTADA
+    ----------------------------------------------------- */
 
     const portada =
         document.createElement(
@@ -860,9 +910,9 @@ function crearTarjetaDrama(
     );
 
 
-    /*
-     * OVERLAY
-     */
+    /* -----------------------------------------------------
+       OVERLAY
+    ----------------------------------------------------- */
 
     const overlay =
         document.createElement(
@@ -874,9 +924,9 @@ function crearTarjetaDrama(
         "drama-card__overlay";
 
 
-    /*
-     * TÍTULO
-     */
+    /* -----------------------------------------------------
+       TÍTULO
+    ----------------------------------------------------- */
 
     const titulo =
         document.createElement(
@@ -892,9 +942,9 @@ function crearTarjetaDrama(
         drama.title;
 
 
-    /*
-     * TIPO
-     */
+    /* -----------------------------------------------------
+       TIPO
+    ----------------------------------------------------- */
 
     const tipo =
         document.createElement(
@@ -910,9 +960,9 @@ function crearTarjetaDrama(
         "Microdrama doblado al español.";
 
 
-    /*
-     * PLATAFORMA
-     */
+    /* -----------------------------------------------------
+       PLATAFORMA
+    ----------------------------------------------------- */
 
     const plataforma =
         document.createElement(
@@ -951,9 +1001,9 @@ function crearTarjetaDrama(
     );
 
 
-    /*
-     * CONTROLES
-     */
+    /* -----------------------------------------------------
+       CONTROLES
+    ----------------------------------------------------- */
 
     const controles =
         document.createElement(
@@ -965,38 +1015,137 @@ function crearTarjetaDrama(
         "drama-card__controls";
 
 
-    const botonVer =
+    let botonVer =
+        null;
+
+
+    if (
+        !esBorrador
+    ) {
+
+        botonVer =
+            document.createElement(
+                "button"
+            );
+
+
+        botonVer.type =
+            "button";
+
+
+        botonVer.className =
+            "drama-card__play";
+
+
+        botonVer.dataset.dramaId =
+            String(
+                drama.id
+            );
+
+
+        botonVer.innerHTML =
+            `
+            <span
+                class="drama-card__play-icon"
+                aria-hidden="true"
+            >
+                ▶
+            </span>
+
+            <span>
+                Ver
+            </span>
+            `;
+
+
+        botonVer.addEventListener(
+            "click",
+            evento => {
+
+                evento.preventDefault();
+
+
+                evento.stopPropagation();
+
+
+                reproducirDrama(
+                    drama
+                );
+
+            }
+        );
+
+    }
+
+
+    /* -----------------------------------------------------
+       BOTÓN DESCRIPCIÓN
+    ----------------------------------------------------- */
+
+    const botonMas =
         document.createElement(
             "button"
         );
 
 
-    botonVer.type =
+    botonMas.type =
         "button";
 
 
-    botonVer.className =
-        "drama-card__play";
+    botonMas.className =
+        "drama-card__more";
 
 
-    botonVer.dataset.dramaId =
-        String(
-            drama.id
+    botonMas.textContent =
+        "+";
+
+
+    botonMas.setAttribute(
+        "aria-label",
+        `Mostrar descripción de ${drama.title}`
+    );
+
+
+    botonMas.setAttribute(
+        "aria-expanded",
+        "false"
+    );
+
+
+    /* -----------------------------------------------------
+       DESCRIPCIÓN
+    ----------------------------------------------------- */
+
+    const descripcion =
+        document.createElement(
+            "div"
         );
 
 
-    botonVer.innerHTML =
-        `
-        <span aria-hidden="true">▶</span>
-        Ver
-        `;
+    descripcion.className =
+        "drama-card__description";
 
 
-    botonVer.hidden =
-        esBorrador;
+    const descripcionTexto =
+        typeof drama.video_description ===
+            "string" &&
+        drama.video_description.trim() !==
+            ""
+            ? drama.video_description.trim()
+            : (
+                typeof drama.description ===
+                    "string"
+                    ? drama.description.trim()
+                    : ""
+            );
 
 
-    botonVer.addEventListener(
+    descripcion.textContent =
+        descripcionTexto ||
+        "Sin descripción disponible.";
+
+
+    botonMas.addEventListener(
         "click",
         evento => {
 
@@ -1006,22 +1155,32 @@ function crearTarjetaDrama(
             evento.stopPropagation();
 
 
-            reproducirDrama(
-                drama
+            const abierta =
+                tarjeta.classList.toggle(
+                    "is-description-open"
+                );
+
+
+            botonMas.textContent =
+                abierta
+                    ? "−"
+                    : "+";
+
+
+            botonMas.setAttribute(
+                "aria-expanded",
+                abierta
+                    ? "true"
+                    : "false"
             );
 
         }
     );
 
 
-    controles.appendChild(
-        botonVer
-    );
-
-
-    /*
-     * VISTAS
-     */
+    /* -----------------------------------------------------
+       VISTAS
+    ----------------------------------------------------- */
 
     const vistas =
         document.createElement(
@@ -1033,8 +1192,42 @@ function crearTarjetaDrama(
         "drama-card__views";
 
 
-    vistas.textContent =
-        `${Number(drama.views) || 0} vistas`;
+    const cantidadVistas =
+        Number(
+            drama.views
+        ) || 0;
+
+
+    vistas.innerHTML =
+        `
+        <span aria-hidden="true">
+            👁
+        </span>
+        ${cantidadVistas}
+        ${cantidadVistas === 1
+            ? "vista"
+            : "vistas"}
+        `;
+
+
+    /* -----------------------------------------------------
+       INSERTAR CONTROLES
+    ----------------------------------------------------- */
+
+    if (
+        botonVer
+    ) {
+
+        controles.appendChild(
+            botonVer
+        );
+
+    }
+
+
+    controles.appendChild(
+        botonMas
+    );
 
 
     controles.appendChild(
@@ -1062,6 +1255,11 @@ function crearTarjetaDrama(
     );
 
 
+    overlay.appendChild(
+        descripcion
+    );
+
+
     tarjeta.appendChild(
         portada
     );
@@ -1072,9 +1270,9 @@ function crearTarjetaDrama(
     );
 
 
-    /*
-     * DETALLE MÓVIL
-     */
+    /* -----------------------------------------------------
+       DETALLE MÓVIL
+    ----------------------------------------------------- */
 
     tarjeta.addEventListener(
         "click",
@@ -1110,6 +1308,88 @@ function crearTarjetaDrama(
 
     catalogo.appendChild(
         tarjeta
+    );
+
+}
+
+
+/* =========================================================
+   ACTUALIZAR VISTAS EN TARJETA
+========================================================= */
+
+function actualizarVistasTarjeta(
+    drama,
+    views
+) {
+
+    const tarjetas =
+        document.querySelectorAll(
+            ".drama-card"
+        );
+
+
+    tarjetas.forEach(
+        tarjeta => {
+
+            const boton =
+                tarjeta.querySelector(
+                    ".drama-card__play"
+                );
+
+
+            if (
+                !boton
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                boton.dataset.dramaId !==
+                String(
+                    drama.id
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const vistas =
+                tarjeta.querySelector(
+                    ".drama-card__views"
+                );
+
+
+            if (
+                vistas
+            ) {
+
+                vistas.innerHTML =
+                    `
+                    <span aria-hidden="true">
+                        👁
+                    </span>
+                    ${Number(views) || 0}
+                    ${
+                        Number(views) === 1
+                            ? "vista"
+                            : "vistas"
+                    }
+                    `;
+
+            }
+
+        }
+    );
+
+
+    actualizarTOPTarjeta(
+        drama,
+        views
     );
 
 }
@@ -1183,25 +1463,27 @@ function actualizarTOPTarjeta(
             }
 
 
-            const etiqueta =
+            const top =
                 document.createElement(
                     "div"
                 );
 
 
-            etiqueta.className =
+            top.className =
                 "drama-card__top";
 
 
-            etiqueta.innerHTML =
+            top.innerHTML =
                 `
-                <span aria-hidden="true">🔥</span>
+                <span aria-hidden="true">
+                    🔥
+                </span>
                 TOP
                 `;
 
 
             tarjeta.appendChild(
-                etiqueta
+                top
             );
 
         }
@@ -1357,6 +1639,50 @@ function crearDetalleMovil() {
         "mobile-detail__platform";
 
 
+    const vistas =
+        document.createElement(
+            "p"
+        );
+
+
+    vistas.className =
+        "mobile-detail__views";
+
+
+    const descripcionTitulo =
+        document.createElement(
+            "h3"
+        );
+
+
+    descripcionTitulo.className =
+        "mobile-detail__description-title";
+
+
+    descripcionTitulo.textContent =
+        "Descripción";
+
+
+    const descripcion =
+        document.createElement(
+            "p"
+        );
+
+
+    descripcion.className =
+        "mobile-detail__description";
+
+
+    const acciones =
+        document.createElement(
+            "div"
+        );
+
+
+    acciones.className =
+        "mobile-detail__actions";
+
+
     const botonVer =
         document.createElement(
             "button"
@@ -1394,54 +1720,17 @@ function crearDetalleMovil() {
 
 
             if (
-                !detalleMovilActual
+                detalleMovilActual
             ) {
 
-                return;
+                reproducirDrama(
+                    detalleMovilActual
+                );
 
             }
 
-
-            reproducirDrama(
-                detalleMovilActual
-            );
-
         }
     );
-
-
-    const tituloDescripcion =
-        document.createElement(
-            "h3"
-        );
-
-
-    tituloDescripcion.className =
-        "mobile-detail__description-title";
-
-
-    tituloDescripcion.textContent =
-        "Descripción";
-
-
-    const descripcion =
-        document.createElement(
-            "p"
-        );
-
-
-    descripcion.className =
-        "mobile-detail__description";
-
-
-    const acciones =
-        document.createElement(
-            "div"
-        );
-
-
-    acciones.className =
-        "mobile-detail__actions";
 
 
     acciones.appendChild(
@@ -1465,12 +1754,17 @@ function crearDetalleMovil() {
 
 
     contenido.appendChild(
+        vistas
+    );
+
+
+    contenido.appendChild(
         acciones
     );
 
 
     contenido.appendChild(
-        tituloDescripcion
+        descripcionTitulo
     );
 
 
@@ -1563,6 +1857,12 @@ function abrirDetalleMovil(
         );
 
 
+    const vistas =
+        detalle.querySelector(
+            ".mobile-detail__views"
+        );
+
+
     const descripcion =
         detalle.querySelector(
             ".mobile-detail__description"
@@ -1624,13 +1924,36 @@ function abrirDetalleMovil(
         }`;
 
 
+    const numeroVistas =
+        Number(
+            drama.views
+        ) || 0;
+
+
+    vistas.innerHTML =
+        `
+        👁
+        ${numeroVistas}
+        ${
+            numeroVistas === 1
+                ? "vista"
+                : "vistas"
+        }
+        `;
+
+
     const descripcionTexto =
         typeof drama.video_description ===
             "string" &&
         drama.video_description.trim() !==
             ""
             ? drama.video_description.trim()
-            : drama.description;
+            : (
+                typeof drama.description ===
+                    "string"
+                    ? drama.description.trim()
+                    : ""
+            );
 
 
     descripcion.textContent =
@@ -1737,31 +2060,40 @@ function insertarEstilosReproductor() {
 
         .md-player {
 
-            position: fixed;
+            position:
+                fixed;
 
-            inset: 0;
+            inset:
+                0;
 
-            z-index: 999999;
+            z-index:
+                999999;
 
-            display: none;
+            display:
+                none;
 
-            align-items: center;
+            align-items:
+                center;
 
-            justify-content: center;
+            justify-content:
+                center;
 
             background:
                 rgba(0,0,0,0.94);
 
-            padding: 20px;
+            padding:
+                20px;
 
-            box-sizing: border-box;
+            box-sizing:
+                border-box;
 
         }
 
 
         .md-player.is-open {
 
-            display: flex;
+            display:
+                flex;
 
         }
 
@@ -1963,7 +2295,7 @@ function insertarEstilosReproductor() {
                 1;
 
             transition:
-                opacity 0.2s ease;
+                opacity .2s ease;
 
         }
 
@@ -1996,7 +2328,7 @@ function insertarEstilosReproductor() {
 
             animation:
                 mdPlayerSpin
-                0.8s linear infinite;
+                .8s linear infinite;
 
         }
 
@@ -2020,9 +2352,6 @@ function insertarEstilosReproductor() {
 
             font-size:
                 14px;
-
-            opacity:
-                0.9;
 
         }
 
@@ -2073,10 +2402,10 @@ function insertarEstilosReproductor() {
                 none;
 
             width:
-                13px;
+                14px;
 
             height:
-                13px;
+                14px;
 
             border-radius:
                 50%;
@@ -2093,10 +2422,10 @@ function insertarEstilosReproductor() {
         .md-player__progress::-moz-range-thumb {
 
             width:
-                13px;
+                14px;
 
             height:
-                13px;
+                14px;
 
             border:
                 0;
@@ -2167,6 +2496,14 @@ function insertarEstilosReproductor() {
         }
 
 
+        .md-player__volume {
+
+            width:
+                85px;
+
+        }
+
+
         .md-player__time {
 
             margin-left:
@@ -2177,20 +2514,6 @@ function insertarEstilosReproductor() {
 
             white-space:
                 nowrap;
-
-            opacity:
-                0.85;
-
-        }
-
-
-        .md-player__volume {
-
-            width:
-                85px;
-
-            accent-color:
-                #fff;
 
         }
 
@@ -2225,7 +2548,7 @@ function insertarEstilosReproductor() {
 
 
         @media (
-            max-width: 700px
+            max-width:700px
         ) {
 
             .md-player {
@@ -2250,22 +2573,19 @@ function insertarEstilosReproductor() {
                 border-radius:
                     0;
 
-                border:
-                    0;
-
             }
 
 
             .md-player__area {
-
-                aspect-ratio:
-                    auto;
 
                 flex:
                     1;
 
                 min-height:
                     0;
+
+                aspect-ratio:
+                    auto;
 
             }
 
@@ -2381,22 +2701,6 @@ function crearReproductor() {
         "×";
 
 
-    cerrar.setAttribute(
-        "aria-label",
-        "Cerrar reproductor"
-    );
-
-
-    header.appendChild(
-        titulo
-    );
-
-
-    header.appendChild(
-        cerrar
-    );
-
-
     const area =
         document.createElement(
             "div"
@@ -2423,10 +2727,8 @@ function crearReproductor() {
     );
 
 
-    video.setAttribute(
-        "preload",
-        "auto"
-    );
+    video.preload =
+        "auto";
 
 
     video.controls =
@@ -2435,11 +2737,6 @@ function crearReproductor() {
 
     video.volume =
         1;
-
-
-    area.appendChild(
-        video
-    );
 
 
     const loading =
@@ -2483,6 +2780,11 @@ function crearReproductor() {
 
     loading.appendChild(
         loadingMessage
+    );
+
+
+    area.appendChild(
+        video
     );
 
 
@@ -2557,12 +2859,6 @@ function crearReproductor() {
 
     play.textContent =
         "▶";
-
-
-    play.setAttribute(
-        "aria-label",
-        "Reproducir"
-    );
 
 
     const retroceder =
@@ -2667,12 +2963,6 @@ function crearReproductor() {
         "⛶";
 
 
-    fullscreen.setAttribute(
-        "aria-label",
-        "Pantalla completa"
-    );
-
-
     const time =
         document.createElement(
             "span"
@@ -2699,6 +2989,16 @@ function crearReproductor() {
 
     status.textContent =
         "Preparando";
+
+
+    header.appendChild(
+        titulo
+    );
+
+
+    header.appendChild(
+        cerrar
+    );
 
 
     buttons.appendChild(
@@ -2836,9 +3136,9 @@ function crearReproductor() {
     };
 
 
-    /*
-     * CERRAR
-     */
+    /* -----------------------------------------------------
+       CERRAR
+    ----------------------------------------------------- */
 
     cerrar.addEventListener(
         "click",
@@ -2846,9 +3146,9 @@ function crearReproductor() {
     );
 
 
-    /*
-     * PLAY / PAUSA
-     */
+    /* -----------------------------------------------------
+       PLAY / PAUSA
+    ----------------------------------------------------- */
 
     play.addEventListener(
         "click",
@@ -2858,6 +3158,9 @@ function crearReproductor() {
                 !video.paused
             ) {
 
+                playerState.allowAutoplay =
+                    false;
+
                 video.pause();
 
                 return;
@@ -2865,19 +3168,18 @@ function crearReproductor() {
             }
 
 
-            try {
+            playerState.allowAutoplay =
+                true;
 
-                playerState.allowAutoplay =
-                    true;
+
+            try {
 
                 await video.play();
 
-            } catch (
-                error
-            ) {
+            } catch {
 
                 actualizarEstadoPlayer(
-                    "Pulsa PLAY para iniciar el vídeo."
+                    "Pulsa PLAY para iniciar."
                 );
 
             }
@@ -2886,9 +3188,9 @@ function crearReproductor() {
     );
 
 
-    /*
-     * RETROCEDER
-     */
+    /* -----------------------------------------------------
+       -10
+    ----------------------------------------------------- */
 
     retroceder.addEventListener(
         "click",
@@ -2906,23 +3208,17 @@ function crearReproductor() {
     );
 
 
-    /*
-     * AVANZAR
-     */
+    /* -----------------------------------------------------
+       +10
+    ----------------------------------------------------- */
 
     avanzar.addEventListener(
         "click",
         () => {
 
-            const duration =
-                Number(
-                    video.duration
-                );
-
-
             if (
                 !Number.isFinite(
-                    duration
+                    video.duration
                 )
             ) {
 
@@ -2933,7 +3229,7 @@ function crearReproductor() {
 
             ejecutarSeekReal(
                 Math.min(
-                    duration -
+                    video.duration -
                     0.05,
                     video.currentTime +
                     10
@@ -2944,9 +3240,9 @@ function crearReproductor() {
     );
 
 
-    /*
-     * MUTE
-     */
+    /* -----------------------------------------------------
+       MUTE
+    ----------------------------------------------------- */
 
     mute.addEventListener(
         "click",
@@ -2962,9 +3258,9 @@ function crearReproductor() {
     );
 
 
-    /*
-     * VOLUMEN
-     */
+    /* -----------------------------------------------------
+       VOLUMEN
+    ----------------------------------------------------- */
 
     volume.addEventListener(
         "input",
@@ -2987,9 +3283,9 @@ function crearReproductor() {
     );
 
 
-    /*
-     * PANTALLA COMPLETA
-     */
+    /* -----------------------------------------------------
+       FULLSCREEN
+    ----------------------------------------------------- */
 
     fullscreen.addEventListener(
         "click",
@@ -2997,9 +3293,9 @@ function crearReproductor() {
     );
 
 
-    /*
-     * BARRA DE PROGRESO
-     */
+    /* -----------------------------------------------------
+       BARRA
+    ----------------------------------------------------- */
 
     progress.addEventListener(
         "pointerdown",
@@ -3026,7 +3322,8 @@ function crearReproductor() {
                 !Number.isFinite(
                     duration
                 ) ||
-                duration <= 0
+                duration <=
+                0
             ) {
 
                 return;
@@ -3034,21 +3331,13 @@ function crearReproductor() {
             }
 
 
-            const porcentaje =
-                Number(
-                    progress.value
-                ) /
-                100;
-
-
             const destino =
-                Math.max(
-                    0,
-                    Math.min(
-                        duration,
-                        duration *
-                        porcentaje
-                    )
+                duration *
+                (
+                    Number(
+                        progress.value
+                    ) /
+                    100
                 );
 
 
@@ -3065,36 +3354,9 @@ function crearReproductor() {
 
     progress.addEventListener(
         "change",
-        async () => {
+        () => {
 
-            const destino =
-                Number(
-                    playerState.pendingSeekTime
-                );
-
-
-            playerState.userSeeking =
-                false;
-
-
-            playerState.pendingSeekTime =
-                null;
-
-
-            if (
-                !Number.isFinite(
-                    destino
-                )
-            ) {
-
-                return;
-
-            }
-
-
-            await ejecutarSeekReal(
-                destino
-            );
+            ejecutarSeekDesdeBarra();
 
         }
     );
@@ -3102,61 +3364,21 @@ function crearReproductor() {
 
     progress.addEventListener(
         "pointerup",
-        async () => {
+        () => {
 
-            if (
-                playerState.pendingSeekTime ===
-                null
-            ) {
-
-                playerState.userSeeking =
-                    false;
-
-                return;
-
-            }
-
-
-            const destino =
-                Number(
-                    playerState.pendingSeekTime
-                );
-
-
-            playerState.userSeeking =
-                false;
-
-
-            playerState.pendingSeekTime =
-                null;
-
-
-            if (
-                Number.isFinite(
-                    destino
-                )
-            ) {
-
-                await ejecutarSeekReal(
-                    destino
-                );
-
-            }
+            ejecutarSeekDesdeBarra();
 
         }
     );
 
 
-    /*
-     * EVENTOS DEL VIDEO
-     */
+    /* -----------------------------------------------------
+       EVENTOS VIDEO
+    ----------------------------------------------------- */
 
     video.addEventListener(
         "play",
         () => {
-
-            playerState.allowAutoplay =
-                true;
 
             actualizarBotonPlay();
 
@@ -3176,13 +3398,9 @@ function crearReproductor() {
 
 
             if (
-                !playerState.stopped &&
-                !playerState.seekInProgress
+                !playerState.seekInProgress &&
+                !playerState.stopped
             ) {
-
-                playerState.allowAutoplay =
-                    false;
-
 
                 actualizarEstadoPlayer(
                     "Pausado"
@@ -3271,6 +3489,15 @@ function crearReproductor() {
         "error",
         () => {
 
+            if (
+                playerState.seekInProgress
+            ) {
+
+                return;
+
+            }
+
+
             const error =
                 video.error;
 
@@ -3280,28 +3507,13 @@ function crearReproductor() {
                 error
             );
 
-
-            if (
-                !playerState.seekInProgress
-            ) {
-
-                actualizarEstadoPlayer(
-                    `Error de reproducción (código ${
-                        error
-                            ? error.code
-                            : "desconocido"
-                    }).`
-                );
-
-            }
-
         }
     );
 
 
-    /*
-     * TECLADO
-     */
+    /* -----------------------------------------------------
+       TECLADO
+    ----------------------------------------------------- */
 
     document.addEventListener(
         "keydown",
@@ -3426,6 +3638,7 @@ function actualizarIconoVolumen() {
         elementos.mute.textContent =
             "🔇";
 
+
         return;
 
     }
@@ -3439,6 +3652,7 @@ function actualizarIconoVolumen() {
         elementos.mute.textContent =
             "🔉";
 
+
         return;
 
     }
@@ -3451,7 +3665,7 @@ function actualizarIconoVolumen() {
 
 
 /* =========================================================
-   PLAY
+   BOTÓN PLAY
 ========================================================= */
 
 function actualizarBotonPlay() {
@@ -3479,14 +3693,6 @@ function actualizarBotonPlay() {
             ? "▶"
             : "❚❚";
 
-
-    elementos.play.setAttribute(
-        "aria-label",
-        video.paused
-            ? "Reproducir"
-            : "Pausar"
-    );
-
 }
 
 
@@ -3502,7 +3708,8 @@ function formatoTiempo(
         !Number.isFinite(
             segundos
         ) ||
-        segundos < 0
+        segundos <
+        0
     ) {
 
         return "0:00";
@@ -3539,7 +3746,8 @@ function formatoTiempo(
 
 
     if (
-        horas > 0
+        horas >
+        0
     ) {
 
         return (
@@ -3586,7 +3794,8 @@ function formatoBytes(
         !Number.isFinite(
             bytes
         ) ||
-        bytes <= 0
+        bytes <=
+        0
     ) {
 
         return "0 B";
@@ -3681,7 +3890,8 @@ function actualizarControlesVideo() {
         Number.isFinite(
             duration
         ) &&
-        duration > 0 &&
+        duration >
+        0 &&
         !playerState.userSeeking
     ) {
 
@@ -3736,7 +3946,8 @@ function obtenerBufferAdelante() {
 
     for (
         let i = 0;
-        i < video.buffered.length;
+        i <
+        video.buffered.length;
         i++
     ) {
 
@@ -3795,15 +4006,20 @@ function estaEnBuffer(
 
     for (
         let i = 0;
-        i < video.buffered.length;
+        i <
+        video.buffered.length;
         i++
     ) {
 
         if (
             tiempo >=
-                video.buffered.start(i) &&
+                video.buffered.start(
+                    i
+                ) &&
             tiempo <=
-                video.buffered.end(i)
+                video.buffered.end(
+                    i
+                )
         ) {
 
             return true;
@@ -3821,20 +4037,8 @@ function estaEnBuffer(
 function actualizarEstadoBuffer() {
 
     if (
-        !playerState.streamStarted
-    ) {
-
-        return;
-
-    }
-
-
-    const video =
-        playerState.videoElement;
-
-
-    if (
-        !video
+        !playerState.streamStarted ||
+        !playerState.videoElement
     ) {
 
         return;
@@ -3847,7 +4051,7 @@ function actualizarEstadoBuffer() {
 
 
     if (
-        !video.paused &&
+        !playerState.videoElement.paused &&
         buffer <
         BUFFER_BAJO &&
         !playerState.seekInProgress
@@ -3863,235 +4067,13 @@ function actualizarEstadoBuffer() {
 
 
 /* =========================================================
-   PANTALLA COMPLETA
-========================================================= */
-
-async function alternarPantallaCompleta() {
-
-    const elementos =
-        playerState.playerElements;
-
-
-    if (
-        !elementos
-    ) {
-
-        return;
-
-    }
-
-
-    try {
-
-        if (
-            document.fullscreenElement
-        ) {
-
-            await document.exitFullscreen();
-
-            return;
-
-        }
-
-
-        if (
-            elementos.ventana.requestFullscreen
-        ) {
-
-            await elementos.ventana.requestFullscreen();
-
-        }
-
-    } catch (
-        error
-    ) {
-
-        console.warn(
-            "[REPRODUCTOR] Pantalla completa:",
-            error
-        );
-
-    }
-
-}
-
-
-/* =========================================================
-   TECLADO
-========================================================= */
-
-function manejarTecladoPlayer(
-    evento
-) {
-
-    const reproductor =
-        document.getElementById(
-            "md-player"
-        );
-
-
-    if (
-        !reproductor ||
-        !reproductor.classList.contains(
-            "is-open"
-        )
-    ) {
-
-        return;
-
-    }
-
-
-    const video =
-        playerState.videoElement;
-
-
-    if (
-        !video
-    ) {
-
-        return;
-
-    }
-
-
-    const tag =
-        evento.target?.tagName;
-
-
-    if (
-        tag === "INPUT" ||
-        tag === "TEXTAREA"
-    ) {
-
-        return;
-
-    }
-
-
-    switch (
-        evento.key.toLowerCase()
-    ) {
-
-        case " ":
-
-        case "k":
-
-            evento.preventDefault();
-
-
-            if (
-                video.paused
-            ) {
-
-                playerState.allowAutoplay =
-                    true;
-
-                video.play().catch(
-                    () => {}
-                );
-
-            } else {
-
-                playerState.allowAutoplay =
-                    false;
-
-                video.pause();
-
-            }
-
-            break;
-
-
-        case "arrowleft":
-
-            evento.preventDefault();
-
-
-            ejecutarSeekReal(
-                Math.max(
-                    0,
-                    video.currentTime -
-                    5
-                )
-            );
-
-            break;
-
-
-        case "arrowright":
-
-            evento.preventDefault();
-
-
-            if (
-                Number.isFinite(
-                    video.duration
-                )
-            ) {
-
-                ejecutarSeekReal(
-                    Math.min(
-                        video.duration -
-                        0.05,
-                        video.currentTime +
-                        5
-                    )
-                );
-
-            }
-
-            break;
-
-
-        case "m":
-
-            evento.preventDefault();
-
-
-            video.muted =
-                !video.muted;
-
-
-            actualizarIconoVolumen();
-
-            break;
-
-
-        case "f":
-
-            evento.preventDefault();
-
-
-            alternarPantallaCompleta();
-
-            break;
-
-
-        case "escape":
-
-            if (
-                !document.fullscreenElement
-            ) {
-
-                cerrarReproductor();
-
-            }
-
-            break;
-
-    }
-
-}
-
-
-/* =========================================================
-   LEER RANGO MEGA
+   LEER MEGA
 ========================================================= */
 
 async function leerRangoMega(
     start,
-    size
+    size,
+    actualizarUI = true
 ) {
 
     const file =
@@ -4103,14 +4085,15 @@ async function leerRangoMega(
     ) {
 
         throw new Error(
-            "No existe archivo MEGA cargado."
+            "No existe archivo MEGA."
         );
 
     }
 
 
     if (
-        start < 0 ||
+        start <
+        0 ||
         start >=
         playerState.fileSize
     ) {
@@ -4139,6 +4122,17 @@ async function leerRangoMega(
 
 
     playerState.megaRequests++;
+
+
+    if (
+        actualizarUI
+    ) {
+
+        actualizarEstadoPlayer(
+            `Descargando ${formatoBytes(esperado)}...`
+        );
+
+    }
 
 
     const stream =
@@ -4172,7 +4166,7 @@ async function leerRangoMega(
     ) {
 
         throw new Error(
-            "MEGAJS no devolvió un stream."
+            "MEGAJS no devolvió stream."
         );
 
     }
@@ -4324,39 +4318,38 @@ async function leerRangoMega(
         );
 
 
-    let offset =
+    let posicion =
         0;
 
 
     for (
-        const chunk of
+        const chunk
+        of
         chunks
     ) {
 
         resultado.set(
             chunk,
-            offset
+            posicion
         );
 
 
-        offset +=
+        posicion +=
             chunk.byteLength;
 
     }
 
 
-    const arrayBuffer =
+    const buffer =
         resultado.buffer;
 
 
     /*
-     * MUY IMPORTANTE.
-     *
-     * MP4Box necesita saber
-     * la posición real del archivo.
+     * MP4Box necesita conocer
+     * la posición real dentro del archivo.
      */
 
-    arrayBuffer.fileStart =
+    buffer.fileStart =
         start;
 
 
@@ -4372,7 +4365,7 @@ async function leerRangoMega(
     return {
 
         buffer:
-            arrayBuffer,
+            buffer,
 
         start:
             start,
@@ -4421,22 +4414,9 @@ function crearPromesaMetadata() {
    CONFIGURAR MP4BOX
 ========================================================= */
 
-function configurarMP4Box() {
-
-    const mp4box =
-        playerState.mp4box;
-
-
-    if (
-        !mp4box
-    ) {
-
-        throw new Error(
-            "MP4Box no está inicializado."
-        );
-
-    }
-
+function configurarMP4Box(
+    mp4box
+) {
 
     mp4box.onMoovStart =
         () => {
@@ -4461,11 +4441,6 @@ function configurarMP4Box() {
             );
 
 
-            actualizarEstadoPlayer(
-                `Error MP4Box: ${error}`
-            );
-
-
             if (
                 playerState.metadataReject
             ) {
@@ -4486,13 +4461,10 @@ function configurarMP4Box() {
     mp4box.onReady =
         info => {
 
-            if (
-                playerState.mp4Ready
-            ) {
-
-                return;
-
-            }
+            console.log(
+                "[REPRODUCTOR] ✓ MP4Box listo.",
+                info
+            );
 
 
             playerState.mp4Ready =
@@ -4503,57 +4475,13 @@ function configurarMP4Box() {
                 info;
 
 
-            console.log(
-                "[REPRODUCTOR] ✓ MP4Box listo.",
-                info
-            );
-
-
-            try {
-
-                prepararMediaSource(
-                    info
-                );
-
-
-                prepararSegmentacion(
-                    info
-                );
-
-
-                if (
-                    playerState.metadataResolve
-                ) {
-
-                    playerState.metadataResolve(
-                        info
-                    );
-
-                }
-
-            } catch (
-                error
+            if (
+                playerState.metadataResolve
             ) {
 
-                playerState.mp4Error =
-                    true;
-
-
-                console.error(
-                    "[REPRODUCTOR]",
-                    error
+                playerState.metadataResolve(
+                    info
                 );
-
-
-                if (
-                    playerState.metadataReject
-                ) {
-
-                    playerState.metadataReject(
-                        error
-                    );
-
-                }
 
             }
 
@@ -4593,6 +4521,7 @@ function configurarMP4Box() {
                     foundTrackId =
                         id;
 
+
                     break;
 
                 }
@@ -4619,10 +4548,11 @@ function configurarMP4Box() {
                 null
             ) {
 
-                console.error(
-                    "[REPRODUCTOR] Segmento sin SourceBuffer.",
+                console.warn(
+                    "[REPRODUCTOR] Segmento sin SourceBuffer:",
                     trackId
                 );
+
 
                 return;
 
@@ -4643,19 +4573,17 @@ function configurarMP4Box() {
 
 
 /* =========================================================
-   MEDIASOURCE
+   CREAR MEDIASOURCE
 ========================================================= */
 
-function prepararMediaSource(
-    info
-) {
+function crearMediaSource() {
 
     if (
         !window.MediaSource
     ) {
 
         throw new Error(
-            "Este navegador no soporta MediaSource."
+            "El navegador no soporta MediaSource."
         );
 
     }
@@ -4663,6 +4591,17 @@ function prepararMediaSource(
 
     const video =
         playerState.videoElement;
+
+
+    if (
+        !video
+    ) {
+
+        throw new Error(
+            "No existe el elemento video."
+        );
+
+    }
 
 
     const mediaSource =
@@ -4673,87 +4612,21 @@ function prepararMediaSource(
         mediaSource;
 
 
-    const objectUrl =
+    const url =
         URL.createObjectURL(
             mediaSource
         );
 
 
     playerState.mediaSourceUrl =
-        objectUrl;
+        url;
 
 
     video.src =
-        objectUrl;
+        url;
 
 
-    mediaSource.addEventListener(
-        "sourceopen",
-        () => {
-
-            try {
-
-                crearSourceBuffers(
-                    info
-                );
-
-            } catch (
-                error
-            ) {
-
-                console.error(
-                    "[REPRODUCTOR]",
-                    error
-                );
-
-
-                playerState.mp4Error =
-                    true;
-
-            }
-
-        },
-        {
-            once:
-                true
-        }
-    );
-
-}
-
-
-/* =========================================================
-   ESPERAR MEDIASOURCE
-========================================================= */
-
-async function esperarMediaSourceAbierto() {
-
-    const mediaSource =
-        playerState.mediaSource;
-
-
-    if (
-        !mediaSource
-    ) {
-
-        throw new Error(
-            "MediaSource no existe."
-        );
-
-    }
-
-
-    if (
-        mediaSource.readyState ===
-        "open"
-    ) {
-
-        return;
-
-    }
-
-
-    await new Promise(
+    return new Promise(
         (
             resolve,
             reject
@@ -4774,37 +4647,18 @@ async function esperarMediaSourceAbierto() {
                 );
 
 
-            const open =
+            mediaSource.addEventListener(
+                "sourceopen",
                 () => {
 
                     clearTimeout(
                         timeout
                     );
+
 
                     resolve();
 
-                };
-
-
-            const error =
-                () => {
-
-                    clearTimeout(
-                        timeout
-                    );
-
-                    reject(
-                        new Error(
-                            "MediaSource informó un error."
-                        )
-                    );
-
-                };
-
-
-            mediaSource.addEventListener(
-                "sourceopen",
-                open,
+                },
                 {
                     once:
                         true
@@ -4814,7 +4668,20 @@ async function esperarMediaSourceAbierto() {
 
             mediaSource.addEventListener(
                 "error",
-                error,
+                () => {
+
+                    clearTimeout(
+                        timeout
+                    );
+
+
+                    reject(
+                        new Error(
+                            "MediaSource informó un error."
+                        )
+                    );
+
+                },
                 {
                     once:
                         true
@@ -4828,7 +4695,7 @@ async function esperarMediaSourceAbierto() {
 
 
 /* =========================================================
-   SOURCEBUFFERS
+   CREAR SOURCEBUFFERS
 ========================================================= */
 
 function crearSourceBuffers(
@@ -4840,28 +4707,37 @@ function crearSourceBuffers(
 
 
     if (
-        !mediaSource
+        !mediaSource ||
+        mediaSource.readyState !==
+        "open"
     ) {
 
         throw new Error(
-            "MediaSource no disponible."
+            "MediaSource no está abierto."
         );
 
     }
 
 
-    if (
-        playerState.sourceBuffers.size >
-        0
-    ) {
+    playerState.sourceBuffers =
+        new Map();
 
-        return;
 
-    }
+    playerState.sourceQueues =
+        new Map();
+
+
+    playerState.videoTrackId =
+        null;
+
+
+    playerState.audioTrackId =
+        null;
 
 
     for (
-        const track of
+        const track
+        of
         info.tracks ||
         []
     ) {
@@ -4897,23 +4773,17 @@ function crearSourceBuffers(
 
 
         if (
-            !mime
-        ) {
-
-            continue;
-
-        }
-
-
-        if (
+            !mime ||
             !MediaSource.isTypeSupported(
                 mime
             )
         ) {
 
-            console.error(
-                `[REPRODUCTOR] MSE no soporta ${mime}`
+            console.warn(
+                "[REPRODUCTOR] MSE no soporta:",
+                mime
             );
+
 
             continue;
 
@@ -4924,6 +4794,10 @@ function crearSourceBuffers(
             mediaSource.addSourceBuffer(
                 mime
             );
+
+
+        sourceBuffer.mode =
+            "segments";
 
 
         playerState.sourceBuffers.set(
@@ -4978,7 +4852,8 @@ function crearSourceBuffers(
             () => {
 
                 console.error(
-                    `[REPRODUCTOR] SourceBuffer error track ${track.id}`
+                    "[REPRODUCTOR] SourceBuffer error:",
+                    track.id
                 );
 
             }
@@ -4993,7 +4868,7 @@ function crearSourceBuffers(
     ) {
 
         throw new Error(
-            "No se pudo crear el SourceBuffer de vídeo."
+            "No se pudo crear SourceBuffer de vídeo."
         );
 
     }
@@ -5002,22 +4877,21 @@ function crearSourceBuffers(
 
 
 /* =========================================================
-   SEGMENTACIÓN
+   CONFIGURAR SEGMENTACIÓN
 ========================================================= */
 
-async function prepararSegmentacion(
+function configurarSegmentacion(
+    mp4box,
     info
 ) {
 
-    const mp4box =
-        playerState.mp4box;
-
-
-    await esperarMediaSourceAbierto();
+    playerState.initSegments =
+        new Map();
 
 
     for (
-        const track of
+        const track
+        of
         info.tracks ||
         []
     ) {
@@ -5069,18 +4943,15 @@ async function prepararSegmentacion(
     ) {
 
         throw new Error(
-            "MP4Box no devolvió segmentos de inicialización."
+            "MP4Box no devolvió init segments."
         );
 
     }
 
 
-    playerState.initSegments =
-        new Map();
-
-
     for (
-        const init of
+        const init
+        of
         initSegments
     ) {
 
@@ -5094,22 +4965,10 @@ async function prepararSegmentacion(
         }
 
 
-        let copia;
-
-
-        try {
-
-            copia =
-                init.buffer.slice(
-                    0
-                );
-
-        } catch {
-
-            copia =
-                init.buffer;
-
-        }
+        const copia =
+            init.buffer.slice(
+                0
+            );
 
 
         playerState.initSegments.set(
@@ -5127,14 +4986,14 @@ async function prepararSegmentacion(
 
 
     console.log(
-        "[REPRODUCTOR] ✓ Segmentación inicializada."
+        "[REPRODUCTOR] ✓ Segmentación preparada."
     );
 
 }
 
 
 /* =========================================================
-   SOURCEBUFFER COLA
+   ENCOLAR SOURCEBUFFER
 ========================================================= */
 
 function encolarSourceBuffer(
@@ -5151,10 +5010,6 @@ function encolarSourceBuffer(
     if (
         !queue
     ) {
-
-        console.error(
-            `[REPRODUCTOR] No existe cola para track ${trackId}.`
-        );
 
         return;
 
@@ -5263,7 +5118,7 @@ function bombearSourceBuffer(
 
 
         console.error(
-            `[REPRODUCTOR] appendBuffer track ${trackId}:`,
+            "[REPRODUCTOR] appendBuffer:",
             error
         );
 
@@ -5273,37 +5128,110 @@ function bombearSourceBuffer(
 
 
 /* =========================================================
-   OFFSET SEEK
+   ESPERAR COLAS
 ========================================================= */
 
-function obtenerOffsetSeek(
-    resultado
-) {
+function esperarColas() {
 
-    if (
-        Number.isFinite(
-            resultado
-        )
-    ) {
+    return new Promise(
+        resolve => {
 
-        return resultado;
-
-    }
+            const inicio =
+                Date.now();
 
 
-    if (
-        resultado &&
-        Number.isFinite(
-            resultado.offset
-        )
-    ) {
+            const revisar =
+                () => {
 
-        return resultado.offset;
-
-    }
+                    let pendiente =
+                        false;
 
 
-    return 0;
+                    for (
+                        const queue
+                        of
+                        playerState.sourceQueues.values()
+                    ) {
+
+                        if (
+                            queue.length >
+                            0
+                        ) {
+
+                            pendiente =
+                                true;
+
+
+                            break;
+
+                        }
+
+                    }
+
+
+                    if (
+                        !pendiente
+                    ) {
+
+                        for (
+                            const sourceBuffer
+                            of
+                            playerState.sourceBuffers.values()
+                        ) {
+
+                            if (
+                                sourceBuffer.updating
+                            ) {
+
+                                pendiente =
+                                    true;
+
+
+                                break;
+
+                            }
+
+                        }
+
+                    }
+
+
+                    if (
+                        !pendiente
+                    ) {
+
+                        resolve();
+
+                        return;
+
+                    }
+
+
+                    if (
+                        Date.now() -
+                        inicio >
+                        TIMEOUT_SOURCEBUFFER
+                    ) {
+
+                        resolve();
+
+                        return;
+
+                    }
+
+
+                    setTimeout(
+                        revisar,
+                        50
+                    );
+
+                };
+
+
+            revisar();
+
+        }
+    );
 
 }
 
@@ -5313,7 +5241,9 @@ function obtenerOffsetSeek(
 ========================================================= */
 
 async function localizarMOOV(
-    operationId
+    operationId,
+    guardarBootstrap =
+        true
 ) {
 
     const mp4box =
@@ -5324,13 +5254,18 @@ async function localizarMOOV(
         0;
 
 
+    const bootstrap =
+        [];
+
+
     const primerBloque =
         await leerRangoMega(
             0,
             Math.min(
                 RANGO_INICIAL,
                 playerState.fileSize
-            )
+            ),
+            false
         );
 
 
@@ -5345,7 +5280,20 @@ async function localizarMOOV(
     }
 
 
-    const siguiente =
+    if (
+        guardarBootstrap
+    ) {
+
+        bootstrap.push(
+            primerBloque.buffer.slice(
+                0
+            )
+        );
+
+    }
+
+
+    let siguiente =
         mp4box.appendBuffer(
             primerBloque.buffer
         );
@@ -5395,7 +5343,8 @@ async function localizarMOOV(
         const bloque =
             await leerRangoMega(
                 offset,
-                size
+                size,
+                false
             );
 
 
@@ -5410,46 +5359,73 @@ async function localizarMOOV(
         }
 
 
-        const resultado =
+        if (
+            guardarBootstrap &&
+            playerState.bootstrapEnd <
+            SEEK_REINICIO_MAX
+        ) {
+
+            bootstrap.push(
+                bloque.buffer.slice(
+                    0
+                )
+            );
+
+        }
+
+
+        siguiente =
             mp4box.appendBuffer(
                 bloque.buffer
             );
 
 
-        const siguienteOffset =
-            Number.isFinite(
-                resultado
-            )
-                ? resultado
-                : bloque.end +
-                  1;
+        offset =
+            bloque.end +
+            1;
 
 
         if (
-            siguienteOffset >=
+            Number.isFinite(
+                siguiente
+            ) &&
+            siguiente >=
             0 &&
-            siguienteOffset <
+            siguiente <
             playerState.fileSize &&
             Math.abs(
-                siguienteOffset -
-                (
-                    bloque.end +
-                    1
-                )
+                siguiente -
+                offset
             ) >
             1024
         ) {
 
             offset =
-                siguienteOffset;
-
-        } else {
-
-            offset =
-                bloque.end +
-                1;
+                siguiente;
 
         }
+
+
+        playerState.bootstrapEnd =
+            offset;
+
+    }
+
+
+    if (
+        guardarBootstrap
+    ) {
+
+        playerState.bootstrapBuffers =
+            bootstrap;
+
+
+        playerState.bootstrapEnd =
+            offset;
+
+
+        playerState.bootstrapReady =
+            true;
 
     }
 
@@ -5462,161 +5438,205 @@ async function localizarMOOV(
 
 
 /* =========================================================
-   ESPERAR COLAS
+   CREAR SESIÓN MP4/MSE
 ========================================================= */
 
-function esperarColas() {
-
-    return new Promise(
-        resolve => {
-
-            const inicio =
-                Date.now();
-
-
-            const revisar =
-                () => {
-
-                    let pendiente =
-                        false;
-
-
-                    for (
-                        const queue
-                        of
-                        playerState.sourceQueues.values()
-                    ) {
-
-                        if (
-                            queue.length >
-                            0
-                        ) {
-
-                            pendiente =
-                                true;
-
-                            break;
-
-                        }
-
-                    }
-
-
-                    for (
-                        const sourceBuffer
-                        of
-                        playerState.sourceBuffers.values()
-                    ) {
-
-                        if (
-                            sourceBuffer.updating
-                        ) {
-
-                            pendiente =
-                                true;
-
-                            break;
-
-                        }
-
-                    }
-
-
-                    if (
-                        !pendiente
-                    ) {
-
-                        resolve();
-
-                        return;
-
-                    }
-
-
-                    if (
-                        Date.now() -
-                        inicio >
-                        TIMEOUT_SOURCEBUFFER
-                    ) {
-
-                        resolve();
-
-                        return;
-
-                    }
-
-
-                    setTimeout(
-                        revisar,
-                        50
-                    );
-
-                };
-
-
-            revisar();
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   ESPERAR BUFFER BAJO
-========================================================= */
-
-function esperarBufferBajo(
-    operationId,
-    generation
+async function crearSesionMedia(
+    operationId
 ) {
 
-    return new Promise(
-        resolve => {
+    /*
+     * Crear MediaSource nuevo.
+     */
 
-            const revisar =
-                () => {
-
-                    if (
-                        playerState.stopped ||
-                        operationId !==
-                        playerState.operationId ||
-                        generation !==
-                        playerState.streamGeneration
-                    ) {
-
-                        resolve();
-
-                        return;
-
-                    }
+    await crearMediaSource();
 
 
-                    const buffer =
-                        obtenerBufferAdelante();
+    if (
+        playerState.stopped ||
+        operationId !==
+        playerState.operationId
+    ) {
+
+        return;
+
+    }
 
 
-                    if (
-                        buffer <=
-                        BUFFER_BAJO
-                    ) {
+    /*
+     * Crear SourceBuffers
+     * usando la información que ya conocemos.
+     */
 
-                        resolve();
-
-                        return;
-
-                    }
+    crearSourceBuffers(
+        playerState.mp4Info
+    );
 
 
-                    setTimeout(
-                        revisar,
-                        500
-                    );
+    /*
+     * Configurar MP4Box para esta sesión.
+     */
 
-                };
+    configurarSegmentacion(
+        playerState.mp4box,
+        playerState.mp4Info
+    );
 
 
-            revisar();
+    await esperarColas();
+
+}
+
+
+/* =========================================================
+   CREAR NUEVO MP4BOX
+========================================================= */
+
+function crearNuevoMP4Box() {
+
+    const mp4box =
+        MP4BoxAPI.createFile();
+
+
+    playerState.mp4box =
+        mp4box;
+
+
+    playerState.mp4Ready =
+        false;
+
+
+    playerState.mp4Error =
+        false;
+
+
+    crearPromesaMetadata();
+
+
+    configurarMP4Box(
+        mp4box
+    );
+
+
+    return mp4box;
+
+}
+
+
+/* =========================================================
+   INICIALIZAR SESIÓN NORMAL
+========================================================= */
+
+async function inicializarSesionInicial(
+    operationId
+) {
+
+    crearNuevoMP4Box();
+
+
+    mostrarLoading(
+        "Analizando estructura del vídeo..."
+    );
+
+
+    actualizarEstadoPlayer(
+        "Buscando estructura MP4..."
+    );
+
+
+    const encontrado =
+        await localizarMOOV(
+            operationId,
+            true
+        );
+
+
+    if (
+        !encontrado
+    ) {
+
+        throw new Error(
+            "No se pudo localizar MOOV."
+        );
+
+    }
+
+
+    if (
+        playerState.mp4Error
+    ) {
+
+        throw new Error(
+            "MP4Box informó un error."
+        );
+
+    }
+
+
+    await crearSesionMedia(
+        operationId
+    );
+
+
+    /*
+     * Ahora MP4Box conoce MOOV.
+     *
+     * seek(0,true) determina
+     * dónde comienzan las muestras.
+     */
+
+    let resultadoSeek =
+        0;
+
+
+    try {
+
+        resultadoSeek =
+            playerState.mp4box.seek(
+                0,
+                true
+            );
+
+    } catch (
+        error
+    ) {
+
+        console.warn(
+            "[REPRODUCTOR] seek inicial:",
+            error
+        );
+
+    }
+
+
+    const offset =
+        obtenerOffsetSeek(
+            resultadoSeek
+        );
+
+
+    console.log(
+        `[REPRODUCTOR] ✓ Inicio multimedia: ${offset.toLocaleString()}`
+    );
+
+
+    iniciarStreamingMedia(
+        offset,
+        operationId,
+        playerState.streamGeneration
+    ).catch(
+        error => {
+
+            if (
+                !playerState.stopped
+            ) {
+
+                console.error(
+                    "[REPRODUCTOR] Streaming:",
+                    error
+                );
+
+            }
 
         }
     );
@@ -5625,14 +5645,13 @@ function esperarBufferBajo(
 
 
 /* =========================================================
-   STREAMING MULTIMEDIA
+   STREAMING
 ========================================================= */
 
 async function iniciarStreamingMedia(
     offsetInicial,
     operationId,
-    generation =
-        playerState.streamGeneration
+    generation
 ) {
 
     const mp4box =
@@ -5644,7 +5663,7 @@ async function iniciarStreamingMedia(
     ) {
 
         throw new Error(
-            "MP4Box no está disponible."
+            "MP4Box no disponible."
         );
 
     }
@@ -5693,6 +5712,11 @@ async function iniciarStreamingMedia(
         offset <
         playerState.fileSize
     ) {
+
+        /*
+         * Si hay suficiente buffer,
+         * esperamos.
+         */
 
         const buffer =
             obtenerBufferAdelante();
@@ -5777,6 +5801,8 @@ async function iniciarStreamingMedia(
         offset >=
         playerState.fileSize &&
         !playerState.stopped &&
+        operationId ===
+        playerState.operationId &&
         generation ===
         playerState.streamGeneration
     ) {
@@ -5790,13 +5816,71 @@ async function iniciarStreamingMedia(
         ) {
 
             console.warn(
-                "[REPRODUCTOR] MP4Box.flush():",
+                "[REPRODUCTOR] flush:",
                 error
             );
 
         }
 
     }
+
+}
+
+
+/* =========================================================
+   ESPERAR BUFFER BAJO
+========================================================= */
+
+function esperarBufferBajo(
+    operationId,
+    generation
+) {
+
+    return new Promise(
+        resolve => {
+
+            const revisar =
+                () => {
+
+                    if (
+                        playerState.stopped ||
+                        operationId !==
+                        playerState.operationId ||
+                        generation !==
+                        playerState.streamGeneration
+                    ) {
+
+                        resolve();
+
+                        return;
+
+                    }
+
+
+                    if (
+                        obtenerBufferAdelante() <=
+                        BUFFER_BAJO
+                    ) {
+
+                        resolve();
+
+                        return;
+
+                    }
+
+
+                    setTimeout(
+                        revisar,
+                        500
+                    );
+
+                };
+
+
+            revisar();
+
+        }
+    );
 
 }
 
@@ -5815,9 +5899,8 @@ async function intentarReproduccion() {
         !video ||
         playerState.playbackStarted ||
         playerState.stopped ||
-        !playerState.allowAutoplay ||
-        playerState.playAttempt ||
-        playerState.seekInProgress
+        playerState.seekInProgress ||
+        !playerState.allowAutoplay
     ) {
 
         return;
@@ -5825,13 +5908,18 @@ async function intentarReproduccion() {
     }
 
 
-    const buffer =
-        obtenerBufferAdelante();
+    if (
+        obtenerBufferAdelante() <
+        BUFFER_INICIAL
+    ) {
+
+        return;
+
+    }
 
 
     if (
-        buffer <
-        BUFFER_INICIAL
+        playerState.playAttempt
     ) {
 
         return;
@@ -5855,17 +5943,14 @@ async function intentarReproduccion() {
         ocultarLoading();
 
 
+        actualizarBotonPlay();
+
+
         actualizarEstadoPlayer(
             "Reproduciendo"
         );
 
-
-        actualizarBotonPlay();
-
-
-    } catch (
-        error
-    ) {
+    } catch {
 
         ocultarLoading();
 
@@ -5885,7 +5970,7 @@ async function intentarReproduccion() {
 
 
 /* =========================================================
-   CARGAR ARCHIVO MEGA
+   PREPARAR ARCHIVO MEGA
 ========================================================= */
 
 async function prepararArchivoMega(
@@ -5904,7 +5989,7 @@ async function prepararArchivoMega(
     ) {
 
         throw new Error(
-            "Este microdrama no tiene enlace de vídeo."
+            "Este microdrama no tiene vídeo."
         );
 
     }
@@ -5915,18 +6000,15 @@ async function prepararArchivoMega(
     ) {
 
         throw new Error(
-            "MEGAJS todavía no está cargado."
+            "MEGAJS no está cargado."
         );
 
     }
 
 
     /*
-     * Los registros actuales ya utilizan:
-     *
-     * https://mega.nz/file/ID#CLAVE
-     *
-     * Se acepta también /embed/ como respaldo.
+     * Aceptamos /file/ y, como respaldo,
+     * /embed/.
      */
 
     const megaUrl =
@@ -5974,7 +6056,7 @@ async function prepararArchivoMega(
     ) {
 
         throw new Error(
-            "MEGAJS no devolvió el tamaño del archivo."
+            "MEGAJS no devolvió tamaño."
         );
 
     }
@@ -5985,7 +6067,7 @@ async function prepararArchivoMega(
 
 
     console.log(
-        `[REPRODUCTOR] ✓ Archivo MEGA: ${
+        `[REPRODUCTOR] ✓ Archivo: ${
             playerState.file.name ||
             "sin nombre"
         }`
@@ -6049,6 +6131,7 @@ async function reproducirDrama(
             drama.title
         );
 
+
         return;
 
     }
@@ -6090,6 +6173,14 @@ async function reproducirDrama(
         drama;
 
 
+    playerState.file =
+        null;
+
+
+    playerState.fileSize =
+        0;
+
+
     playerState.mp4box =
         null;
 
@@ -6122,18 +6213,6 @@ async function reproducirDrama(
         new Map();
 
 
-    playerState.initSegments =
-        new Map();
-
-
-    playerState.videoTrackId =
-        null;
-
-
-    playerState.audioTrackId =
-        null;
-
-
     playerState.totalDownloaded =
         0;
 
@@ -6162,10 +6241,6 @@ async function reproducirDrama(
         false;
 
 
-    playerState.pendingRead =
-        false;
-
-
     playerState.seekInProgress =
         false;
 
@@ -6186,12 +6261,20 @@ async function reproducirDrama(
         true;
 
 
-    playerState.playAttempt =
-        false;
-
-
     playerState.streamGeneration =
         0;
+
+
+    playerState.bootstrapBuffers =
+        [];
+
+
+    playerState.bootstrapEnd =
+        0;
+
+
+    playerState.bootstrapReady =
+        false;
 
 
     reproductorActual =
@@ -6244,13 +6327,17 @@ async function reproducirDrama(
     );
 
 
+    /*
+     * Registrar vista.
+     */
+
     registrarVista(
         drama
     ).then(
-        viewsActualizadas => {
+        views => {
 
             if (
-                viewsActualizadas ===
+                views ===
                 null
             ) {
 
@@ -6260,12 +6347,12 @@ async function reproducirDrama(
 
 
             drama.views =
-                viewsActualizadas;
+                views;
 
 
-            actualizarTOPTarjeta(
+            actualizarVistasTarjeta(
                 drama,
-                viewsActualizadas
+                views
             );
 
         }
@@ -6298,184 +6385,21 @@ async function reproducirDrama(
         );
 
 
-        playerState.mp4box =
-            MP4BoxAPI.createFile();
-
-
-        configurarMP4Box();
-
-
-        crearPromesaMetadata();
-
-
-        mostrarLoading(
-            "Analizando estructura del vídeo..."
+        await inicializarSesionInicial(
+            operationId
         );
 
 
-        actualizarEstadoPlayer(
-            "Buscando estructura MP4..."
-        );
+        /*
+         * La sesión inicial ya comenzó
+         * su streaming en segundo plano.
+         */
+
+        playerState.loading =
+            false;
 
 
-        const encontrado =
-            await localizarMOOV(
-                operationId
-            );
-
-
-        if (
-            !encontrado
-        ) {
-
-            throw new Error(
-                "No se pudo localizar la estructura MOOV del vídeo."
-            );
-
-        }
-
-
-        if (
-            playerState.mp4Error
-        ) {
-
-            throw new Error(
-                "MP4Box informó un error."
-            );
-
-        }
-
-
-        if (
-            !playerState.mp4Ready
-        ) {
-
-            await Promise.race(
-                [
-                    playerState.metadataPromise,
-
-                    new Promise(
-                        resolve =>
-                            setTimeout(
-                                resolve,
-                                5000
-                            )
-                    )
-
-                ]
-            );
-
-        }
-
-
-        if (
-            !playerState.mp4Ready
-        ) {
-
-            throw new Error(
-                "MP4Box no terminó de analizar el vídeo."
-            );
-
-        }
-
-
-        let seekResult =
-            0;
-
-
-        try {
-
-            seekResult =
-                playerState.mp4box.seek(
-                    0,
-                    true
-                );
-
-        } catch (
-            error
-        ) {
-
-            console.warn(
-                "[REPRODUCTOR] seek inicial:",
-                error
-            );
-
-        }
-
-
-        const mediaOffset =
-            obtenerOffsetSeek(
-                seekResult
-            );
-
-
-        await esperarMediaSourceAbierto();
-
-
-        const inicioBuffers =
-            Date.now();
-
-
-        while (
-            playerState.sourceBuffers.size ===
-                0 &&
-            Date.now() -
-                inicioBuffers <
-                10000
-        ) {
-
-            await new Promise(
-                resolve =>
-                    setTimeout(
-                        resolve,
-                        50
-                    )
-            );
-
-        }
-
-
-        if (
-            playerState.sourceBuffers.size ===
-            0
-        ) {
-
-            throw new Error(
-                "No se pudieron crear los SourceBuffers."
-            );
-
-        }
-
-
-        mostrarLoading(
-            "Iniciando reproducción..."
-        );
-
-
-        actualizarEstadoPlayer(
-            "Descargando vídeo..."
-        );
-
-
-        await esperarColas();
-
-
-        await iniciarStreamingMedia(
-            mediaOffset,
-            operationId,
-            playerState.streamGeneration
-        );
-
-
-        if (
-            !playerState.playbackStarted &&
-            obtenerBufferAdelante() >=
-            BUFFER_INICIAL
-        ) {
-
-            await intentarReproduccion();
-
-        }
+        actualizarDiagnostico();
 
 
     } catch (
@@ -6502,9 +6426,8 @@ async function reproducirDrama(
             true;
 
 
-        actualizarEstadoPlayer(
-            `Error: ${error.message || error}`
-        );
+        playerState.loading =
+            false;
 
 
         mostrarLoading(
@@ -6513,22 +6436,52 @@ async function reproducirDrama(
         );
 
 
-    } finally {
-
-        if (
-            operationId ===
-            playerState.operationId
-        ) {
-
-            playerState.loading =
-                false;
-
-
-            actualizarDiagnostico();
-
-        }
+        actualizarEstadoPlayer(
+            `Error: ${
+                error.message ||
+                error
+            }`
+        );
 
     }
+
+}
+
+
+/* =========================================================
+   SEEK DESDE BARRA
+========================================================= */
+
+async function ejecutarSeekDesdeBarra() {
+
+    const destino =
+        Number(
+            playerState.pendingSeekTime
+        );
+
+
+    playerState.userSeeking =
+        false;
+
+
+    playerState.pendingSeekTime =
+        null;
+
+
+    if (
+        !Number.isFinite(
+            destino
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    await ejecutarSeekReal(
+        destino
+    );
 
 }
 
@@ -6545,13 +6498,8 @@ async function ejecutarSeekReal(
         playerState.videoElement;
 
 
-    const mp4box =
-        playerState.mp4box;
-
-
     if (
         !video ||
-        !mp4box ||
         !playerState.mp4Ready ||
         playerState.stopped
     ) {
@@ -6571,7 +6519,8 @@ async function ejecutarSeekReal(
         !Number.isFinite(
             duration
         ) ||
-        duration <= 0
+        duration <=
+        0
     ) {
 
         return;
@@ -6593,8 +6542,8 @@ async function ejecutarSeekReal(
 
 
     /*
-     * Si ya tenemos el punto,
-     * el salto es instantáneo.
+     * Si el punto está en el buffer,
+     * no necesitamos reconstruir nada.
      */
 
     if (
@@ -6613,7 +6562,7 @@ async function ejecutarSeekReal(
         ) {
 
             console.warn(
-                "[REPRODUCTOR] Seek buffer:",
+                "[REPRODUCTOR] Seek local:",
                 error
             );
 
@@ -6626,15 +6575,11 @@ async function ejecutarSeekReal(
 
 
     /*
-     * Si hay otro seek activo,
-     * lo invalidamos.
+     * Evitar seeks simultáneos.
      */
 
-    playerState.seekToken++;
-
-
     const token =
-        playerState.seekToken;
+        ++playerState.seekToken;
 
 
     const estabaReproduciendo =
@@ -6649,18 +6594,23 @@ async function ejecutarSeekReal(
         true;
 
 
-    const generation =
-        ++playerState.streamGeneration;
-
-
     const operationId =
         playerState.operationId;
+
+
+    const generation =
+        ++playerState.streamGeneration;
 
 
     try {
 
         console.log(
-            `[REPRODUCTOR] ===== SEEK → ${formatoTiempo(tiempo)} =====`
+            `[REPRODUCTOR] =================================`
+        );
+
+
+        console.log(
+            `[REPRODUCTOR] SEEK REMOTO → ${formatoTiempo(tiempo)}`
         );
 
 
@@ -6678,46 +6628,268 @@ async function ejecutarSeekReal(
 
 
         /*
-         * Detener procesamiento anterior.
+         * Detener MP4Box anterior.
          */
 
-        try {
-
-            mp4box.stop();
-
-        } catch (
-            error
+        if (
+            playerState.mp4box
         ) {
 
-            console.warn(
-                "[REPRODUCTOR] MP4Box.stop():",
-                error
+            try {
+
+                playerState.mp4box.stop();
+
+            } catch {
+
+                /* Sin acción */
+
+            }
+
+        }
+
+
+        /*
+         * Liberar MediaSource anterior.
+         */
+
+        const oldUrl =
+            playerState.mediaSourceUrl;
+
+
+        const oldMediaSource =
+            playerState.mediaSource;
+
+
+        if (
+            oldMediaSource &&
+            oldMediaSource.readyState ===
+            "open"
+        ) {
+
+            try {
+
+                oldMediaSource.endOfStream();
+
+            } catch {
+
+                /* Sin acción */
+
+            }
+
+        }
+
+
+        if (
+            oldUrl
+        ) {
+
+            try {
+
+                URL.revokeObjectURL(
+                    oldUrl
+                );
+
+            } catch {
+
+                /* Sin acción */
+
+            }
+
+        }
+
+
+        /*
+         * Vaciar estado MSE.
+         */
+
+        playerState.mediaSource =
+            null;
+
+
+        playerState.mediaSourceUrl =
+            null;
+
+
+        playerState.sourceBuffers =
+            new Map();
+
+
+        playerState.sourceQueues =
+            new Map();
+
+
+        playerState.initSegments =
+            new Map();
+
+
+        playerState.mp4Ready =
+            false;
+
+
+        playerState.mp4Error =
+            false;
+
+
+        playerState.streamStarted =
+            false;
+
+
+        playerState.playbackStarted =
+            false;
+
+
+        /*
+         * Crear nuevo MP4Box.
+         */
+
+        const mp4box =
+            crearNuevoMP4Box();
+
+
+        /*
+         * Alimentar nuevamente
+         * el encabezado necesario.
+         */
+
+        if (
+            !playerState.bootstrapReady ||
+            playerState.bootstrapBuffers.length ===
+            0
+        ) {
+
+            throw new Error(
+                "No existe información inicial para reconstruir el reproductor."
+            );
+
+        }
+
+
+        actualizarEstadoPlayer(
+            "Reconstruyendo estructura MP4..."
+        );
+
+
+        for (
+            const bloque
+            of
+            playerState.bootstrapBuffers
+        ) {
+
+            if (
+                token !==
+                playerState.seekToken
+            ) {
+
+                return;
+
+            }
+
+
+            const copia =
+                bloque.slice(
+                    0
+                );
+
+
+            copia.fileStart =
+                obtenerFileStartBootstrap(
+                    bloque,
+                    playerState.bootstrapBuffers
+                );
+
+
+            mp4box.appendBuffer(
+                copia
+            );
+
+
+            if (
+                playerState.mp4Ready
+            ) {
+
+                break;
+
+            }
+
+        }
+
+
+        /*
+         * Si el bloque guardado no fue suficiente,
+         * continuamos leyendo desde el principio
+         * hasta obtener MOOV.
+         */
+
+        if (
+            !playerState.mp4Ready
+        ) {
+
+            let offset =
+                playerState.bootstrapEnd;
+
+
+            while (
+                !playerState.mp4Ready &&
+                !playerState.mp4Error &&
+                offset <
+                Math.min(
+                    playerState.fileSize,
+                    SEEK_REINICIO_MAX
+                )
+            ) {
+
+                const size =
+                    Math.min(
+                        RANGO_MEDIA,
+                        playerState.fileSize -
+                        offset
+                    );
+
+
+                const bloque =
+                    await leerRangoMega(
+                        offset,
+                        size,
+                        false
+                    );
+
+
+                bloque.buffer.fileStart =
+                    offset;
+
+
+                mp4box.appendBuffer(
+                    bloque.buffer
+                );
+
+
+                offset =
+                    bloque.end +
+                    1;
+
+            }
+
+        }
+
+
+        if (
+            !playerState.mp4Ready
+        ) {
+
+            throw new Error(
+                "MP4Box no pudo reconstruir la estructura del vídeo."
             );
 
         }
 
 
         /*
-         * Invalidar cualquier cola anterior.
+         * Crear MediaSource nuevo.
          */
 
-        for (
-            const queue
-            of
-            playerState.sourceQueues.values()
-        ) {
-
-            queue.length =
-                0;
-
-        }
-
-
-        /*
-         * Limpiar SourceBuffers.
-         */
-
-        await limpiarBuffersParaSeek();
+        await crearSesionMedia(
+            operationId
+        );
 
 
         if (
@@ -6731,143 +6903,100 @@ async function ejecutarSeekReal(
 
 
         /*
-         * MP4Box calcula el byte
-         * donde debemos continuar.
+         * Ahora MP4Box ya conoce
+         * el MP4 y podemos obtener
+         * el offset correspondiente
+         * al tiempo solicitado.
          */
 
-        const resultado =
+        const resultadoSeek =
             mp4box.seek(
                 tiempo,
                 true
             );
 
 
-        const offset =
+        const offsetMega =
             obtenerOffsetSeek(
-                resultado
+                resultadoSeek
             );
 
 
         if (
             !Number.isFinite(
-                offset
+                offsetMega
             ) ||
-            offset < 0 ||
-            offset >=
+            offsetMega <
+            0 ||
+            offsetMega >=
             playerState.fileSize
         ) {
 
             throw new Error(
-                `MP4Box devolvió un offset inválido: ${offset}`
+                `Offset de SEEK inválido: ${offsetMega}`
             );
 
         }
 
 
         console.log(
-            `[REPRODUCTOR] ✓ MP4Box.seek(${tiempo.toFixed(2)}, true) → ${offset.toLocaleString()}`
+            `[REPRODUCTOR] ✓ MP4Box.seek(${tiempo.toFixed(2)}, true)`
         );
 
 
-        playerState.cursor =
-            offset;
+        console.log(
+            `[REPRODUCTOR] ✓ Offset MEGA: ${offsetMega.toLocaleString()}`
+        );
 
 
         /*
-         * Restaurar los segmentos
-         * de inicialización.
+         * Inicializar reproducción
+         * desde el punto solicitado.
          */
 
-        for (
-            const [
-                trackId,
-                initBuffer
-            ]
-            of
-            playerState.initSegments.entries()
-        ) {
+        video.currentTime =
+            tiempo;
 
-            encolarSourceBuffer(
-                trackId,
-                initBuffer
-            );
 
-        }
+        actualizarEstadoPlayer(
+            `Cargando ${formatoTiempo(tiempo)}...`
+        );
+
+
+        playerState.streamStarted =
+            true;
 
 
         /*
-         * Esperar a que la inicialización
-         * vuelva al MSE.
-         */
-
-        await esperarColas();
-
-
-        if (
-            token !==
-            playerState.seekToken
-        ) {
-
-            return;
-
-        }
-
-
-        /*
-         * Colocar el playhead.
-         */
-
-        try {
-
-            video.currentTime =
-                tiempo;
-
-        } catch (
-            error
-        ) {
-
-            console.warn(
-                "[REPRODUCTOR] currentTime:",
-                error
-            );
-
-        }
-
-
-        /*
-         * Lanzar nuevo streaming
-         * desde el byte calculado.
+         * Lanzar nuevo flujo.
          */
 
         iniciarStreamingMedia(
-            offset,
+            offsetMega,
             operationId,
             generation
         ).catch(
             error => {
 
                 if (
-                    token !==
+                    token ===
                     playerState.seekToken
                 ) {
 
-                    return;
+                    console.error(
+                        "[REPRODUCTOR] Streaming SEEK:",
+                        error
+                    );
 
                 }
-
-
-                console.error(
-                    "[REPRODUCTOR] Streaming después de seek:",
-                    error
-                );
 
             }
         );
 
 
         /*
-         * Esperar hasta que el destino
-         * aparezca realmente en el buffer.
+         * Esperar a que aparezca
+         * el punto solicitado.
          */
 
         const disponible =
@@ -6893,7 +7022,7 @@ async function ejecutarSeekReal(
         ) {
 
             throw new Error(
-                `No se pudo cargar ${formatoTiempo(tiempo)}.`
+                `El punto ${formatoTiempo(tiempo)} no llegó al buffer.`
             );
 
         }
@@ -6933,12 +7062,7 @@ async function ejecutarSeekReal(
                     `Reproduciendo desde ${formatoTiempo(tiempo)}`
                 );
 
-            } catch (
-                error
-            ) {
-
-                actualizarBotonPlay();
-
+            } catch {
 
                 actualizarEstadoPlayer(
                     `Listo en ${formatoTiempo(tiempo)} — pulsa PLAY`
@@ -6963,7 +7087,7 @@ async function ejecutarSeekReal(
 
 
         console.log(
-            `[REPRODUCTOR] ✓ Seek completado → ${formatoTiempo(tiempo)}`
+            `[REPRODUCTOR] ✓ SEEK COMPLETADO → ${formatoTiempo(tiempo)}`
         );
 
 
@@ -6971,31 +7095,24 @@ async function ejecutarSeekReal(
         error
     ) {
 
-        if (
-            token ===
-            playerState.seekToken
-        ) {
-
-            console.error(
-                "[REPRODUCTOR] SEEK:",
-                error
-            );
+        console.error(
+            "[REPRODUCTOR] SEEK ERROR:",
+            error
+        );
 
 
-            actualizarEstadoPlayer(
-                `Error de seek: ${
-                    error.message ||
-                    error
-                }`
-            );
-
-
-            mostrarLoading(
+        actualizarEstadoPlayer(
+            `Error de seek: ${
                 error.message ||
-                "No se pudo realizar el salto."
-            );
+                error
+            }`
+        );
 
-        }
+
+        mostrarLoading(
+            error.message ||
+            "No se pudo realizar el salto."
+        );
 
     } finally {
 
@@ -7015,303 +7132,47 @@ async function ejecutarSeekReal(
 
 
 /* =========================================================
-   LIMPIAR BUFFERS PARA SEEK
+   FILESTART DEL BOOTSTRAP
 ========================================================= */
 
-async function limpiarBuffersParaSeek() {
+function obtenerFileStartBootstrap(
+    buffer,
+    buffers
+) {
 
-    const sourceBuffers =
-        Array.from(
-            playerState.sourceBuffers.values()
-        );
+    let offset =
+        0;
 
 
     for (
-        const sourceBuffer
+        const actual
         of
-        sourceBuffers
+        buffers
     ) {
 
         if (
-            !sourceBuffer
+            actual ===
+            buffer
         ) {
 
-            continue;
+            return offset;
 
         }
 
 
-        if (
-            sourceBuffer.updating
-        ) {
-
-            try {
-
-                sourceBuffer.abort();
-
-            } catch {
-
-                /* Sin acción */
-
-            }
-
-
-            await esperarSourceBufferLibre(
-                sourceBuffer
-            );
-
-        }
-
-
-        const rangos =
-            [];
-
-
-        try {
-
-            for (
-                let i = 0;
-                i < sourceBuffer.buffered.length;
-                i++
-            ) {
-
-                rangos.push(
-                    {
-                        inicio:
-                            sourceBuffer.buffered.start(i),
-
-                        fin:
-                            sourceBuffer.buffered.end(i)
-
-                    }
-                );
-
-            }
-
-        } catch {
-
-            continue;
-
-        }
-
-
-        for (
-            const rango of
-            rangos
-        ) {
-
-            if (
-                rango.fin <=
-                rango.inicio
-            ) {
-
-                continue;
-
-            }
-
-
-            await new Promise(
-                resolve => {
-
-                    let terminado =
-                        false;
-
-
-                    const finalizar =
-                        () => {
-
-                            if (
-                                terminado
-                            ) {
-
-                                return;
-
-                            }
-
-
-                            terminado =
-                                true;
-
-
-                            clearTimeout(
-                                temporizador
-                            );
-
-
-                            sourceBuffer.removeEventListener(
-                                "updateend",
-                                finalizar
-                            );
-
-
-                            sourceBuffer.removeEventListener(
-                                "error",
-                                finalizar
-                            );
-
-
-                            sourceBuffer.removeEventListener(
-                                "abort",
-                                finalizar
-                            );
-
-
-                            resolve();
-
-                        };
-
-
-                    const temporizador =
-                        setTimeout(
-                            finalizar,
-                            10000
-                        );
-
-
-                    sourceBuffer.addEventListener(
-                        "updateend",
-                        finalizar
-                    );
-
-
-                    sourceBuffer.addEventListener(
-                        "error",
-                        finalizar
-                    );
-
-
-                    sourceBuffer.addEventListener(
-                        "abort",
-                        finalizar
-                    );
-
-
-                    try {
-
-                        sourceBuffer.remove(
-                            rango.inicio,
-                            rango.fin
-                        );
-
-                    } catch {
-
-                        finalizar();
-
-                    }
-
-                }
-            );
-
-        }
+        offset +=
+            actual.byteLength;
 
     }
+
+
+    return 0;
 
 }
 
 
 /* =========================================================
-   ESPERAR SOURCEBUFFER LIBRE
-========================================================= */
-
-function esperarSourceBufferLibre(
-    sourceBuffer,
-    timeout =
-        TIMEOUT_SOURCEBUFFER
-) {
-
-    if (
-        !sourceBuffer ||
-        !sourceBuffer.updating
-    ) {
-
-        return Promise.resolve();
-
-    }
-
-
-    return new Promise(
-        resolve => {
-
-            let terminado =
-                false;
-
-
-            const finalizar =
-                () => {
-
-                    if (
-                        terminado
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    terminado =
-                        true;
-
-
-                    clearTimeout(
-                        temporizador
-                    );
-
-
-                    sourceBuffer.removeEventListener(
-                        "updateend",
-                        finalizar
-                    );
-
-
-                    sourceBuffer.removeEventListener(
-                        "error",
-                        finalizar
-                    );
-
-
-                    sourceBuffer.removeEventListener(
-                        "abort",
-                        finalizar
-                    );
-
-
-                    resolve();
-
-                };
-
-
-            const temporizador =
-                setTimeout(
-                    finalizar,
-                    timeout
-                );
-
-
-            sourceBuffer.addEventListener(
-                "updateend",
-                finalizar
-            );
-
-
-            sourceBuffer.addEventListener(
-                "error",
-                finalizar
-            );
-
-
-            sourceBuffer.addEventListener(
-                "abort",
-                finalizar
-            );
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   ESPERAR PUNTO EN BUFFER
+   ESPERAR BUFFER EN PUNTO
 ========================================================= */
 
 function esperarBufferEnPunto(
@@ -7393,6 +7254,258 @@ function esperarBufferEnPunto(
 
 
 /* =========================================================
+   OBTENER OFFSET
+========================================================= */
+
+function obtenerOffsetSeek(
+    resultado
+) {
+
+    if (
+        Number.isFinite(
+            resultado
+        )
+    ) {
+
+        return resultado;
+
+    }
+
+
+    if (
+        resultado &&
+        Number.isFinite(
+            resultado.offset
+        )
+    ) {
+
+        return resultado.offset;
+
+    }
+
+
+    return 0;
+
+}
+
+
+/* =========================================================
+   FULLSCREEN
+========================================================= */
+
+async function alternarPantallaCompleta() {
+
+    const elementos =
+        playerState.playerElements;
+
+
+    if (
+        !elementos
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        if (
+            document.fullscreenElement
+        ) {
+
+            await document.exitFullscreen();
+
+            return;
+
+        }
+
+
+        if (
+            elementos.ventana.requestFullscreen
+        ) {
+
+            await elementos.ventana.requestFullscreen();
+
+        }
+
+    } catch (
+        error
+    ) {
+
+        console.warn(
+            "[REPRODUCTOR] Fullscreen:",
+            error
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   TECLADO
+========================================================= */
+
+function manejarTecladoPlayer(
+    evento
+) {
+
+    const reproductor =
+        document.getElementById(
+            "md-player"
+        );
+
+
+    if (
+        !reproductor ||
+        !reproductor.classList.contains(
+            "is-open"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const video =
+        playerState.videoElement;
+
+
+    if (
+        !video
+    ) {
+
+        return;
+
+    }
+
+
+    const tag =
+        evento.target?.tagName;
+
+
+    if (
+        tag ===
+        "INPUT" ||
+        tag ===
+        "TEXTAREA"
+    ) {
+
+        return;
+
+    }
+
+
+    switch (
+        evento.key.toLowerCase()
+    ) {
+
+        case " ":
+
+        case "k":
+
+            evento.preventDefault();
+
+
+            if (
+                video.paused
+            ) {
+
+                playerState.allowAutoplay =
+                    true;
+
+
+                video.play().catch(
+                    () => {}
+                );
+
+            } else {
+
+                playerState.allowAutoplay =
+                    false;
+
+
+                video.pause();
+
+            }
+
+            break;
+
+
+        case "arrowleft":
+
+            evento.preventDefault();
+
+
+            ejecutarSeekReal(
+                Math.max(
+                    0,
+                    video.currentTime -
+                    5
+                )
+            );
+
+            break;
+
+
+        case "arrowright":
+
+            evento.preventDefault();
+
+
+            if (
+                Number.isFinite(
+                    video.duration
+                )
+            ) {
+
+                ejecutarSeekReal(
+                    Math.min(
+                        video.duration -
+                        0.05,
+                        video.currentTime +
+                        5
+                    )
+                );
+
+            }
+
+            break;
+
+
+        case "m":
+
+            evento.preventDefault();
+
+
+            video.muted =
+                !video.muted;
+
+
+            actualizarIconoVolumen();
+
+
+            break;
+
+
+        case "f":
+
+            evento.preventDefault();
+
+
+            alternarPantallaCompleta();
+
+
+            break;
+
+    }
+
+}
+
+
+/* =========================================================
    DIAGNÓSTICO
 ========================================================= */
 
@@ -7463,10 +7576,6 @@ function detenerReproductor() {
 
 
     playerState.streamGeneration++;
-
-
-    playerState.seekInProgress =
-        false;
 
 
     if (
@@ -7585,8 +7694,8 @@ function detenerReproductor() {
         false;
 
 
-    playerState.allowAutoplay =
-        true;
+    playerState.seekInProgress =
+        false;
 
 
     reproductorActual =
@@ -7680,23 +7789,15 @@ function mostrarMensajeSinVideo(
         `;
 
 
-    const titulo =
-        mensaje.querySelector(
-            "strong"
-        );
-
-
-    titulo.textContent =
+    mensaje.querySelector(
+        "strong"
+    ).textContent =
         tituloDrama;
 
 
-    const cerrar =
-        mensaje.querySelector(
-            ".video-missing-message__close"
-        );
-
-
-    cerrar.addEventListener(
+    mensaje.querySelector(
+        ".video-missing-message__close"
+    ).addEventListener(
         "click",
         () => {
 
@@ -7753,12 +7854,14 @@ document.addEventListener(
                         () => {}
                     );
 
+
                 return;
 
             }
 
 
             cerrarReproductor();
+
 
             return;
 

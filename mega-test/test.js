@@ -43,6 +43,8 @@ import {
     File as MEGAFile
 } from "https://unpkg.com/megajs/dist/main.browser-es.mjs";
 
+import * as MP4Box
+from "https://cdn.jsdelivr.net/npm/mp4box@2.4.1/dist/mp4box.all.mjs";
 
 /* =========================================================
    VIDEOS DE PRUEBA
@@ -1050,95 +1052,7 @@ function createPlayerInterface() {
 }
 
 
-/* =========================================================
-   CARGAR MP4BOX.JS
-========================================================= */
 
-async function loadMP4Box() {
-
-    if (
-        window.MP4Box
-    ) {
-
-        return window.MP4Box;
-
-    }
-
-
-    log(
-        "Cargando MP4Box.js...",
-        "info"
-    );
-
-
-    await new Promise(
-        (
-            resolve,
-            reject
-        ) => {
-
-            const script =
-                document.createElement(
-                    "script"
-                );
-
-
-            script.src =
-                "https://cdn.jsdelivr.net/npm/mp4box/dist/mp4box.all.js";
-
-
-            script.async =
-                true;
-
-
-            script.onload =
-                () => {
-
-                    log(
-                        "✓ MP4Box.js cargado.",
-                        "success"
-                    );
-
-
-                    resolve();
-
-                };
-
-
-            script.onerror =
-                () => {
-
-                    reject(
-                        new Error(
-                            "No se pudo cargar MP4Box.js."
-                        )
-                    );
-
-                };
-
-
-            document.head.appendChild(
-                script
-            );
-
-        }
-    );
-
-
-    if (
-        !window.MP4Box
-    ) {
-
-        throw new Error(
-            "MP4Box.js no quedó disponible."
-        );
-
-    }
-
-
-    return window.MP4Box;
-
-}
 
 
 /* =========================================================
@@ -1449,9 +1363,6 @@ async function analyzeMP4() {
             "info"
         );
 
-
-        const MP4Box =
-            await loadMP4Box();
 
 
         const parser =
@@ -2551,8 +2462,7 @@ async function startExperimentalPlayer() {
 
     try {
 
-        const MP4Box =
-            await loadMP4Box();
+        
 
 
         mp4box =
@@ -2836,6 +2746,40 @@ function stopExperimentalPlayer() {
     log(
         "Reproductor detenido por el usuario.",
         "info"
+    );
+
+}
+
+/* =========================================================
+   OBTENER MENSAJE DE ERROR
+========================================================= */
+
+function getErrorMessage(
+    error
+) {
+
+    if (
+        error instanceof Error
+    ) {
+
+        return error.message;
+
+    }
+
+
+    if (
+        error &&
+        typeof error.message ===
+        "string"
+    ) {
+
+        return error.message;
+
+    }
+
+
+    return String(
+        error
     );
 
 }

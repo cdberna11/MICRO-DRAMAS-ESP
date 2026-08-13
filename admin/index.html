@@ -526,6 +526,59 @@
 
 
             <!-- =================================================
+                 BÚSQUEDA
+            ================================================== -->
+
+            <div
+                id="contenedor-busqueda"
+                class="admin-search"
+                hidden
+            >
+
+                <div class="admin-search__input-wrapper">
+
+                    <span
+                        class="admin-search__icon"
+                        aria-hidden="true"
+                    >
+                        🔎
+                    </span>
+
+
+                    <input
+                        type="search"
+                        id="buscador-dramas"
+                        class="admin-search__input"
+                        placeholder="Buscar por nombre, ID o plataforma..."
+                        autocomplete="off"
+                        aria-label="Buscar microdramas"
+                    >
+
+
+                    <button
+                        id="boton-limpiar-busqueda"
+                        class="admin-search__clear"
+                        type="button"
+                        aria-label="Limpiar búsqueda"
+                        title="Limpiar búsqueda"
+                        hidden
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="resultado-busqueda"
+                    class="admin-search__result"
+                    aria-live="polite"
+                ></div>
+
+            </div>
+
+
+            <!-- =================================================
                  TABLA
             ================================================== -->
 

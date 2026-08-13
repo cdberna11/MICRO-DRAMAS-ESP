@@ -6183,25 +6183,23 @@ async function ejecutarSeekDesdeBarra() {
             playerState.pendingSeekTime
         );
 
-
     playerState.userSeeking =
         false;
-
 
     playerState.pendingSeekTime =
         null;
 
-
     if (
-        !Number.isFinite(
-            destino
-        )
+        !Number.isFinite(destino)
     ) {
 
         return;
 
     }
 
+    console.log(
+        `[BARRA] SEEK solicitado → ${formatoTiempo(destino)}`
+    );
 
     await ejecutarSeekReal(
         destino
@@ -6835,42 +6833,132 @@ async function ejecutarSeekRemoto(
          * en SourceBuffer.
          */
 
-        const disponible =
-            await esperarBufferEnPunto(
-                tiempo,
-                token,
-                30000
-            );
+        const puntoDisponible =
+    await esperarBufferEnPunto(
+        tiempo,
+        token,
+        30000
+    );
 
 
-        if (
-            token !==
-            playerState.seekToken ||
-            playerState.stopped
-        ) {
+if (
+    token !==
+    playerState.seekToken ||
+    playerState.stopped
+) {
 
-            return;
+    return;
 
-        }
-
-
-        if (
-            !disponible
-        ) {
-
-            throw new Error(
-                `El punto ${formatoTiempo(tiempo)} no llegó al buffer después de 30 segundos.`
-            );
-
-        }
+}
 
 
-        /*
-         * Colocar posición exacta.
-         */
+if (
+    !Number.isFinite(
+        puntoDisponible
+    )
+) {
 
-        video.currentTime =
-            tiempo;
+    throw new Error(
+        `No se pudo localizar el punto ${formatoTiempo(tiempo)} en el buffer.`
+    );
+
+}
+
+
+/*
+ * =====================================================
+ * POSICIONAMIENTO FINAL
+ * =====================================================
+ *
+ * Si el punto exacto está disponible:
+ *
+ *     5:05 → 5:05
+ *
+ * Si MP4Box/MSE comenzó el segmento unos
+ * segundos después:
+ *
+ *     solicitado 5:05
+ *     disponible 5:07
+ *     → comenzamos en 5:07
+ *
+ * Esto evita quedar atrapados esperando
+ * eternamente un timestamp que no existe
+ * exactamente dentro del segmento.
+ */
+
+let posicionFinal =
+    puntoDisponible;
+
+
+/*
+ * Si el punto solicitado está realmente
+ * dentro del rango de buffer, preferimos
+ * SIEMPRE el punto exacto.
+ */
+
+if (
+    estaEnBuffer(
+        tiempo
+    )
+) {
+
+    posicionFinal =
+        tiempo;
+
+}
+
+
+/*
+ * Seguridad contra valores fuera
+ * de la duración.
+ */
+
+posicionFinal =
+    Math.max(
+        0,
+        Math.min(
+            duration - 0.05,
+            posicionFinal
+        )
+    );
+
+
+console.log(
+    `[SEEK] Posicionamiento final → solicitado ${formatoTiempo(tiempo)} / usado ${formatoTiempo(posicionFinal)}`
+);
+
+
+try {
+
+    video.currentTime =
+        posicionFinal;
+
+} catch (
+    error
+) {
+
+    throw new Error(
+        `No se pudo posicionar el vídeo: ${
+            error.message ||
+            error
+        }`
+    );
+
+}
+
+
+await new Promise(
+    resolve =>
+        setTimeout(
+            resolve,
+            150
+        )
+);
+
+
+console.log(
+    `[SEEK] Resultado final: ${formatoTiempo(video.currentTime)}`
+);
 
 
         await new Promise(
@@ -7038,8 +7126,7 @@ async function ejecutarSeekRemoto(
 function esperarBufferEnPunto(
     tiempo,
     token,
-    timeout =
-        30000
+    timeout = 30000
 ) {
 
     return new Promise(
@@ -7048,6 +7135,8 @@ function esperarBufferEnPunto(
             const inicio =
                 Date.now();
 
+            const TOLERANCIA_CERCANA =
+                4;
 
             const revisar =
                 () => {
@@ -7059,28 +7148,151 @@ function esperarBufferEnPunto(
                     ) {
 
                         resolve(
-                            false
+                            null
                         );
 
                         return;
 
                     }
 
+                    const video =
+                        playerState.videoElement;
 
                     if (
-                        estaEnBuffer(
-                            tiempo
+                        !video ||
+                        !video.buffered ||
+                        video.buffered.length === 0
+                    ) {
+
+                        if (
+                            Date.now() -
+                            inicio >=
+                            timeout
+                        ) {
+
+                            resolve(
+                                null
+                            );
+
+                            return;
+
+                        }
+
+                        setTimeout(
+                            revisar,
+                            100
+                        );
+
+                        return;
+
+                    }
+
+                    let mejorPunto =
+                        null;
+
+                    let menorDistancia =
+                        Infinity;
+
+                    for (
+                        let i = 0;
+                        i <
+                        video.buffered.length;
+                        i++
+                    ) {
+
+                        const inicioBuffer =
+                            video.buffered.start(
+                                i
+                            );
+
+                        const finBuffer =
+                            video.buffered.end(
+                                i
+                            );
+
+                        /*
+                         * CASO IDEAL:
+                         * el punto solicitado está
+                         * directamente dentro del buffer.
+                         */
+
+                        if (
+                            tiempo >=
+                            inicioBuffer &&
+                            tiempo <=
+                            finBuffer
+                        ) {
+
+                            console.log(
+                                `[SEEK] ✓ Punto exacto en buffer: ${formatoTiempo(tiempo)}`
+                            );
+
+                            resolve(
+                                tiempo
+                            );
+
+                            return;
+
+                        }
+
+                        /*
+                         * Si MP4Box empieza el segmento
+                         * unos segundos después del punto
+                         * solicitado, utilizamos el inicio
+                         * real del segmento.
+                         */
+
+                        const distanciaInicio =
+                            Math.abs(
+                                inicioBuffer -
+                                tiempo
+                            );
+
+                        if (
+                            distanciaInicio <=
+                            TOLERANCIA_CERCANA &&
+                            distanciaInicio <
+                            menorDistancia
+                        ) {
+
+                            menorDistancia =
+                                distanciaInicio;
+
+                            mejorPunto =
+                                inicioBuffer;
+
+                        }
+
+                        /*
+                         * Si el punto está inmediatamente
+                         * después del final del buffer,
+                         * seguimos esperando más datos.
+                         */
+
+                    }
+
+                    /*
+                     * Tenemos un segmento suficientemente
+                     * cercano al punto solicitado.
+                     */
+
+                    if (
+                        Number.isFinite(
+                            mejorPunto
                         )
                     ) {
 
+                        console.log(
+                            `[SEEK] ✓ Buffer cercano: destino ${formatoTiempo(tiempo)} → inicio disponible ${formatoTiempo(mejorPunto)}`
+                        );
+
                         resolve(
-                            true
+                            mejorPunto
                         );
 
                         return;
 
                     }
-
 
                     if (
                         Date.now() -
@@ -7088,14 +7300,46 @@ function esperarBufferEnPunto(
                         timeout
                     ) {
 
+                        console.warn(
+                            `[SEEK] Timeout esperando buffer para ${formatoTiempo(tiempo)}`
+                        );
+
+                        /*
+                         * Mostrar los rangos reales ayuda
+                         * a diagnosticar futuros problemas.
+                         */
+
+                        const rangos = [];
+
+                        for (
+                            let i = 0;
+                            i <
+                            video.buffered.length;
+                            i++
+                        ) {
+
+                            rangos.push(
+                                `${formatoTiempo(
+                                    video.buffered.start(i)
+                                )}-${formatoTiempo(
+                                    video.buffered.end(i)
+                                )}`
+                            );
+
+                        }
+
+                        console.warn(
+                            "[SEEK] Rangos disponibles:",
+                            rangos
+                        );
+
                         resolve(
-                            false
+                            null
                         );
 
                         return;
 
                     }
-
 
                     setTimeout(
                         revisar,
@@ -7103,7 +7347,6 @@ function esperarBufferEnPunto(
                     );
 
                 };
-
 
             revisar();
 
@@ -7676,12 +7919,143 @@ window.addEventListener(
 
 
 /* =========================================================
+   SEEK ROBUSTO DE LA BARRA
+========================================================= */
+
+function instalarSeekBarraRobusta() {
+
+    const progress =
+        playerState.playerElements?.progress;
+
+
+    if (
+        !progress
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        progress.dataset.seekRobusto ===
+        "1"
+    ) {
+
+        return;
+
+    }
+
+
+    progress.dataset.seekRobusto =
+        "1";
+
+
+    /*
+     * Algunos navegadores disparan
+     * change de forma diferente cuando
+     * se utiliza el ratón/touch.
+     *
+     * pointerup garantiza que el destino
+     * se procese cuando el usuario termina
+     * de mover la barra.
+     */
+
+    progress.addEventListener(
+        "pointerup",
+        () => {
+
+            if (
+                !playerState.userSeeking
+            ) {
+
+                return;
+
+            }
+
+
+            ejecutarSeekDesdeBarra();
+
+        }
+    );
+
+
+    /*
+     * Soporte adicional para teclado.
+     */
+
+    progress.addEventListener(
+        "keyup",
+        evento => {
+
+            if (
+                evento.key !==
+                "ArrowLeft" &&
+                evento.key !==
+                "ArrowRight"
+            ) {
+
+                return;
+
+            }
+
+
+            const duration =
+                obtenerDuracionVideo();
+
+
+            if (
+                !Number.isFinite(
+                    duration
+                ) ||
+                duration <=
+                0
+            ) {
+
+                return;
+
+            }
+
+
+            const destino =
+                duration *
+                (
+                    Number(
+                        progress.value
+                    ) /
+                    100
+                );
+
+
+            playerState.pendingSeekTime =
+                destino;
+
+
+            playerState.userSeeking =
+                false;
+
+
+            ejecutarSeekDesdeBarra();
+
+        }
+    );
+
+
+    console.log(
+        "[BARRA] ✓ SEEK robusto instalado."
+    );
+
+}
+
+/* =========================================================
    INICIALIZAR
 ========================================================= */
 
 function inicializarReproductor() {
 
     crearReproductor();
+
+    instalarSeekBarraRobusta();
 
 }
 

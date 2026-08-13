@@ -86,6 +86,132 @@ let detalleMovilActual =
 let reproductorActual =
     null;
 
+/* =========================================================
+   MOTOR DE MEDIA SOURCE
+   - iPhone/iPad → ManagedMediaSource
+   - Android/Chromium → MediaSource
+========================================================= */
+
+function esDispositivoAppleMovil() {
+
+    const userAgent =
+        navigator.userAgent ||
+        "";
+
+    const esIOS =
+        /iPhone|iPad|iPod/i.test(
+            userAgent
+        );
+
+    /*
+     * iPadOS puede identificarse como Mac.
+     * Este caso permite detectarlo correctamente.
+     */
+
+    const esIPadOS =
+        navigator.platform ===
+            "MacIntel" &&
+        navigator.maxTouchPoints >
+            1;
+
+    return (
+        esIOS ||
+        esIPadOS
+    );
+
+}
+
+
+function obtenerMediaSourceAPI() {
+
+    /*
+     * =====================================================
+     * iPhone / iPad
+     * =====================================================
+     *
+     * Si existe ManagedMediaSource lo usamos.
+     */
+
+    if (
+        esDispositivoAppleMovil() &&
+        typeof window.ManagedMediaSource ===
+            "function"
+    ) {
+
+        return window.ManagedMediaSource;
+
+    }
+
+
+    /*
+     * =====================================================
+     * Android / Chrome / Chromium / Edge
+     * =====================================================
+     *
+     * Mantiene nuestro motor MSE actual.
+     */
+
+    if (
+        typeof window.MediaSource ===
+            "function"
+    ) {
+
+        return window.MediaSource;
+
+    }
+
+
+    /*
+     * Último recurso:
+     * si algún navegador ofrece MMS pero no
+     * MediaSource estándar.
+     */
+
+    if (
+        typeof window.ManagedMediaSource ===
+            "function"
+    ) {
+
+        return window.ManagedMediaSource;
+
+    }
+
+
+    return null;
+
+}
+
+
+function obtenerNombreMediaSource() {
+
+    const API =
+        obtenerMediaSourceAPI();
+
+
+    if (
+        API ===
+        window.ManagedMediaSource
+    ) {
+
+        return "ManagedMediaSource";
+
+    }
+
+
+    if (
+        API ===
+        window.MediaSource
+    ) {
+
+        return "MediaSource";
+
+    }
+
+
+    return "Ninguno";
+
+}
+
 
 /* =========================================================
    ESTADO DEL REPRODUCTOR
@@ -2180,12 +2306,35 @@ function crearReproductor() {
         "auto";
 
 
-    video.controls =
-        false;
+   video.controls =
+    false;
 
 
-    video.volume =
-        1;
+/*
+ * En iPhone/iPad ManagedMediaSource necesita
+ * que el remote playback esté deshabilitado
+ * cuando no existe una fuente alternativa
+ * AirPlay/HLS.
+ *
+ * No afecta Android/Chromium.
+ */
+
+if (
+    esDispositivoAppleMovil()
+) {
+
+    try {
+
+        video.disableRemotePlayback =
+            true;
+
+    } catch {}
+
+}
+
+
+video.volume =
+    1;
 
 
     const loading =
@@ -4411,14 +4560,24 @@ function configurarMP4Box(
    CREAR MEDIASOURCE
 ========================================================= */
 
+/* =========================================================
+   CREAR MEDIASOURCE
+   - iPhone/iPad → ManagedMediaSource
+   - Android/Chromium → MediaSource
+========================================================= */
+
 function crearMediaSource() {
 
+    const MediaSourceAPI =
+        obtenerMediaSourceAPI();
+
+
     if (
-        !window.MediaSource
+        !MediaSourceAPI
     ) {
 
         throw new Error(
-            "El navegador no soporta MediaSource."
+            "Este navegador no soporta MediaSource ni ManagedMediaSource."
         );
 
     }
@@ -4439,8 +4598,55 @@ function crearMediaSource() {
     }
 
 
+    /*
+     * =====================================================
+     * SAFARI / iPHONE / iPAD
+     * =====================================================
+     *
+     * ManagedMediaSource requiere que el remote playback
+     * esté deshabilitado si no proporcionamos una fuente
+     * alternativa compatible con AirPlay.
+     *
+     * Nuestro reproductor trabaja directamente con MEGA
+     * y MP4Box, por lo que utilizamos esta modalidad.
+     */
+
+    if (
+        MediaSourceAPI ===
+        window.ManagedMediaSource
+    ) {
+
+        try {
+
+            video.disableRemotePlayback =
+                true;
+
+        } catch (
+            error
+        ) {
+
+            console.warn(
+                "[REPRODUCTOR] No se pudo establecer disableRemotePlayback:",
+                error
+            );
+
+        }
+
+        console.log(
+            "[REPRODUCTOR] 🍎 Usando ManagedMediaSource."
+        );
+
+    } else {
+
+        console.log(
+            "[REPRODUCTOR] 🌐 Usando MediaSource estándar."
+        );
+
+    }
+
+
     const mediaSource =
-        new MediaSource();
+        new MediaSourceAPI();
 
 
     playerState.mediaSource =
@@ -4467,13 +4673,45 @@ function crearMediaSource() {
             reject
         ) => {
 
+            let terminado =
+                false;
+
+
+            const finalizarError =
+                error => {
+
+                    if (
+                        terminado
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    terminado =
+                        true;
+
+
+                    clearTimeout(
+                        timeout
+                    );
+
+
+                    reject(
+                        error
+                    );
+
+                };
+
+
             const timeout =
                 setTimeout(
                     () => {
 
-                        reject(
+                        finalizarError(
                             new Error(
-                                "Timeout esperando MediaSource."
+                                `Timeout esperando ${obtenerNombreMediaSource()}.`
                             )
                         );
 
@@ -4486,8 +4724,26 @@ function crearMediaSource() {
                 "sourceopen",
                 () => {
 
+                    if (
+                        terminado
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    terminado =
+                        true;
+
+
                     clearTimeout(
                         timeout
+                    );
+
+
+                    console.log(
+                        `[REPRODUCTOR] ✓ ${obtenerNombreMediaSource()} abierto.`
                     );
 
 
@@ -4507,7 +4763,7 @@ function crearMediaSource() {
 
 
                             console.log(
-                                `[REPRODUCTOR] ✓ MediaSource.duration = ${playerState.duration.toFixed(3)}`
+                                `[REPRODUCTOR] ✓ ${obtenerNombreMediaSource()}.duration = ${playerState.duration.toFixed(3)}`
                             );
 
                         } catch (
@@ -4515,7 +4771,7 @@ function crearMediaSource() {
                         ) {
 
                             console.warn(
-                                "[REPRODUCTOR] No se pudo asignar duration:",
+                                `[REPRODUCTOR] No se pudo asignar duration a ${obtenerNombreMediaSource()}:`,
                                 error
                             );
 
@@ -4538,14 +4794,9 @@ function crearMediaSource() {
                 "error",
                 () => {
 
-                    clearTimeout(
-                        timeout
-                    );
-
-
-                    reject(
+                    finalizarError(
                         new Error(
-                            "MediaSource informó un error."
+                            `${obtenerNombreMediaSource()} informó un error.`
                         )
                     );
 
@@ -4561,9 +4812,11 @@ function crearMediaSource() {
 
 }
 
-
 /* =========================================================
    CREAR SOURCEBUFFERS
+   Compatible con:
+   - MediaSource
+   - ManagedMediaSource
 ========================================================= */
 
 function crearSourceBuffers(
@@ -4574,6 +4827,10 @@ function crearSourceBuffers(
         playerState.mediaSource;
 
 
+    const MediaSourceAPI =
+        obtenerMediaSourceAPI();
+
+
     if (
         !mediaSource ||
         mediaSource.readyState !==
@@ -4581,7 +4838,18 @@ function crearSourceBuffers(
     ) {
 
         throw new Error(
-            "MediaSource no está abierto."
+            `${obtenerNombreMediaSource()} no está abierto.`
+        );
+
+    }
+
+
+    if (
+        !MediaSourceAPI
+    ) {
+
+        throw new Error(
+            "No existe una API MediaSource compatible."
         );
 
     }
@@ -4640,15 +4908,27 @@ function crearSourceBuffers(
         }
 
 
+        /*
+         * =================================================
+         * COMPROBAR CODEC
+         * =================================================
+         *
+         * Aquí utilizamos la API que realmente está
+         * funcionando:
+         *
+         * iPhone → ManagedMediaSource
+         * Android → MediaSource
+         */
+
         if (
             !mime ||
-            !MediaSource.isTypeSupported(
+            !MediaSourceAPI.isTypeSupported(
                 mime
             )
         ) {
 
             console.warn(
-                "[REPRODUCTOR] MSE no soporta:",
+                `[REPRODUCTOR] ${obtenerNombreMediaSource()} no soporta:`,
                 mime
             );
 
@@ -4714,12 +4994,39 @@ function crearSourceBuffers(
         );
 
 
+        /*
+         * ManagedSourceBuffer puede emitir
+         * bufferedchange cuando Safari modifica
+         * automáticamente el buffer.
+         *
+         * No necesitamos cambiar nuestra lógica,
+         * pero dejamos el evento registrado para
+         * diagnóstico.
+         */
+
+        sourceBuffer.addEventListener(
+            "bufferedchange",
+            () => {
+
+                if (
+                    obtenerNombreMediaSource() ===
+                    "ManagedMediaSource"
+                ) {
+
+                    actualizarDiagnostico();
+
+                }
+
+            }
+        );
+
+
         sourceBuffer.addEventListener(
             "error",
             () => {
 
                 console.error(
-                    "[REPRODUCTOR] SourceBuffer error:",
+                    `[REPRODUCTOR] ${obtenerNombreMediaSource()} SourceBuffer error:`,
                     track.id
                 );
 
@@ -4735,10 +5042,15 @@ function crearSourceBuffers(
     ) {
 
         throw new Error(
-            "No se pudo crear SourceBuffer de vídeo."
+            "No se pudo crear SourceBuffer de vídeo compatible."
         );
 
     }
+
+
+    console.log(
+        `[REPRODUCTOR] ✓ SourceBuffers creados usando ${obtenerNombreMediaSource()}.`
+    );
 
 }
 

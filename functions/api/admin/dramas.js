@@ -75,6 +75,10 @@ function convertirDestacado(
 }
 
 
+/* =========================================================
+   VALIDAR URL HTTP / HTTPS
+========================================================= */
+
 function esUrlHttpValida(
     valor
 ) {
@@ -98,6 +102,82 @@ function esUrlHttpValida(
     }
 }
 
+
+/* =========================================================
+   VALIDAR URL MEGA
+   Formato esperado:
+
+   https://mega.nz/file/ID#KEY
+
+   El enlace debe ser /file/
+   y debe contener la llave después de #.
+========================================================= */
+
+function esUrlMegaFileValida(
+    valor
+) {
+    if (!valor) {
+        return true;
+    }
+
+    try {
+        const url =
+            new URL(
+                valor
+            );
+
+        if (
+            url.protocol !== "https:" &&
+            url.protocol !== "http:"
+        ) {
+            return false;
+        }
+
+        const host =
+            url.hostname.toLowerCase();
+
+        if (
+            host !== "mega.nz"
+        ) {
+            return false;
+        }
+
+        if (
+            !url.pathname.startsWith(
+                "/file/"
+            )
+        ) {
+            return false;
+        }
+
+        const identificador =
+            url.pathname.slice(
+                "/file/".length
+            ).trim();
+
+        const llave =
+            url.hash.startsWith("#")
+                ? url.hash.slice(1).trim()
+                : "";
+
+        if (
+            !identificador ||
+            !llave
+        ) {
+            return false;
+        }
+
+        return true;
+
+    } catch {
+        return false;
+    }
+}
+
+
+/* =========================================================
+   VALIDAR SLUG
+========================================================= */
 
 function esSlugValido(
     slug
@@ -155,16 +235,17 @@ function normalizarDrama(
             ) || PORTADA_GENERICA,
 
         /*
-         * video_url ya no se utiliza
-         * en el nuevo formulario.
+         * video_url es ahora la columna oficial
+         * para los enlaces de vídeo.
          *
-         * La columna permanece en D1
-         * por compatibilidad.
+         * El enlace esperado es:
+         *
+         * https://mega.nz/file/ID#KEY
          */
 
-        embed_url:
+        video_url:
             limpiarTexto(
-                datos.embed_url
+                datos.video_url
             ),
 
         status:
@@ -286,15 +367,7 @@ function validarDrama(
 
     /* -----------------------------------------------------
        URL PORTADA
-    -----------------------------------------------------
-
-       Se permiten:
-
-       1. URL externa HTTP/HTTPS
-       2. Ruta local que comience con "/"
-
-       La portada genérica utiliza una ruta local.
-    */
+    ----------------------------------------------------- */
 
     const portadaEsValida =
         drama.cover_url.startsWith("/") ||
@@ -312,16 +385,17 @@ function validarDrama(
 
 
     /* -----------------------------------------------------
-       URL EMBED
+       URL VIDEO MEGA
     ----------------------------------------------------- */
 
     if (
-        !esUrlHttpValida(
-            drama.embed_url
+        drama.video_url &&
+        !esUrlMegaFileValida(
+            drama.video_url
         )
     ) {
         errores.push(
-            "La URL de inserción debe comenzar con http:// o https://."
+            "El enlace del video debe ser una URL de MEGA con formato https://mega.nz/file/ID#KEY."
         );
     }
 
@@ -405,7 +479,7 @@ export async function onRequestGet(
                         video_description,
                         cover_url,
                         video_url,
-                        embed_url,
+                        video_url_2,
                         status,
                         featured,
                         sort_order,
@@ -644,6 +718,13 @@ export async function onRequestPost(
 
         /* -----------------------------------------------------
            Insertar
+
+           video_url:
+           enlace nuevo de MEGA
+
+           video_url_2:
+           se deja vacío para los nuevos registros.
+           No se toca ningún dato histórico existente.
         ----------------------------------------------------- */
 
         const insercion =
@@ -657,12 +738,12 @@ export async function onRequestPost(
                         video_description,
                         cover_url,
                         video_url,
-                        embed_url,
                         status,
                         featured,
                         sort_order,
                         created_at,
-                        updated_at
+                        updated_at,
+                        video_url_2
                     )
                     VALUES (
                         ?,
@@ -671,13 +752,13 @@ export async function onRequestPost(
                         ?,
                         ?,
                         ?,
-                        '',
                         ?,
                         ?,
                         ?,
                         ?,
                         CURRENT_TIMESTAMP,
-                        CURRENT_TIMESTAMP
+                        CURRENT_TIMESTAMP,
+                        ''
                     )
                 `)
                 .bind(
@@ -687,7 +768,7 @@ export async function onRequestPost(
                     drama.description,
                     drama.video_description,
                     drama.cover_url,
-                    drama.embed_url,
+                    drama.video_url,
                     drama.status,
                     drama.featured,
                     siguienteOrden
@@ -987,8 +1068,15 @@ export async function onRequestPut(
            Actualizar
 
            IMPORTANTE:
-           sort_order NO se toca.
-           El orden actual del microdrama se conserva.
+
+           video_url:
+           se actualiza con el nuevo enlace.
+
+           video_url_2:
+           NO SE TOCA.
+
+           Esto conserva cualquier dato histórico
+           que exista en esa columna.
         ----------------------------------------------------- */
 
         const actualizacion =
@@ -1002,7 +1090,7 @@ export async function onRequestPut(
                         description = ?,
                         video_description = ?,
                         cover_url = ?,
-                        embed_url = ?,
+                        video_url = ?,
                         status = ?,
                         featured = ?,
                         updated_at = CURRENT_TIMESTAMP
@@ -1015,7 +1103,7 @@ export async function onRequestPut(
                     drama.description,
                     drama.video_description,
                     drama.cover_url,
-                    drama.embed_url,
+                    drama.video_url,
                     drama.status,
                     drama.featured,
                     id
@@ -1283,6 +1371,6 @@ export async function onRequestDelete(
                     "No se pudieron eliminar los microdramas."
             },
             500
-        );
+            );
     }
 }

@@ -2709,209 +2709,436 @@ function crearReproductor() {
         alternarPantallaCompleta
     );
 
+/* =====================================================
+   BARRA DE PROGRESO
+===================================================== */
 
-    /* =====================================================
-       BARRA
-    ===================================================== */
+let ultimoEventoSeek =
+    0;
 
-    progress.addEventListener(
-        "pointerdown",
-        () => {
+
+/*
+ * El usuario comienza a mover la barra.
+ */
+
+progress.addEventListener(
+    "pointerdown",
+    () => {
+
+        playerState.userSeeking =
+            true;
+
+        playerState.pendingSeekTime =
+            null;
+
+    }
+);
+
+
+/*
+ * Mientras mueve la barra:
+ * solamente actualizamos la posición visual.
+ * NO hacemos SEEK todavía.
+ */
+
+progress.addEventListener(
+    "input",
+    () => {
+
+        const duration =
+            obtenerDuracionVideo();
+
+
+        if (
+            !Number.isFinite(
+                duration
+            ) ||
+            duration <=
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        const porcentaje =
+            Number(
+                progress.value
+            );
+
+
+        const destino =
+            duration *
+            (
+                porcentaje /
+                100
+            );
+
+
+        playerState.pendingSeekTime =
+            destino;
+
+
+        time.textContent =
+            `${formatoTiempo(destino)} / ${formatoTiempo(duration)}`;
+
+    }
+);
+
+
+/*
+ * Al soltar el ratón/touch:
+ * ejecutamos UN SOLO SEEK.
+ */
+
+progress.addEventListener(
+    "pointerup",
+    () => {
+
+        if (
+            !playerState.userSeeking
+        ) {
+
+            return;
+
+        }
+
+
+        const ahora =
+            Date.now();
+
+
+        /*
+         * Evita que CHANGE y POINTERUP
+         * ejecuten el SEEK dos veces.
+         */
+
+        if (
+            ahora -
+            ultimoEventoSeek <
+            150
+        ) {
 
             playerState.userSeeking =
-                true;
+                false;
 
-            playerState.pendingSeekTime =
-                null;
-
-        }
-    );
-
-
-    progress.addEventListener(
-        "input",
-        () => {
-
-            const duration =
-                obtenerDuracionVideo();
-
-
-            if (
-                !Number.isFinite(
-                    duration
-                ) ||
-                duration <=
-                0
-            ) {
-
-                return;
-
-            }
-
-
-            const destino =
-                duration *
-                (
-                    Number(
-                        progress.value
-                    ) /
-                    100
-                );
-
-
-            playerState.pendingSeekTime =
-                destino;
-
-
-            time.textContent =
-                `${formatoTiempo(destino)} / ${formatoTiempo(duration)}`;
+            return;
 
         }
-    );
 
 
-    progress.addEventListener(
-        "change",
-        () => {
-
-            ejecutarSeekDesdeBarra();
-
-        }
-    );
+        ultimoEventoSeek =
+            ahora;
 
 
-    video.addEventListener(
-        "play",
-        () => {
+        ejecutarSeekDesdeBarra();
 
-            actualizarBotonPlay();
-
-        }
-    );
+    }
+);
 
 
-    video.addEventListener(
-        "pause",
-        () => {
+/*
+ * Algunos navegadores utilizan CHANGE
+ * en lugar de POINTERUP.
+ *
+ * Solo lo usamos como respaldo.
+ */
 
-            actualizarBotonPlay();
+progress.addEventListener(
+    "change",
+    () => {
 
+        /*
+         * Si todavía estamos dentro del gesto
+         * del ratón/touch, POINTERUP será quien
+         * ejecute el SEEK.
+         */
 
-            if (
-                !playerState.seekInProgress &&
-                !playerState.stopped
-            ) {
+        if (
+            playerState.userSeeking
+        ) {
 
-                actualizarEstadoPlayer(
-                    "Pausado"
-                );
-
-            }
+            return;
 
         }
-    );
 
 
-    video.addEventListener(
-        "waiting",
-        () => {
+        if (
+            !Number.isFinite(
+                playerState.pendingSeekTime
+            )
+        ) {
 
-            if (
-                !playerState.seekInProgress
-            ) {
-
-                mostrarLoading(
-                    "Cargando más vídeo..."
-                );
-
-            }
+            return;
 
         }
-    );
 
 
-    video.addEventListener(
-        "playing",
-        () => {
-
-            playerState.playbackStarted =
-                true;
+        const ahora =
+            Date.now();
 
 
-            ocultarLoading();
+        if (
+            ahora -
+            ultimoEventoSeek <
+            150
+        ) {
+
+            return;
+
+        }
 
 
-            actualizarBotonPlay();
+        ultimoEventoSeek =
+            ahora;
 
+
+        ejecutarSeekDesdeBarra();
+
+    }
+);
+
+
+/*
+ * Si el usuario cancela el movimiento
+ * de la barra, limpiamos el estado.
+ */
+
+progress.addEventListener(
+    "pointercancel",
+    () => {
+
+        playerState.userSeeking =
+            false;
+
+        playerState.pendingSeekTime =
+            null;
+
+        actualizarControlesVideo();
+
+    }
+);
+
+
+/*
+ * Soporte para mover la barra mediante
+ * las flechas del teclado.
+ */
+
+progress.addEventListener(
+    "keyup",
+    evento => {
+
+        if (
+            evento.key !==
+            "ArrowLeft" &&
+            evento.key !==
+            "ArrowRight"
+        ) {
+
+            return;
+
+        }
+
+
+        const duration =
+            obtenerDuracionVideo();
+
+
+        if (
+            !Number.isFinite(
+                duration
+            ) ||
+            duration <=
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        const destino =
+            duration *
+            (
+                Number(
+                    progress.value
+                ) /
+                100
+            );
+
+
+        playerState.pendingSeekTime =
+            destino;
+
+
+        playerState.userSeeking =
+            false;
+
+
+        const ahora =
+            Date.now();
+
+
+        if (
+            ahora -
+            ultimoEventoSeek <
+            150
+        ) {
+
+            return;
+
+        }
+
+
+        ultimoEventoSeek =
+            ahora;
+
+
+        ejecutarSeekDesdeBarra();
+
+    }
+);
+
+
+/* =====================================================
+   CONTROLES DEL VIDEO
+===================================================== */
+
+video.addEventListener(
+    "play",
+    () => {
+
+        actualizarBotonPlay();
+
+    }
+);
+
+
+video.addEventListener(
+    "pause",
+    () => {
+
+        actualizarBotonPlay();
+
+
+        if (
+            !playerState.seekInProgress &&
+            !playerState.stopped
+        ) {
 
             actualizarEstadoPlayer(
-                "Reproduciendo"
+                "Pausado"
             );
 
         }
-    );
+
+    }
+);
 
 
-    video.addEventListener(
-        "seeking",
-        () => {
+video.addEventListener(
+    "waiting",
+    () => {
 
-            console.log(
-                `[SEEK] Evento seeking → ${video.currentTime.toFixed(2)}`
+        if (
+            !playerState.seekInProgress
+        ) {
+
+            mostrarLoading(
+                "Cargando más vídeo..."
             );
 
         }
-    );
+
+    }
+);
 
 
-    video.addEventListener(
-        "seeked",
-        () => {
+video.addEventListener(
+    "playing",
+    () => {
 
-            console.log(
-                `[SEEK] Evento seeked → ${video.currentTime.toFixed(2)}`
-            );
-
-
-            actualizarControlesVideo();
-
-        }
-    );
+        playerState.playbackStarted =
+            true;
 
 
-    video.addEventListener(
-        "timeupdate",
-        actualizarControlesVideo
-    );
+        ocultarLoading();
 
 
-    video.addEventListener(
-        "durationchange",
-        actualizarControlesVideo
-    );
+        actualizarBotonPlay();
 
 
-    video.addEventListener(
-        "progress",
-        actualizarControlesVideo
-    );
+        actualizarEstadoPlayer(
+            "Reproduciendo"
+        );
+
+    }
+);
 
 
-    video.addEventListener(
-        "ended",
-        () => {
+video.addEventListener(
+    "seeking",
+    () => {
 
-            actualizarBotonPlay();
+        console.log(
+            `[SEEK] Evento seeking → ${video.currentTime.toFixed(2)}`
+        );
+
+    }
+);
 
 
-            actualizarEstadoPlayer(
-                "Vídeo finalizado"
-            );
+video.addEventListener(
+    "seeked",
+    () => {
 
-        }
-    );
+        console.log(
+            `[SEEK] Evento seeked → ${video.currentTime.toFixed(2)}`
+        );
+
+
+        actualizarControlesVideo();
+
+    }
+);
+
+
+video.addEventListener(
+    "timeupdate",
+    actualizarControlesVideo
+);
+
+
+video.addEventListener(
+    "durationchange",
+    actualizarControlesVideo
+);
+
+
+video.addEventListener(
+    "progress",
+    actualizarControlesVideo
+);
+
+
+video.addEventListener(
+    "ended",
+    () => {
+
+        actualizarBotonPlay();
+
+
+        actualizarEstadoPlayer(
+            "Vídeo finalizado"
+        );
+
+    }
+);
 
 }
+    
 
 
 /* =========================================================

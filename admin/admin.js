@@ -254,10 +254,19 @@ function abrirFormularioEdicion(
         drama.cover_url || "";
 
 
+    /*
+     * NUEVA ESTRUCTURA:
+     *
+     * video_url es ahora la columna oficial
+     * donde se almacenan los enlaces MEGA.
+     *
+     * video_url_2 NO se carga en el formulario
+     * porque es una columna histórica/respaldo.
+     */
     document.getElementById(
-        "embed_url"
+        "video_url"
     ).value =
-        drama.embed_url || "";
+        drama.video_url || "";
 
 
     document.getElementById(
@@ -769,9 +778,18 @@ async function guardarFormulario(
             ).value.trim(),
 
 
-        embed_url:
+        /*
+         * NUEVA ESTRUCTURA:
+         *
+         * Los enlaces MEGA nuevos se envían
+         * exclusivamente como video_url.
+         *
+         * video_url_2 nunca se envía desde el
+         * panel administrativo.
+         */
+        video_url:
             document.getElementById(
-                "embed_url"
+                "video_url"
             ).value.trim(),
 
 

@@ -3298,14 +3298,17 @@ function crearReproductor() {
     ----------------------------------------------------- */
 
     progress.addEventListener(
-        "pointerdown",
-        () => {
+    "pointerdown",
+    () => {
 
-            playerState.userSeeking =
-                true;
+        playerState.userSeeking =
+            true;
 
-        }
-    );
+        playerState.pendingSeekTime =
+            null;
+
+    }
+);
 
 
     progress.addEventListener(
@@ -3353,23 +3356,13 @@ function crearReproductor() {
 
 
     progress.addEventListener(
-        "change",
-        () => {
+    "change",
+    () => {
 
-            ejecutarSeekDesdeBarra();
+        ejecutarSeekDesdeBarra();
 
-        }
-    );
-
-
-    progress.addEventListener(
-        "pointerup",
-        () => {
-
-            ejecutarSeekDesdeBarra();
-
-        }
-    );
+    }
+);
 
 
     /* -----------------------------------------------------
@@ -6489,7 +6482,6 @@ async function ejecutarSeekDesdeBarra() {
 /* =========================================================
    SEEK REAL
 ========================================================= */
-
 async function ejecutarSeekReal(
     destino
 ) {
@@ -6532,18 +6524,31 @@ async function ejecutarSeekReal(
         Math.max(
             0,
             Math.min(
-                duration -
-                0.05,
-                Number(
-                    destino
-                )
+                duration - 0.05,
+                Number(destino)
             )
         );
 
 
+    if (
+        !Number.isFinite(
+            tiempo
+        )
+    ) {
+
+        return;
+
+    }
+
+
     /*
-     * Si el punto está en el buffer,
-     * no necesitamos reconstruir nada.
+     * =====================================================
+     * SEEK LOCAL
+     *
+     * Primero intentamos utilizar el buffer existente.
+     * Esto permite que +10 / -10 sea instantáneo cuando
+     * el destino ya está descargado.
+     * =====================================================
      */
 
     if (
@@ -6551,6 +6556,10 @@ async function ejecutarSeekReal(
             tiempo
         )
     ) {
+
+        const tiempoAnterior =
+            video.currentTime;
+
 
         try {
 
@@ -6562,11 +6571,59 @@ async function ejecutarSeekReal(
         ) {
 
             console.warn(
-                "[REPRODUCTOR] Seek local:",
+                "[REPRODUCTOR] Error SEEK local:",
                 error
             );
 
         }
+
+
+        /*
+         * Verificación.
+         *
+         * Algunos navegadores pueden no aplicar el cambio
+         * inmediatamente en MSE.
+         */
+
+        setTimeout(
+            () => {
+
+                if (
+                    playerState.stopped ||
+                    playerState.seekInProgress
+                ) {
+
+                    return;
+
+                }
+
+
+                const diferencia =
+                    Math.abs(
+                        video.currentTime -
+                        tiempo
+                    );
+
+
+                if (
+                    diferencia >
+                    0.75
+                ) {
+
+                    console.warn(
+                        "[REPRODUCTOR] SEEK local no aplicado. Se realizará SEEK remoto."
+                    );
+
+
+                    ejecutarSeekRemoto(
+                        tiempo
+                    );
+
+                }
+
+            },
+            250
+        );
 
 
         return;
@@ -6575,28 +6632,85 @@ async function ejecutarSeekReal(
 
 
     /*
-     * Evitar seeks simultáneos.
+     * =====================================================
+     * SEEK REMOTO
+     * =====================================================
      */
+
+    await ejecutarSeekRemoto(
+        tiempo
+    );
+
+}
+
+
+/* =========================================================
+   SEEK REMOTO
+========================================================= */
+
+async function ejecutarSeekRemoto(
+    tiempo
+) {
+
+    const video =
+        playerState.videoElement;
+
+
+    if (
+        !video ||
+        playerState.stopped
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+     * Evitar dos SEEK simultáneos.
+     */
+
+    if (
+        playerState.seekInProgress
+    ) {
+
+        /*
+         * Guardamos el último destino solicitado.
+         */
+
+        playerState.pendingSeekTime =
+            tiempo;
+
+
+        return;
+
+    }
+
 
     const token =
         ++playerState.seekToken;
+
+
+    const operationId =
+        playerState.operationId;
 
 
     const estabaReproduciendo =
         !video.paused;
 
 
-    playerState.allowAutoplay =
-        estabaReproduciendo;
-
-
     playerState.seekInProgress =
         true;
 
 
-    const operationId =
-        playerState.operationId;
+    playerState.allowAutoplay =
+        estabaReproduciendo;
 
+
+    /*
+     * Cada SEEK remoto crea una nueva generación
+     * de streaming.
+     */
 
     const generation =
         ++playerState.streamGeneration;
@@ -6605,7 +6719,7 @@ async function ejecutarSeekReal(
     try {
 
         console.log(
-            `[REPRODUCTOR] =================================`
+            "==============================================="
         );
 
 
@@ -6614,21 +6728,33 @@ async function ejecutarSeekReal(
         );
 
 
-        mostrarLoading(
-            `Buscando ${formatoTiempo(tiempo)}...`
-        );
-
-
         actualizarEstadoPlayer(
             `Buscando ${formatoTiempo(tiempo)}...`
         );
 
 
-        video.pause();
+        mostrarLoading(
+            `Buscando ${formatoTiempo(tiempo)}...`
+        );
 
 
         /*
-         * Detener MP4Box anterior.
+         * Pausar antes de reconstruir.
+         */
+
+        try {
+
+            video.pause();
+
+        } catch {
+
+            /* Sin acción */
+
+        }
+
+
+        /*
+         * Detener flujo anterior.
          */
 
         if (
@@ -6652,23 +6778,23 @@ async function ejecutarSeekReal(
          * Liberar MediaSource anterior.
          */
 
-        const oldUrl =
-            playerState.mediaSourceUrl;
-
-
-        const oldMediaSource =
+        const mediaSourceAnterior =
             playerState.mediaSource;
 
 
+        const mediaSourceUrlAnterior =
+            playerState.mediaSourceUrl;
+
+
         if (
-            oldMediaSource &&
-            oldMediaSource.readyState ===
+            mediaSourceAnterior &&
+            mediaSourceAnterior.readyState ===
             "open"
         ) {
 
             try {
 
-                oldMediaSource.endOfStream();
+                mediaSourceAnterior.endOfStream();
 
             } catch {
 
@@ -6680,13 +6806,13 @@ async function ejecutarSeekReal(
 
 
         if (
-            oldUrl
+            mediaSourceUrlAnterior
         ) {
 
             try {
 
                 URL.revokeObjectURL(
-                    oldUrl
+                    mediaSourceUrlAnterior
                 );
 
             } catch {
@@ -6699,7 +6825,7 @@ async function ejecutarSeekReal(
 
 
         /*
-         * Vaciar estado MSE.
+         * Invalidar sesión MSE anterior.
          */
 
         playerState.mediaSource =
@@ -6722,14 +6848,6 @@ async function ejecutarSeekReal(
             new Map();
 
 
-        playerState.mp4Ready =
-            false;
-
-
-        playerState.mp4Error =
-            false;
-
-
         playerState.streamStarted =
             false;
 
@@ -6738,158 +6856,22 @@ async function ejecutarSeekReal(
             false;
 
 
+        playerState.mp4Ready =
+            false;
+
+
+        playerState.mp4Error =
+            false;
+
+
         /*
-         * Crear nuevo MP4Box.
+         * =================================================
+         * CREAR NUEVO MP4BOX
+         * =================================================
          */
 
         const mp4box =
             crearNuevoMP4Box();
-
-
-        /*
-         * Alimentar nuevamente
-         * el encabezado necesario.
-         */
-
-        if (
-            !playerState.bootstrapReady ||
-            playerState.bootstrapBuffers.length ===
-            0
-        ) {
-
-            throw new Error(
-                "No existe información inicial para reconstruir el reproductor."
-            );
-
-        }
-
-
-        actualizarEstadoPlayer(
-            "Reconstruyendo estructura MP4..."
-        );
-
-
-        for (
-            const bloque
-            of
-            playerState.bootstrapBuffers
-        ) {
-
-            if (
-                token !==
-                playerState.seekToken
-            ) {
-
-                return;
-
-            }
-
-
-            const copia =
-                bloque.slice(
-                    0
-                );
-
-
-            copia.fileStart =
-                obtenerFileStartBootstrap(
-                    bloque,
-                    playerState.bootstrapBuffers
-                );
-
-
-            mp4box.appendBuffer(
-                copia
-            );
-
-
-            if (
-                playerState.mp4Ready
-            ) {
-
-                break;
-
-            }
-
-        }
-
-
-        /*
-         * Si el bloque guardado no fue suficiente,
-         * continuamos leyendo desde el principio
-         * hasta obtener MOOV.
-         */
-
-        if (
-            !playerState.mp4Ready
-        ) {
-
-            let offset =
-                playerState.bootstrapEnd;
-
-
-            while (
-                !playerState.mp4Ready &&
-                !playerState.mp4Error &&
-                offset <
-                Math.min(
-                    playerState.fileSize,
-                    SEEK_REINICIO_MAX
-                )
-            ) {
-
-                const size =
-                    Math.min(
-                        RANGO_MEDIA,
-                        playerState.fileSize -
-                        offset
-                    );
-
-
-                const bloque =
-                    await leerRangoMega(
-                        offset,
-                        size,
-                        false
-                    );
-
-
-                bloque.buffer.fileStart =
-                    offset;
-
-
-                mp4box.appendBuffer(
-                    bloque.buffer
-                );
-
-
-                offset =
-                    bloque.end +
-                    1;
-
-            }
-
-        }
-
-
-        if (
-            !playerState.mp4Ready
-        ) {
-
-            throw new Error(
-                "MP4Box no pudo reconstruir la estructura del vídeo."
-            );
-
-        }
-
-
-        /*
-         * Crear MediaSource nuevo.
-         */
-
-        await crearSesionMedia(
-            operationId
-        );
 
 
         if (
@@ -6903,23 +6885,234 @@ async function ejecutarSeekReal(
 
 
         /*
-         * Ahora MP4Box ya conoce
-         * el MP4 y podemos obtener
-         * el offset correspondiente
-         * al tiempo solicitado.
+         * =================================================
+         * RECONSTRUIR ESTRUCTURA MP4
+         *
+         * Utilizamos exactamente los bloques originales
+         * del bootstrap y respetamos fileStart.
+         * =================================================
          */
 
-        const resultadoSeek =
-            mp4box.seek(
-                tiempo,
-                true
+        actualizarEstadoPlayer(
+            "Reconstruyendo estructura MP4..."
+        );
+
+
+        if (
+            !playerState.bootstrapReady ||
+            !Array.isArray(
+                playerState.bootstrapBuffers
+            ) ||
+            playerState.bootstrapBuffers.length ===
+            0
+        ) {
+
+            throw new Error(
+                "No existe bootstrap MP4 disponible para SEEK."
             );
+
+        }
+
+
+        let bootstrapOffset =
+            0;
+
+
+        for (
+            const bloque
+            of
+            playerState.bootstrapBuffers
+        ) {
+
+            if (
+                token !==
+                playerState.seekToken ||
+                playerState.stopped
+            ) {
+
+                return;
+
+            }
+
+
+            const copia =
+                bloque.slice(
+                    0
+                );
+
+
+            /*
+             * MUY IMPORTANTE:
+             *
+             * MP4Box necesita conocer la posición física
+             * de este bloque dentro del archivo MEGA.
+             */
+
+            copia.fileStart =
+                bootstrapOffset;
+
+
+            mp4box.appendBuffer(
+                copia
+            );
+
+
+            bootstrapOffset +=
+                copia.byteLength;
+
+
+            /*
+             * Una vez que MP4Box conoce MOOV ya podemos
+             * calcular el offset exacto del SEEK.
+             */
+
+            if (
+                playerState.mp4Ready
+            ) {
+
+                break;
+
+            }
+
+        }
+
+
+        /*
+         * Si por alguna razón el bootstrap guardado no fue
+         * suficiente para reconstruir MOOV, continuamos
+         * leyendo desde el archivo MEGA.
+         */
+
+        let offsetBootstrap =
+            bootstrapOffset;
+
+
+        while (
+            !playerState.mp4Ready &&
+            !playerState.mp4Error &&
+            !playerState.stopped &&
+            token ===
+            playerState.seekToken &&
+            offsetBootstrap <
+            Math.min(
+                playerState.fileSize,
+                SEEK_REINICIO_MAX
+            )
+        ) {
+
+            const size =
+                Math.min(
+                    RANGO_MEDIA,
+                    playerState.fileSize -
+                    offsetBootstrap
+                );
+
+
+            const bloque =
+                await leerRangoMega(
+                    offsetBootstrap,
+                    size,
+                    false
+                );
+
+
+            if (
+                token !==
+                playerState.seekToken ||
+                playerState.stopped
+            ) {
+
+                return;
+
+            }
+
+
+            bloque.buffer.fileStart =
+                offsetBootstrap;
+
+
+            mp4box.appendBuffer(
+                bloque.buffer
+            );
+
+
+            offsetBootstrap =
+                bloque.end +
+                1;
+
+        }
+
+
+        if (
+            !playerState.mp4Ready
+        ) {
+
+            throw new Error(
+                "MP4Box no pudo reconstruir la estructura MP4."
+            );
+
+        }
+
+
+        /*
+         * =================================================
+         * AQUÍ ESTÁ EL CAMBIO MÁS IMPORTANTE
+         *
+         * PRIMERO hacemos seek() en MP4Box.
+         *
+         * DESPUÉS creamos la sesión MSE.
+         * =================================================
+         */
+
+        actualizarEstadoPlayer(
+            `Calculando posición ${formatoTiempo(tiempo)}...`
+        );
+
+
+        let resultadoSeek;
+
+
+        try {
+
+            resultadoSeek =
+                mp4box.seek(
+                    tiempo,
+                    true
+                );
+
+        } catch (
+            error
+        ) {
+
+            throw new Error(
+                `MP4Box no pudo realizar SEEK: ${
+                    error.message ||
+                    error
+                }`
+            );
+
+        }
 
 
         const offsetMega =
             obtenerOffsetSeek(
                 resultadoSeek
             );
+
+
+        console.log(
+            `[REPRODUCTOR] MP4Box.seek() →`,
+            resultadoSeek
+        );
+
+
+        console.log(
+            `[REPRODUCTOR] Offset MEGA → ${
+                Number(
+                    offsetMega
+                ).toLocaleString()
+            }`
+        );
 
 
         if (
@@ -6933,29 +7126,71 @@ async function ejecutarSeekReal(
         ) {
 
             throw new Error(
-                `Offset de SEEK inválido: ${offsetMega}`
+                `Offset MEGA inválido: ${offsetMega}`
             );
 
         }
 
 
-        console.log(
-            `[REPRODUCTOR] ✓ MP4Box.seek(${tiempo.toFixed(2)}, true)`
+        /*
+         * =================================================
+         * CREAR NUEVA SESIÓN MSE
+         * =================================================
+         */
+
+        actualizarEstadoPlayer(
+            "Preparando nuevo buffer..."
         );
 
 
-        console.log(
-            `[REPRODUCTOR] ✓ Offset MEGA: ${offsetMega.toLocaleString()}`
+        await crearSesionMedia(
+            operationId
         );
+
+
+        if (
+            token !==
+            playerState.seekToken ||
+            playerState.stopped
+        ) {
+
+            return;
+
+        }
 
 
         /*
-         * Inicializar reproducción
-         * desde el punto solicitado.
+         * =================================================
+         * MUY IMPORTANTE
+         *
+         * MP4Box ya recibió seek().
+         *
+         * Ahora start() hará que los nuevos samples
+         * comiencen a producir segmentos desde el RAP
+         * correspondiente.
+         * =================================================
          */
 
-        video.currentTime =
-            tiempo;
+        playerState.streamStarted =
+            true;
+
+
+        /*
+         * Ponemos el vídeo en el destino solicitado.
+         *
+         * Todavía no esperamos que esté disponible.
+         */
+
+        try {
+
+            video.currentTime =
+                tiempo;
+
+        } catch {
+
+            /* Se volverá a establecer después */
+
+        }
 
 
         actualizarEstadoPlayer(
@@ -6963,12 +7198,10 @@ async function ejecutarSeekReal(
         );
 
 
-        playerState.streamStarted =
-            true;
-
-
         /*
-         * Lanzar nuevo flujo.
+         * =================================================
+         * DESCARGAR DESDE EL OFFSET REAL DE MEGA
+         * =================================================
          */
 
         iniciarStreamingMedia(
@@ -6980,7 +7213,8 @@ async function ejecutarSeekReal(
 
                 if (
                     token ===
-                    playerState.seekToken
+                    playerState.seekToken &&
+                    !playerState.stopped
                 ) {
 
                     console.error(
@@ -6995,8 +7229,10 @@ async function ejecutarSeekReal(
 
 
         /*
-         * Esperar a que aparezca
-         * el punto solicitado.
+         * =================================================
+         * ESPERAR A QUE EL DESTINO APAREZCA REALMENTE
+         * EN EL BUFFER MSE.
+         * =================================================
          */
 
         const disponible =
@@ -7009,7 +7245,8 @@ async function ejecutarSeekReal(
 
         if (
             token !==
-            playerState.seekToken
+            playerState.seekToken ||
+            playerState.stopped
         ) {
 
             return;
@@ -7022,14 +7259,55 @@ async function ejecutarSeekReal(
         ) {
 
             throw new Error(
-                `El punto ${formatoTiempo(tiempo)} no llegó al buffer.`
+                `El punto ${formatoTiempo(tiempo)} no llegó al buffer después de 30 segundos.`
             );
 
         }
 
 
+        /*
+         * Ahora sí podemos colocar exactamente el
+         * cabezal en el punto solicitado.
+         */
+
         video.currentTime =
             tiempo;
+
+
+        /*
+         * Esperamos un pequeño ciclo del navegador para
+         * confirmar que currentTime realmente cambió.
+         */
+
+        await new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    100
+                )
+        );
+
+
+        if (
+            Math.abs(
+                video.currentTime -
+                tiempo
+            ) >
+            1
+        ) {
+
+            console.warn(
+                "[REPRODUCTOR] El navegador ajustó ligeramente el punto SEEK.",
+                {
+                    solicitado:
+                        tiempo,
+
+                    actual:
+                        video.currentTime
+                }
+            );
+
+        }
 
 
         ocultarLoading();
@@ -7037,6 +7315,12 @@ async function ejecutarSeekReal(
 
         actualizarControlesVideo();
 
+
+        /*
+         * =================================================
+         * REANUDAR SI ESTABA REPRODUCIÉNDOSE
+         * =================================================
+         */
 
         if (
             estabaReproduciendo
@@ -7063,6 +7347,9 @@ async function ejecutarSeekReal(
                 );
 
             } catch {
+
+                actualizarBotonPlay();
+
 
                 actualizarEstadoPlayer(
                     `Listo en ${formatoTiempo(tiempo)} — pulsa PLAY`
@@ -7101,18 +7388,25 @@ async function ejecutarSeekReal(
         );
 
 
-        actualizarEstadoPlayer(
-            `Error de seek: ${
+        if (
+            token ===
+            playerState.seekToken
+        ) {
+
+            actualizarEstadoPlayer(
+                `Error de seek: ${
+                    error.message ||
+                    error
+                }`
+            );
+
+
+            mostrarLoading(
                 error.message ||
-                error
-            }`
-        );
+                "No se pudo realizar el salto."
+            );
 
-
-        mostrarLoading(
-            error.message ||
-            "No se pudo realizar el salto."
-        );
+        }
 
     } finally {
 
@@ -7124,6 +7418,45 @@ async function ejecutarSeekReal(
             playerState.seekInProgress =
                 false;
 
+
+            /*
+             * Si durante el SEEK el usuario hizo otro
+             * movimiento de la barra, ejecutamos solamente
+             * el último solicitado.
+             */
+
+            const siguienteSeek =
+                playerState.pendingSeekTime;
+
+
+            playerState.pendingSeekTime =
+                null;
+
+
+            if (
+                Number.isFinite(
+                    siguienteSeek
+                ) &&
+                Math.abs(
+                    siguienteSeek -
+                    video.currentTime
+                ) >
+                0.75
+            ) {
+
+                setTimeout(
+                    () => {
+
+                        ejecutarSeekReal(
+                            siguienteSeek
+                        );
+
+                    },
+                    50
+                );
+
+            }
+
         }
 
     }
@@ -7131,14 +7464,25 @@ async function ejecutarSeekReal(
 }
 
 
+
 /* =========================================================
    FILESTART DEL BOOTSTRAP
 ========================================================= */
-
 function obtenerFileStartBootstrap(
     buffer,
     buffers
 ) {
+
+    if (
+        !Array.isArray(
+            buffers
+        )
+    ) {
+
+        return 0;
+
+    }
+
 
     let offset =
         0;
@@ -7169,6 +7513,7 @@ function obtenerFileStartBootstrap(
     return 0;
 
 }
+
 
 
 /* =========================================================

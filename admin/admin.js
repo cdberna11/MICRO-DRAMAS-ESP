@@ -21,6 +21,12 @@ let dramasActuales = [];
 
 
 /*
+ * Texto utilizado actualmente en el buscador.
+ */
+let textoBusqueda = "";
+
+
+/*
  * Indica si el formulario está creando o editando.
  */
 let modoFormulario = "nuevo";
@@ -37,6 +43,8 @@ document.addEventListener(
         inicializarFormulario();
 
         inicializarSeleccionMultiple();
+
+        inicializarBuscador();
 
         cargarDramasAdministrativos();
 
@@ -1278,6 +1286,235 @@ async function eliminarSeleccionados() {
 
 
 /* =========================================================
+   INICIALIZAR BUSCADOR
+========================================================= */
+
+function inicializarBuscador() {
+
+    const buscador =
+        document.getElementById(
+            "buscador-dramas"
+        );
+
+
+    const botonLimpiar =
+        document.getElementById(
+            "boton-limpiar-busqueda"
+        );
+
+
+    if (
+        !buscador ||
+        !botonLimpiar
+    ) {
+
+        console.error(
+            "No se pudo inicializar el buscador de microdramas."
+        );
+
+        return;
+    }
+
+
+    buscador.addEventListener(
+        "input",
+        () => {
+
+            textoBusqueda =
+                buscador.value.trim();
+
+
+            botonLimpiar.hidden =
+                textoBusqueda === "";
+
+
+            aplicarFiltroDramas();
+
+        }
+    );
+
+
+    botonLimpiar.addEventListener(
+        "click",
+        () => {
+
+            buscador.value =
+                "";
+
+
+            textoBusqueda =
+                "";
+
+
+            botonLimpiar.hidden =
+                true;
+
+
+            buscador.focus();
+
+
+            aplicarFiltroDramas();
+
+        }
+    );
+}
+
+
+/* =========================================================
+   APLICAR FILTRO
+========================================================= */
+
+function aplicarFiltroDramas() {
+
+    const elementos =
+        obtenerElementos();
+
+
+    if (
+        !elementos
+    ) {
+
+        return;
+    }
+
+
+    const resultadoBusqueda =
+        document.getElementById(
+            "resultado-busqueda"
+        );
+
+
+    /*
+     * Sin búsqueda:
+     * mostrar todos los registros.
+     */
+
+    if (
+        textoBusqueda === ""
+    ) {
+
+        renderizarDramas(
+            dramasActuales,
+            elementos
+        );
+
+
+        if (
+            resultadoBusqueda
+        ) {
+
+            resultadoBusqueda.textContent =
+                `${dramasActuales.length} microdrama${
+                    dramasActuales.length === 1
+                        ? ""
+                        : "s"
+                }`;
+
+        }
+
+
+        actualizarEstadoSeleccion();
+
+        return;
+    }
+
+
+    /*
+     * Normalizamos la búsqueda para ignorar:
+     *
+     * - Mayúsculas
+     * - Minúsculas
+     * - Acentos
+     */
+
+    const busqueda =
+        normalizarTextoBusqueda(
+            textoBusqueda
+        );
+
+
+    const dramasFiltrados =
+        dramasActuales.filter(
+            (drama) => {
+
+                const id =
+                    normalizarTextoBusqueda(
+                        drama.id
+                    );
+
+
+                const titulo =
+                    normalizarTextoBusqueda(
+                        drama.title
+                    );
+
+
+                const plataforma =
+                    normalizarTextoBusqueda(
+                        drama.platform
+                    );
+
+
+                return (
+                    id.includes(busqueda) ||
+                    titulo.includes(busqueda) ||
+                    plataforma.includes(busqueda)
+                );
+            }
+        );
+
+
+    renderizarDramas(
+        dramasFiltrados,
+        elementos
+    );
+
+
+    if (
+        resultadoBusqueda
+    ) {
+
+        resultadoBusqueda.textContent =
+            dramasFiltrados.length === 0
+                ? "No se encontraron microdramas que coincidan con la búsqueda."
+                : `Mostrando ${
+                    dramasFiltrados.length
+                } de ${
+                    dramasActuales.length
+                } microdrama${
+                    dramasActuales.length === 1
+                        ? ""
+                        : "s"
+                }.`;
+    }
+
+
+    actualizarEstadoSeleccion();
+}
+
+
+/* =========================================================
+   NORMALIZAR TEXTO PARA BÚSQUEDA
+========================================================= */
+
+function normalizarTextoBusqueda(
+    valor
+) {
+
+    return String(
+        valor ?? ""
+    )
+        .normalize("NFD")
+        .replace(
+            /[\u0300-\u036f]/g,
+            ""
+        )
+        .toLowerCase()
+        .trim();
+}
+
+
+/* =========================================================
    CARGAR DRAMAS
 ========================================================= */
 
@@ -1361,10 +1598,7 @@ async function cargarDramasAdministrativos() {
             datos.dramas;
 
 
-        renderizarDramas(
-            dramasActuales,
-            elementos
-        );
+        aplicarFiltroDramas();
 
 
         actualizarEstadoSeleccion();
@@ -1470,6 +1704,21 @@ function mostrarEstadoCarga(
 
 
     elementos.listaDramas.replaceChildren();
+
+
+    const contenedorBusqueda =
+        document.getElementById(
+            "contenedor-busqueda"
+        );
+
+
+    if (
+        contenedorBusqueda
+    ) {
+
+        contenedorBusqueda.hidden =
+            true;
+    }
 }
 
 
@@ -1489,16 +1738,44 @@ function renderizarDramas(
     elementos.listaDramas.replaceChildren();
 
 
+    const contenedorBusqueda =
+        document.getElementById(
+            "contenedor-busqueda"
+        );
+
+
+    /*
+     * La barra de búsqueda se muestra siempre
+     * que existan microdramas cargados,
+     * incluso cuando la búsqueda actual
+     * no produce resultados.
+     */
+
+    if (
+        contenedorBusqueda
+    ) {
+
+        contenedorBusqueda.hidden =
+            dramasActuales.length === 0;
+    }
+
+
     if (
         dramas.length === 0
     ) {
+
+        elementos.contenedorTabla.hidden =
+            true;
+
 
         elementos.estadoVacio.hidden =
             false;
 
 
-        elementos.contenedorTabla.hidden =
-            true;
+        elementos.estadoVacio.textContent =
+            textoBusqueda === ""
+                ? "No hay microdramas registrados."
+                : "No se encontraron microdramas que coincidan con la búsqueda.";
 
 
         return;
@@ -1507,6 +1784,10 @@ function renderizarDramas(
 
     elementos.estadoVacio.hidden =
         true;
+
+
+    elementos.estadoVacio.textContent =
+        "No hay microdramas registrados.";
 
 
     const fragmento =
@@ -2187,6 +2468,21 @@ function mostrarError(
 
     elementos.contenedorTabla.hidden =
         true;
+
+
+    const contenedorBusqueda =
+        document.getElementById(
+            "contenedor-busqueda"
+        );
+
+
+    if (
+        contenedorBusqueda
+    ) {
+
+        contenedorBusqueda.hidden =
+            true;
+    }
 
 
     mostrarMensajeAdmin(

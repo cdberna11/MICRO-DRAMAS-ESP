@@ -2,38 +2,38 @@
    MICRO-DRAMAS-ESP
    LABORATORIO MEGA + MEGAJS + MP4BOX + MEDIASOURCE
 
-   OBJETIVO
+   PRUEBA:
+   STREAMING CONTINUO ADAPTATIVO
+
+   Flujo:
 
    MEGA
       ↓
    MEGAJS
       ↓
-   RANGOS DIRIGIDOS
+   Rangos HTTP/MEGA
       ↓
-   MP4Box.js
+   MP4Box
       ↓
-   MOOV / TRACKS
-      ↓
-   SEGMENTACIÓN
+   Segmentos MP4
       ↓
    MediaSource
       ↓
-   SourceBuffer
+   SourceBuffer vídeo + audio
       ↓
    <video>
 
-   IMPORTANTE
+   IMPORTANTE:
 
-   El archivo NO se descarga completo.
+   - Mientras reproduce:
+       objetivo = 30 s
+       máximo  = 45 s
 
-   MP4Box indica mediante appendBuffer()
-   qué posición necesita a continuación.
+   - Mientras está pausado:
+       objetivo = 120 s
+       máximo  = 120 s
 
-   Esta versión utiliza esa posición para
-   solicitar rangos concretos de MEGA.
-
-   LÍMITE DE SEGURIDAD:
-   64 MB por prueba.
+   El archivo completo NO se descarga.
 ========================================================= */
 
 
@@ -44,7 +44,6 @@
 import {
     File as MEGAFile
 } from "https://unpkg.com/megajs/dist/main.browser-es.mjs";
-
 
 import * as MP4Box
 from "https://cdn.jsdelivr.net/npm/mp4box@2.4.1/dist/mp4box.all.mjs";
@@ -57,24 +56,13 @@ from "https://cdn.jsdelivr.net/npm/mp4box@2.4.1/dist/mp4box.all.mjs";
 const VIDEOS = {
 
     video1: {
-
-        name:
-            "EL OJO DE LA RIQUEZA",
-
-        url:
-            "https://mega.nz/file/ulBR1aaC#90sGdNoolQrZyf_1T9uTht2qB9kKjb7bQGV0ycxXSlg"
-
+        name: "EL OJO DE LA RIQUEZA",
+        url: "https://mega.nz/file/ulBR1aaC#90sGdNoolQrZyf_1T9uTht2qB9kKjb7bQGV0ycxXSlg"
     },
 
-
     video2: {
-
-        name:
-            "DE LA TRAICIÓN AL TRONO",
-
-        url:
-            "https://mega.nz/file/PlRVAaqK#q6k9C9wVySYblyzsk9G8w0D4DyJTc04q47_oSBAd8LU"
-
+        name: "DE LA TRAICIÓN AL TRONO",
+        url: "https://mega.nz/file/PlRVAaqK#q6k9C9wVySYblyzsk9G8w0D4DyJTc04q47_oSBAd8LU"
     }
 
 };
@@ -84,38 +72,128 @@ const VIDEOS = {
    CONFIGURACIÓN
 ========================================================= */
 
+
+/*
+ * Primer rango.
+ *
+ * Se utiliza para localizar la estructura inicial
+ * del MP4.
+ */
+
 const INITIAL_RANGE_SIZE =
     4 * 1024 * 1024;
 
 
-const DIRECTED_RANGE_SIZE =
+/*
+ * Tamaño de cada solicitud multimedia.
+ */
+
+const MEDIA_RANGE_SIZE =
     8 * 1024 * 1024;
 
 
 /*
- * Seguridad:
- * nunca descargar más de 64 MB
- * automáticamente durante esta prueba.
+ * Mientras reproduce:
+ *
+ * Queremos aproximadamente 30 segundos
+ * disponibles por delante.
  */
 
-const MAX_TEST_BYTES =
-    64 * 1024 * 1024;
-
-
-const MAX_DIRECTED_REQUESTS =
-    20;
-
-
-const TEST_BLOCK_SIZE =
-    1024 * 1024;
+const PLAYING_TARGET_BUFFER =
+    30;
 
 
 /*
- * Número de muestras aproximado por segmento.
+ * No superar aproximadamente 45 segundos
+ * mientras reproduce.
+ */
+
+const PLAYING_MAX_BUFFER =
+    45;
+
+
+/*
+ * Si el buffer cae por debajo de 8 segundos,
+ * debemos reaccionar rápidamente.
+ */
+
+const LOW_BUFFER =
+    8;
+
+
+/*
+ * Mientras el usuario está pausado,
+ * aprovechamos el tiempo para precargar.
+
+ * Límite deliberado:
+ * 120 segundos.
+ */
+
+const PAUSED_TARGET_BUFFER =
+    120;
+
+
+/*
+ * No superar 120 segundos mientras
+ * el usuario está pausado.
+ */
+
+const PAUSED_MAX_BUFFER =
+    120;
+
+
+/*
+ * Intervalo de comprobación.
+ */
+
+const BUFFER_CHECK_INTERVAL =
+    500;
+
+
+/*
+ * MP4Box generará segmentos cada cierta
+ * cantidad de muestras.
  */
 
 const SEGMENT_SAMPLES =
     30;
+
+
+/*
+ * Una sola solicitud MEGA simultánea.
+
+ * Para esta prueba es deliberado.
+ * Queremos mantener orden y estabilidad.
+ */
+
+const MAX_PARALLEL_REQUESTS =
+    1;
+
+
+/*
+ * Tiempo máximo esperando a que MP4Box
+ * encuentre MOOV.
+ */
+
+const MOOV_TIMEOUT =
+    30000;
+
+
+/*
+ * Límite de protección para una posición
+ * que no cambia.
+ */
+
+const MAX_SAME_POSITION_RETRIES =
+    3;
+
+
+/*
+ * Seguridad para no entrar en loops.
+ */
+
+const MAX_STREAM_REQUESTS =
+    5000;
 
 
 /* =========================================================
@@ -127,66 +205,55 @@ const videoSelect =
         "video-select"
     );
 
-
 const btnInfo =
     document.getElementById(
         "btn-info"
     );
-
 
 const btnChunk =
     document.getElementById(
         "btn-chunk"
     );
 
-
 const statusElement =
     document.getElementById(
         "status"
     );
-
 
 const fileNameElement =
     document.getElementById(
         "file-name"
     );
 
-
 const fileSizeElement =
     document.getElementById(
         "file-size"
     );
-
 
 const fileTypeElement =
     document.getElementById(
         "file-type"
     );
 
-
 const progressBar =
     document.getElementById(
         "progress-bar"
     );
-
 
 const progressText =
     document.getElementById(
         "progress-text"
     );
 
-
 const progressPercent =
     document.getElementById(
         "progress-percent"
     );
 
-
 const resultBox =
     document.getElementById(
         "result-box"
     );
-
 
 const diagnosticLog =
     document.getElementById(
@@ -214,39 +281,43 @@ if (
 ) {
 
     throw new Error(
-        "Faltan elementos HTML necesarios en la página de prueba."
+        "Faltan elementos HTML necesarios en la página."
     );
 
 }
 
 
 /* =========================================================
-   ESTADO GLOBAL
+   ESTADO DEL ARCHIVO
 ========================================================= */
 
 let currentFile =
     null;
 
-
 let currentVideo =
     null;
 
-
 let fileSize =
     0;
-
 
 let totalDownloaded =
     0;
 
 
-let requestedRanges =
+/* =========================================================
+   RANGOS SOLICITADOS
+========================================================= */
+
+const requestedRanges =
     new Set();
 
 
+/* =========================================================
+   OPERACIÓN
+========================================================= */
+
 let activeOperation =
     null;
-
 
 let operationId =
     0;
@@ -259,14 +330,11 @@ let operationId =
 let mp4box =
     null;
 
-
 let mp4Ready =
     false;
 
-
 let mp4Error =
     false;
-
 
 let mp4Info =
     null;
@@ -279,16 +347,15 @@ let mp4Info =
 let mediaSource =
     null;
 
-
 let mediaSourceUrl =
     null;
 
 
+/* =========================================================
+   VIDEO
+========================================================= */
+
 let videoElement =
-    null;
-
-
-let mediaSourceOpenPromise =
     null;
 
 
@@ -299,57 +366,119 @@ let mediaSourceOpenPromise =
 const sourceBuffers =
     new Map();
 
-
 const sourceQueues =
     new Map();
 
 
-const sourceBufferReady =
-    new Map();
+/* =========================================================
+   ESTADO DE STREAMING
+========================================================= */
+
+let streamingActive =
+    false;
+
+let streamingStopped =
+    false;
+
+let fetchingRange =
+    false;
+
+let streamingLoopRunning =
+    false;
+
+
+/*
+ * Posición que MP4Box está solicitando.
+ *
+ * Se conserva por información,
+ * pero NO será utilizada ciegamente
+ * para el streaming multimedia.
+ */
+
+let mp4SuggestedPosition =
+    null;
+
+
+/*
+ * Cursor multimedia.
+
+ * Este cursor avanza secuencialmente
+ * por el contenido del MP4.
+ */
+
+let mediaCursor =
+    null;
+
+
+/*
+ * Posición del rango MOOV.
+ */
+
+let moovRangeStart =
+    null;
+
+let moovRangeEnd =
+    null;
+
+
+/*
+ * Evita pedir repetidamente la misma
+ * posición problemática.
+ */
+
+let samePositionCount =
+    0;
 
 
 /* =========================================================
-   REPRODUCTOR
+   ESTADÍSTICAS
 ========================================================= */
 
-let playerStarted =
-    false;
-
-
-let playerStopped =
-    false;
-
-
-let playbackStarted =
-    false;
-
-
-let segmentationPrepared =
-    false;
-
+let totalRequests =
+    0;
 
 let totalSegments =
     0;
 
+
+/* =========================================================
+   REPRODUCCIÓN
+========================================================= */
+
+let playbackStarted =
+    false;
+
+let playbackRequested =
+    false;
+
+
+/*
+ * Indica si el usuario pausó manualmente.
+ *
+ * No significa que el video esté simplemente
+ * esperando datos.
+ */
+
+let userPaused =
+    false;
+
+
+/* =========================================================
+   INTERFAZ DEL REPRODUCTOR
+========================================================= */
+
+let startPlayerButton =
+    null;
+
+let stopPlayerButton =
+    null;
 
 let playerInfoElement =
     null;
 
 
 /* =========================================================
-   BOTONES DEL REPRODUCTOR
-========================================================= */
-
-let startPlayerButton =
-    null;
-
-
-let stopPlayerButton =
-    null;
-
-
-/* =========================================================
-   UTILIDAD ERROR
+   UTILIDADES
 ========================================================= */
 
 function getErrorMessage(
@@ -364,17 +493,14 @@ function getErrorMessage(
 
     }
 
-
     if (
         error &&
-        typeof error.message ===
-        "string"
+        typeof error.message === "string"
     ) {
 
         return error.message;
 
     }
-
 
     return String(
         error
@@ -397,23 +523,18 @@ function log(
             "div"
         );
 
-
     line.className =
         `log-line log-${type}`;
-
 
     const time =
         new Date().toLocaleTimeString();
 
-
     line.textContent =
         `[${time}] ${message}`;
-
 
     diagnosticLog.appendChild(
         line
     );
-
 
     diagnosticLog.scrollTop =
         diagnosticLog.scrollHeight;
@@ -422,7 +543,7 @@ function log(
 
 
 /* =========================================================
-   ESTADO
+   STATUS
 ========================================================= */
 
 function setStatus(
@@ -432,7 +553,6 @@ function setStatus(
 
     statusElement.textContent =
         text;
-
 
     statusElement.className =
         `status status-${type}`;
@@ -457,7 +577,6 @@ function formatBytes(
 
     }
 
-
     const units = [
         "B",
         "KB",
@@ -465,7 +584,6 @@ function formatBytes(
         "GB",
         "TB"
     ];
-
 
     const exponent =
         Math.min(
@@ -476,14 +594,12 @@ function formatBytes(
             units.length - 1
         );
 
-
     const value =
         bytes /
         Math.pow(
             1024,
             exponent
         );
-
 
     return (
         value.toFixed(
@@ -514,7 +630,6 @@ function formatTime(
 
     }
 
-
     const total =
         Math.max(
             0,
@@ -523,27 +638,20 @@ function formatTime(
             )
         );
 
-
     const hours =
         Math.floor(
-            total /
-            3600
+            total / 3600
         );
-
 
     const minutes =
         Math.floor(
             (
-                total %
-                3600
-            ) /
-            60
+                total % 3600
+            ) / 60
         );
 
-
     const secs =
-        total %
-        60;
+        total % 60;
 
 
     if (
@@ -581,53 +689,13 @@ function getSelectedVideo() {
 
 
 /* =========================================================
-   RESET
-========================================================= */
-
-function resetInfo() {
-
-    fileNameElement.textContent =
-        "—";
-
-
-    fileSizeElement.textContent =
-        "—";
-
-
-    fileTypeElement.textContent =
-        "—";
-
-
-    progressBar.style.width =
-        "0%";
-
-
-    progressText.textContent =
-        "0 B";
-
-
-    progressPercent.textContent =
-        "0%";
-
-
-    resultBox.className =
-        "result-box";
-
-
-    resultBox.textContent =
-        "Todavía no se ha realizado ninguna prueba.";
-
-}
-
-
-/* =========================================================
    PROGRESO
 ========================================================= */
 
 function updateProgress() {
 
     progressText.textContent =
-        `${formatBytes(totalDownloaded)} descargados`;
+        `${formatBytes(totalDownloaded)} recibidos`;
 
 
     if (
@@ -637,22 +705,13 @@ function updateProgress() {
         progressPercent.textContent =
             "0%";
 
-
         progressBar.style.width =
             "0%";
-
 
         return;
 
     }
 
-
-    /*
-     * IMPORTANTE:
-     *
-     * Este porcentaje indica bytes descargados,
-     * no posición del archivo.
-     */
 
     const percent =
         Math.min(
@@ -671,6 +730,272 @@ function updateProgress() {
 
     progressBar.style.width =
         `${percent}%`;
+
+}
+
+
+/* =========================================================
+   OBTENER BUFFER ACTUAL
+========================================================= */
+
+function getBufferState() {
+
+    if (
+        !videoElement
+    ) {
+
+        return {
+            start: 0,
+            end: 0,
+            ahead: 0,
+            total: 0
+        };
+
+    }
+
+
+    const currentTime =
+        Number.isFinite(
+            videoElement.currentTime
+        )
+            ? videoElement.currentTime
+            : 0;
+
+
+    const ranges =
+        videoElement.buffered;
+
+
+    if (
+        !ranges ||
+        ranges.length === 0
+    ) {
+
+        return {
+            start: 0,
+            end: 0,
+            ahead: 0,
+            total: 0
+        };
+
+    }
+
+
+    let activeStart =
+        null;
+
+    let activeEnd =
+        null;
+
+
+    for (
+        let i = 0;
+        i < ranges.length;
+        i++
+    ) {
+
+        const start =
+            ranges.start(i);
+
+        const end =
+            ranges.end(i);
+
+
+        if (
+            currentTime >= start &&
+            currentTime <= end
+        ) {
+
+            activeStart =
+                start;
+
+            activeEnd =
+                end;
+
+            break;
+
+        }
+
+    }
+
+
+    /*
+     * Si todavía no hemos llegado al
+     * primer rango, utilizar el primero.
+     */
+
+    if (
+        activeStart === null
+    ) {
+
+        if (
+            currentTime <
+            ranges.start(0)
+        ) {
+
+            activeStart =
+                ranges.start(0);
+
+            activeEnd =
+                ranges.end(0);
+
+        }
+
+    }
+
+
+    if (
+        activeStart === null
+    ) {
+
+        return {
+            start: 0,
+            end: 0,
+            ahead: 0,
+            total: 0
+        };
+
+    }
+
+
+    const ahead =
+        Math.max(
+            0,
+            activeEnd -
+            currentTime
+        );
+
+
+    let total =
+        0;
+
+
+    for (
+        let i = 0;
+        i < ranges.length;
+        i++
+    ) {
+
+        total +=
+            Math.max(
+                0,
+                ranges.end(i) -
+                ranges.start(i)
+            );
+
+    }
+
+
+    return {
+        start:
+            activeStart,
+
+        end:
+            activeEnd,
+
+        ahead:
+            ahead,
+
+        total:
+            total
+    };
+
+}
+
+
+/* =========================================================
+   ACTUALIZAR INFORMACIÓN DEL REPRODUCTOR
+========================================================= */
+
+function updatePlayerInfo() {
+
+    if (
+        !playerInfoElement
+    ) {
+
+        return;
+
+    }
+
+
+    const buffer =
+        getBufferState();
+
+
+    const current =
+        videoElement
+            ? videoElement.currentTime
+            : 0;
+
+
+    const duration =
+        videoElement &&
+        Number.isFinite(
+            videoElement.duration
+        )
+            ? videoElement.duration
+            : 0;
+
+
+    let mode =
+        "ESPERA";
+
+
+    if (
+        streamingActive
+    ) {
+
+        if (
+            videoElement &&
+            videoElement.paused
+        ) {
+
+            mode =
+                "PRECARGA EN PAUSA";
+
+        } else {
+
+            mode =
+                "STREAMING ACTIVO";
+
+        }
+
+    }
+
+
+    playerInfoElement.textContent =
+        [
+            `Modo: ${mode}`,
+
+            `Posición: ${formatTime(current)}`,
+
+            `Duración: ${formatTime(duration)}`,
+
+            `Buffer: ${buffer.ahead.toFixed(1)} s`,
+
+            `Buffer total: ${buffer.total.toFixed(1)} s`,
+
+            `MEGA descargado: ${formatBytes(totalDownloaded)}`,
+
+            `Solicitudes: ${totalRequests}`,
+
+            `Segmentos: ${totalSegments}`,
+
+            `Cursor multimedia: ${
+                Number.isFinite(mediaCursor)
+                    ? mediaCursor.toLocaleString()
+                    : "—"
+            }`,
+
+            `MP4Box sugiere: ${
+                Number.isFinite(mp4SuggestedPosition)
+                    ? mp4SuggestedPosition.toLocaleString()
+                    : "—"
+            }`
+
+        ].join(
+            " | "
+        );
 
 }
 
@@ -701,30 +1026,23 @@ function createPlayerInterface() {
             "section"
         );
 
-
     panel.id =
         "mega-player-panel";
-
 
     panel.style.marginTop =
         "24px";
 
-
     panel.style.padding =
         "18px";
-
 
     panel.style.border =
         "1px solid #30303a";
 
-
     panel.style.borderRadius =
         "12px";
 
-
     panel.style.background =
         "#17171d";
-
 
     panel.style.boxSizing =
         "border-box";
@@ -735,10 +1053,8 @@ function createPlayerInterface() {
             "h3"
         );
 
-
     title.textContent =
-        "Reproductor experimental MEGA";
-
+        "Reproductor experimental — Streaming adaptativo";
 
     title.style.margin =
         "0 0 8px 0";
@@ -754,18 +1070,14 @@ function createPlayerInterface() {
             "div"
         );
 
-
     subtitle.textContent =
         "MEGAJS → MP4Box.js → MediaSource → <video>";
-
 
     subtitle.style.opacity =
         "0.7";
 
-
     subtitle.style.fontSize =
         "13px";
-
 
     subtitle.style.marginBottom =
         "16px";
@@ -776,21 +1088,18 @@ function createPlayerInterface() {
     );
 
 
-    const buttonContainer =
+    const buttons =
         document.createElement(
             "div"
         );
 
-
-    buttonContainer.style.display =
+    buttons.style.display =
         "flex";
 
-
-    buttonContainer.style.flexWrap =
+    buttons.style.flexWrap =
         "wrap";
 
-
-    buttonContainer.style.gap =
+    buttons.style.gap =
         "10px";
 
 
@@ -799,21 +1108,14 @@ function createPlayerInterface() {
             "button"
         );
 
-
     startPlayerButton.type =
         "button";
 
-
     startPlayerButton.textContent =
-        "Iniciar reproducción experimental";
-
+        "Iniciar streaming continuo";
 
     startPlayerButton.disabled =
         true;
-
-
-    startPlayerButton.style.cursor =
-        "pointer";
 
 
     stopPlayerButton =
@@ -821,35 +1123,27 @@ function createPlayerInterface() {
             "button"
         );
 
-
     stopPlayerButton.type =
         "button";
 
-
     stopPlayerButton.textContent =
         "Detener";
-
 
     stopPlayerButton.disabled =
         true;
 
 
-    stopPlayerButton.style.cursor =
-        "pointer";
-
-
-    buttonContainer.appendChild(
+    buttons.appendChild(
         startPlayerButton
     );
 
-
-    buttonContainer.appendChild(
+    buttons.appendChild(
         stopPlayerButton
     );
 
 
     panel.appendChild(
-        buttonContainer
+        buttons
     );
 
 
@@ -858,42 +1152,32 @@ function createPlayerInterface() {
             "video"
         );
 
-
     videoElement.id =
         "mega-video";
-
 
     videoElement.controls =
         true;
 
-
     videoElement.playsInline =
         true;
-
 
     videoElement.preload =
         "metadata";
 
-
     videoElement.style.width =
         "100%";
-
 
     videoElement.style.display =
         "block";
 
-
     videoElement.style.marginTop =
         "18px";
-
 
     videoElement.style.background =
         "#000";
 
-
     videoElement.style.borderRadius =
         "8px";
-
 
     videoElement.style.minHeight =
         "180px";
@@ -909,29 +1193,20 @@ function createPlayerInterface() {
             "div"
         );
 
-
-    playerInfoElement.id =
-        "mega-player-info";
-
-
     playerInfoElement.style.marginTop =
         "14px";
-
 
     playerInfoElement.style.fontFamily =
         "monospace";
 
-
     playerInfoElement.style.fontSize =
         "12px";
 
-
     playerInfoElement.style.lineHeight =
-        "1.6";
-
+        "1.7";
 
     playerInfoElement.textContent =
-        "Reproductor preparado. Esperando inicio.";
+        "Reproductor preparado.";
 
 
     panel.appendChild(
@@ -939,31 +1214,103 @@ function createPlayerInterface() {
     );
 
 
-    /*
-     * Insertar después del resultado.
-     */
-
     resultBox.parentNode.insertBefore(
         panel,
         resultBox.nextSibling
     );
 
 
-    /*
-     * Eventos.
-     */
+    /* =====================================================
+       EVENTO PLAY
+    ===================================================== */
 
-    startPlayerButton.addEventListener(
-        "click",
-        startExperimentalPlayer
+    videoElement.addEventListener(
+        "play",
+        () => {
+
+            userPaused =
+                false;
+
+            playbackRequested =
+                true;
+
+
+            log(
+                "▶ Usuario inició/reanudó la reproducción.",
+                "info"
+            );
+
+
+            setStatus(
+                "Reproduciendo",
+                "success"
+            );
+
+
+            updatePlayerInfo();
+
+        }
     );
 
 
-    stopPlayerButton.addEventListener(
-        "click",
-        stopExperimentalPlayer
+    /* =====================================================
+       EVENTO PAUSE
+    ===================================================== */
+
+    videoElement.addEventListener(
+        "pause",
+        () => {
+
+            if (
+                videoElement.ended
+            ) {
+
+                return;
+
+            }
+
+
+            /*
+             * Este es el cambio importante.
+
+             * NO detenemos el streaming.
+             */
+
+            if (
+                streamingActive
+            ) {
+
+                userPaused =
+                    true;
+
+
+                playbackRequested =
+                    false;
+
+
+                log(
+                    "⏸ Usuario pausó el vídeo.",
+                    "info"
+                );
+
+
+                log(
+                    `⏳ PRE-CARGA ACTIVADA. Objetivo: ${PAUSED_TARGET_BUFFER} segundos.`,
+                    "success"
+                );
+
+            }
+
+
+            updatePlayerInfo();
+
+        }
     );
 
+
+    /* =====================================================
+       PLAYING
+    ===================================================== */
 
     videoElement.addEventListener(
         "playing",
@@ -972,9 +1319,12 @@ function createPlayerInterface() {
             playbackStarted =
                 true;
 
+            userPaused =
+                false;
+
 
             log(
-                "▶ EL VIDEO ESTÁ REPRODUCIENDO.",
+                "✓ VIDEO REPRODUCIENDO.",
                 "success"
             );
 
@@ -984,16 +1334,23 @@ function createPlayerInterface() {
                 "success"
             );
 
+
+            updatePlayerInfo();
+
         }
     );
 
+
+    /* =====================================================
+       WAITING
+    ===================================================== */
 
     videoElement.addEventListener(
         "waiting",
         () => {
 
             log(
-                "⏳ El vídeo está esperando más datos.",
+                "⏳ BUFFERING: el vídeo necesita más datos.",
                 "info"
             );
 
@@ -1001,31 +1358,104 @@ function createPlayerInterface() {
     );
 
 
+    /* =====================================================
+       CANPLAY
+    ===================================================== */
+
     videoElement.addEventListener(
         "canplay",
         () => {
 
             log(
-                "✓ El navegador indica que el vídeo puede comenzar.",
+                "✓ El navegador indica que puede reproducir.",
                 "success"
             );
 
         }
     );
 
+
+    /* =====================================================
+       LOADED METADATA
+    ===================================================== */
 
     videoElement.addEventListener(
         "loadedmetadata",
         () => {
 
             log(
-                `✓ Metadata del <video> disponible. Duración: ${formatTime(videoElement.duration)}`,
+                `✓ Metadata disponible. Duración: ${formatTime(videoElement.duration)}`,
                 "success"
             );
+
+
+            updatePlayerInfo();
 
         }
     );
 
+
+    /* =====================================================
+       TIMEUPDATE
+    ===================================================== */
+
+    videoElement.addEventListener(
+        "timeupdate",
+        () => {
+
+            updatePlayerInfo();
+
+        }
+    );
+
+
+    /* =====================================================
+       PROGRESS
+    ===================================================== */
+
+    videoElement.addEventListener(
+        "progress",
+        () => {
+
+            updatePlayerInfo();
+
+        }
+    );
+
+
+    /* =====================================================
+       ENDED
+    ===================================================== */
+
+    videoElement.addEventListener(
+        "ended",
+        () => {
+
+            streamingActive =
+                false;
+
+
+            setStatus(
+                "Finalizado",
+                "success"
+            );
+
+
+            log(
+                "✓ El vídeo llegó al final.",
+                "success"
+            );
+
+
+            updatePlayerInfo();
+
+        }
+    );
+
+
+    /* =====================================================
+       ERROR VIDEO
+    ===================================================== */
 
     videoElement.addEventListener(
         "error",
@@ -1034,34 +1464,41 @@ function createPlayerInterface() {
             const mediaError =
                 videoElement.error;
 
-
-            let message =
-                "Error desconocido del elemento <video>.";
-
-
-            if (
+            const code =
                 mediaError
-            ) {
-
-                message =
-                    `MediaError code=${mediaError.code}`;
-
-            }
+                    ? mediaError.code
+                    : "desconocido";
 
 
             log(
-                `✗ ${message}`,
+                `✗ MediaError del vídeo: ${code}`,
                 "error"
             );
 
         }
     );
 
+
+    /* =====================================================
+       BOTONES
+    ===================================================== */
+
+    startPlayerButton.addEventListener(
+        "click",
+        startAdaptiveStreaming
+    );
+
+
+    stopPlayerButton.addEventListener(
+        "click",
+        stopAdaptiveStreaming
+    );
+
 }
 
 
 /* =========================================================
-   CARGAR INFORMACIÓN MEGA
+   CARGAR INFORMACIÓN DEL ARCHIVO
 ========================================================= */
 
 async function loadFileInformation() {
@@ -1071,10 +1508,9 @@ async function loadFileInformation() {
     ) {
 
         log(
-            "⚠ Hay una operación activa.",
+            "⚠ Ya existe una operación activa.",
             "error"
         );
-
 
         return;
 
@@ -1097,34 +1533,27 @@ async function loadFileInformation() {
     btnInfo.disabled =
         true;
 
-
     btnChunk.disabled =
         true;
 
 
-    resetInfo();
+    resetStreamingState();
 
 
     currentFile =
         null;
 
-
     currentVideo =
         null;
 
-
     fileSize =
         0;
-
 
     totalDownloaded =
         0;
 
 
-    requestedRanges.clear();
-
-
-    resetPlayerState();
+    resetInfo();
 
 
     setStatus(
@@ -1147,14 +1576,14 @@ async function loadFileInformation() {
         );
 
 
-        const mainFile =
+        const file =
             MEGAFile.fromURL(
                 selected.url
             );
 
 
         currentFile =
-            mainFile;
+            file;
 
 
         log(
@@ -1169,16 +1598,16 @@ async function loadFileInformation() {
         );
 
 
-        const loadedFile =
-            await mainFile.loadAttributes();
+        const loaded =
+            await file.loadAttributes();
 
 
         if (
-            loadedFile
+            loaded
         ) {
 
             currentFile =
-                loadedFile;
+                loaded;
 
         }
 
@@ -1196,18 +1625,7 @@ async function loadFileInformation() {
 
         const name =
             currentFile.name ||
-            selected.name ||
-            "Desconocido";
-
-
-        const type =
-            name
-                .toLowerCase()
-                .endsWith(
-                    ".mp4"
-                )
-                ? "video/mp4"
-                : "Desconocido";
+            selected.name;
 
 
         fileNameElement.textContent =
@@ -1221,7 +1639,7 @@ async function loadFileInformation() {
 
 
         fileTypeElement.textContent =
-            type;
+            "video/mp4";
 
 
         setStatus(
@@ -1249,10 +1667,6 @@ async function loadFileInformation() {
             "success"
         );
 
-
-        /*
-         * Crear el reproductor.
-         */
 
         createPlayerInterface();
 
@@ -1288,11 +1702,11 @@ async function loadFileInformation() {
 
 
         resultBox.textContent =
-            `No se pudo leer el archivo: ${getErrorMessage(error)}`;
+            `Error: ${getErrorMessage(error)}`;
 
 
         log(
-            `✗ Error: ${getErrorMessage(error)}`,
+            `✗ ${getErrorMessage(error)}`,
             "error"
         );
 
@@ -1321,19 +1735,7 @@ async function readMegaRange(
     ) {
 
         throw new Error(
-            "No existe archivo MEGA cargado."
-        );
-
-    }
-
-
-    if (
-        !Number.isFinite(start) ||
-        !Number.isFinite(size)
-    ) {
-
-        throw new Error(
-            "Inicio o tamaño de rango inválido."
+            "No existe archivo MEGA."
         );
 
     }
@@ -1345,7 +1747,7 @@ async function readMegaRange(
     ) {
 
         throw new Error(
-            `Posición fuera de rango: ${start}`
+            `Posición MEGA inválida: ${start}`
         );
 
     }
@@ -1367,13 +1769,13 @@ async function readMegaRange(
         1;
 
 
-    const rangeKey =
+    const key =
         `${start}:${end}`;
 
 
     if (
         requestedRanges.has(
-            rangeKey
+            key
         )
     ) {
 
@@ -1385,8 +1787,23 @@ async function readMegaRange(
 
 
     requestedRanges.add(
-        rangeKey
+        key
     );
+
+
+    totalRequests++;
+
+
+    if (
+        totalRequests >
+        MAX_STREAM_REQUESTS
+    ) {
+
+        throw new Error(
+            "Se alcanzó el límite de seguridad de solicitudes."
+        );
+
+    }
 
 
     log(
@@ -1405,7 +1822,7 @@ async function readMegaRange(
                 end,
 
             maxConnections:
-                1,
+                MAX_PARALLEL_REQUESTS,
 
             initialChunkSize:
                 128 *
@@ -1427,7 +1844,7 @@ async function readMegaRange(
     ) {
 
         throw new Error(
-            "MEGAJS no devolvió un stream."
+            "MEGAJS no devolvió el stream."
         );
 
     }
@@ -1464,7 +1881,7 @@ async function readMegaRange(
                     }
 
 
-                    let array;
+                    let bytes;
 
 
                     if (
@@ -1472,14 +1889,14 @@ async function readMegaRange(
                         Uint8Array
                     ) {
 
-                        array =
+                        bytes =
                             chunk;
 
                     } else if (
                         chunk.buffer
                     ) {
 
-                        array =
+                        bytes =
                             new Uint8Array(
                                 chunk.buffer,
                                 chunk.byteOffset ||
@@ -1489,11 +1906,11 @@ async function readMegaRange(
 
                     } else {
 
-                        log(
-                            "⚠ Bloque MEGAJS con formato desconocido.",
-                            "error"
+                        reject(
+                            new Error(
+                                "MEGAJS devolvió un bloque desconocido."
+                            )
                         );
-
 
                         return;
 
@@ -1501,7 +1918,7 @@ async function readMegaRange(
 
 
                     const copy =
-                        array.slice();
+                        bytes.slice();
 
 
                     chunks.push(
@@ -1590,7 +2007,8 @@ async function readMegaRange(
 
 
     for (
-        const chunk of chunks
+        const chunk of
+        chunks
     ) {
 
         result.set(
@@ -1598,24 +2016,24 @@ async function readMegaRange(
             offset
         );
 
-
         offset +=
             chunk.byteLength;
 
     }
 
 
-    const arrayBuffer =
+    const buffer =
         result.buffer;
 
 
     /*
-     * CRÍTICO:
-     *
-     * MP4Box necesita esta propiedad.
+     * CRÍTICO.
+
+     * MP4Box necesita saber la posición
+     * absoluta del bloque dentro del archivo.
      */
 
-    arrayBuffer.fileStart =
+    buffer.fileStart =
         start;
 
 
@@ -1635,7 +2053,7 @@ async function readMegaRange(
     return {
 
         buffer:
-            arrayBuffer,
+            buffer,
 
         start:
             start,
@@ -1662,7 +2080,7 @@ async function createMediaSource() {
     ) {
 
         throw new Error(
-            "Este navegador no soporta MediaSource Extensions."
+            "Este navegador no soporta MediaSource."
         );
 
     }
@@ -1673,15 +2091,11 @@ async function createMediaSource() {
     ) {
 
         throw new Error(
-            "El elemento <video> todavía no existe."
+            "No existe el elemento <video>."
         );
 
     }
 
-
-    /*
-     * Liberar URL anterior.
-     */
 
     if (
         mediaSourceUrl
@@ -1695,17 +2109,7 @@ async function createMediaSource() {
 
         } catch (
             error
-        ) {
-
-            console.warn(
-                error
-            );
-
-        }
-
-
-        mediaSourceUrl =
-            null;
+        ) {}
 
     }
 
@@ -1724,105 +2128,80 @@ async function createMediaSource() {
         mediaSourceUrl;
 
 
-    mediaSourceOpenPromise =
-        new Promise(
-            (
-                resolve,
-                reject
-            ) => {
+    await new Promise(
+        (
+            resolve,
+            reject
+        ) => {
 
-                const onOpen =
-                    () => {
+            const opened =
+                () => {
 
-                        log(
-                            "✓ MediaSource abierto.",
-                            "success"
-                        );
-
-
-                        resolve();
-
-                    };
+                    log(
+                        "✓ MediaSource abierto.",
+                        "success"
+                    );
 
 
-                const onError =
-                    () => {
+                    resolve();
 
-                        reject(
-                            new Error(
-                                "MediaSource informó un error."
-                            )
-                        );
-
-                    };
+                };
 
 
-                mediaSource.addEventListener(
-                    "sourceopen",
-                    onOpen,
-                    {
-                        once:
-                            true
-                    }
-                );
+            const failed =
+                () => {
+
+                    reject(
+                        new Error(
+                            "MediaSource informó un error."
+                        )
+                    );
+
+                };
 
 
-                mediaSource.addEventListener(
-                    "error",
-                    onError,
-                    {
-                        once:
-                            true
-                    }
-                );
-
-            }
-        );
+            mediaSource.addEventListener(
+                "sourceopen",
+                opened,
+                {
+                    once:
+                        true
+                }
+            );
 
 
-    await mediaSourceOpenPromise;
+            mediaSource.addEventListener(
+                "error",
+                failed,
+                {
+                    once:
+                        true
+                }
+            );
+
+        }
+    );
 
 }
 
 
 /* =========================================================
-   CREAR SOURCEBUFFER
+   CREAR SOURCEBUFFERS
 ========================================================= */
 
 function createSourceBuffers(
     info
 ) {
 
-    if (
-        !mediaSource ||
-        mediaSource.readyState !==
-            "open"
-    ) {
-
-        throw new Error(
-            "MediaSource no está abierto."
-        );
-
-    }
-
-
     sourceBuffers.clear();
-
 
     sourceQueues.clear();
 
 
-    sourceBufferReady.clear();
-
-
-    const tracks =
-        info.tracks ||
-        [];
-
-
     for (
         const track of
-        tracks
+        info.tracks ||
+        []
     ) {
 
         let mime =
@@ -1850,12 +2229,6 @@ function createSourceBuffers(
             !mime
         ) {
 
-            log(
-                `⚠ Track ${track.id} no tiene MIME reconocible.`,
-                "error"
-            );
-
-
             continue;
 
         }
@@ -1874,10 +2247,9 @@ function createSourceBuffers(
         ) {
 
             log(
-                `✗ El navegador NO soporta: ${mime}`,
+                `✗ Codec no soportado: ${mime}`,
                 "error"
             );
-
 
             continue;
 
@@ -1889,10 +2261,6 @@ function createSourceBuffers(
                 mime
             );
 
-
-        /*
-         * Mantener segmentos en orden.
-         */
 
         sourceBuffer.mode =
             "segments";
@@ -1909,12 +2277,6 @@ function createSourceBuffers(
             []);
 
 
-        sourceBufferReady.set(
-            track.id,
-            true
-        );
-
-
         sourceBuffer.addEventListener(
             "updateend",
             () => {
@@ -1924,7 +2286,7 @@ function createSourceBuffers(
                 );
 
 
-                tryStartPlayback();
+                updatePlayerInfo();
 
             }
         );
@@ -1934,14 +2296,14 @@ function createSourceBuffers(
             "error",
             () => {
 
-                log(
-                    `✗ SourceBuffer track ${track.id} informó un error.`,
-                    "error"
-                );
-
-
                 mp4Error =
                     true;
+
+
+                log(
+                    `✗ SourceBuffer track ${track.id} informó error.`,
+                    "error"
+                );
 
             }
         );
@@ -1961,7 +2323,7 @@ function createSourceBuffers(
     ) {
 
         throw new Error(
-            "No se pudo crear ningún SourceBuffer compatible."
+            "No se pudo crear ningún SourceBuffer."
         );
 
     }
@@ -1970,7 +2332,7 @@ function createSourceBuffers(
 
 
 /* =========================================================
-   AGREGAR A COLA
+   COLA SOURCEBUFFER
 ========================================================= */
 
 function queueSourceBuffer(
@@ -1987,12 +2349,6 @@ function queueSourceBuffer(
     if (
         !queue
     ) {
-
-        log(
-            `⚠ No existe cola para track ${trackId}.`,
-            "error"
-        );
-
 
         return;
 
@@ -2070,7 +2426,6 @@ function pumpSourceBuffer(
             buffer
         );
 
-
     } catch (
         error
     ) {
@@ -2081,7 +2436,7 @@ function pumpSourceBuffer(
 
 
         log(
-            `✗ Error appendBuffer track ${trackId}: ${getErrorMessage(error)}`,
+            `✗ appendBuffer track ${trackId}: ${getErrorMessage(error)}`,
             "error"
         );
 
@@ -2099,15 +2454,6 @@ function prepareSegmentation(
 ) {
 
     if (
-        segmentationPrepared
-    ) {
-
-        return;
-
-    }
-
-
-    if (
         !mp4box
     ) {
 
@@ -2118,32 +2464,10 @@ function prepareSegmentation(
     }
 
 
-    if (
-        !mediaSource ||
-        mediaSource.readyState !==
-            "open"
-    ) {
-
-        throw new Error(
-            "MediaSource todavía no está abierto."
-        );
-
-    }
-
-
-    /*
-     * Crear SourceBuffers.
-     */
-
     createSourceBuffers(
         info
     );
 
-
-    /*
-     * onSegment debe existir antes
-     * de inicializar la segmentación.
-     */
 
     mp4box.onSegment =
         (
@@ -2155,27 +2479,6 @@ function prepareSegmentation(
         ) => {
 
             totalSegments++;
-
-
-            const targetSourceBuffer =
-                sourceBuffers.get(
-                    trackId
-                );
-
-
-            if (
-                !targetSourceBuffer
-            ) {
-
-                log(
-                    `⚠ Segmento track ${trackId}, pero no existe SourceBuffer.`,
-                    "error"
-                );
-
-
-                return;
-
-            }
 
 
             queueSourceBuffer(
@@ -2197,7 +2500,7 @@ function prepareSegmentation(
             ) {
 
                 log(
-                    `  Próxima muestra: ${sampleNumber}`,
+                    `Muestra inicial/siguiente: ${sampleNumber}`,
                     "info"
                 );
 
@@ -2216,14 +2519,10 @@ function prepareSegmentation(
             }
 
 
-            tryStartPlayback();
+            updatePlayerInfo();
 
         };
 
-
-    /*
-     * Configurar todos los tracks.
-     */
 
     for (
         const track of
@@ -2244,9 +2543,7 @@ function prepareSegmentation(
 
         mp4box.setSegmentOptions(
             track.id,
-            sourceBuffers.get(
-                track.id
-            ),
+            null,
             {
                 nbSamples:
                     SEGMENT_SAMPLES,
@@ -2260,21 +2557,8 @@ function prepareSegmentation(
             }
         );
 
-
-        log(
-            `✓ Segmentación configurada para track ${track.id}.`,
-            "success"
-        );
-
     }
 
-
-    /*
-     * Crear initialization segments.
-     *
-     * Usamos per-track para que cada
-     * SourceBuffer reciba su propio init.
-     */
 
     const initSegments =
         mp4box.initializeSegmentation(
@@ -2319,19 +2603,11 @@ function prepareSegmentation(
     }
 
 
-    segmentationPrepared =
-        true;
-
-
-    /*
-     * Comenzar procesamiento.
-     */
-
     mp4box.start();
 
 
     log(
-        "✓ MP4Box inició procesamiento de muestras.",
+        "✓ MP4Box inició procesamiento.",
         "success"
     );
 
@@ -2398,20 +2674,11 @@ function configureMP4Box() {
             );
 
 
-            /*
-             * En este punto MOOV está disponible.
-             *
-             * La preparación de MSE se hace
-             * inmediatamente si MediaSource ya
-             * está abierto.
-             */
-
             try {
 
                 prepareSegmentation(
                     info
                 );
-
 
             } catch (
                 error
@@ -2422,7 +2689,7 @@ function configureMP4Box() {
 
 
                 log(
-                    `✗ Error preparando segmentación: ${getErrorMessage(error)}`,
+                    `✗ Error preparando MSE: ${getErrorMessage(error)}`,
                     "error"
                 );
 
@@ -2449,7 +2716,7 @@ function configureMP4Box() {
 
 
 /* =========================================================
-   INFORMACIÓN MP4
+   MOSTRAR INFORMACIÓN MP4
 ========================================================= */
 
 function showMP4Info(
@@ -2504,7 +2771,7 @@ function showMP4Info(
         tracks
     ) {
 
-        let message =
+        let text =
             `Track ${track.id}: codec=${track.codec || "desconocido"}`;
 
 
@@ -2512,7 +2779,7 @@ function showMP4Info(
             track.video
         ) {
 
-            message +=
+            text +=
                 ` | vídeo ${track.video.width}x${track.video.height}`;
 
         }
@@ -2522,28 +2789,1029 @@ function showMP4Info(
             track.audio
         ) {
 
-            message +=
+            text +=
                 ` | audio ${track.audio.sample_rate || "—"} Hz`;
 
         }
 
 
         log(
-            message,
+            text,
             "success"
         );
 
     }
 
+}
+
+
+/* =========================================================
+   ESPERAR MP4 READY
+========================================================= */
+
+function waitForMP4Ready(
+    currentOperation
+) {
+
+    return new Promise(
+        (
+            resolve,
+            reject
+        ) => {
+
+            const started =
+                Date.now();
+
+
+            const timer =
+                setInterval(
+                    () => {
+
+                        if (
+                            currentOperation !==
+                            operationId
+                        ) {
+
+                            clearInterval(
+                                timer
+                            );
+
+
+                            reject(
+                                new Error(
+                                    "Operación cancelada."
+                                )
+                            );
+
+
+                            return;
+
+                        }
+
+
+                        if (
+                            mp4Error
+                        ) {
+
+                            clearInterval(
+                                timer
+                            );
+
+
+                            reject(
+                                new Error(
+                                    "MP4Box informó un error."
+                                )
+                            );
+
+
+                            return;
+
+                        }
+
+
+                        if (
+                            mp4Ready
+                        ) {
+
+                            clearInterval(
+                                timer
+                            );
+
+
+                            resolve();
+
+
+                            return;
+
+                        }
+
+
+                        if (
+                            Date.now() -
+                            started >
+                            MOOV_TIMEOUT
+                        ) {
+
+                            clearInterval(
+                                timer
+                            );
+
+
+                            reject(
+                                new Error(
+                                    "Tiempo agotado esperando MOOV."
+                                )
+                            );
+
+                        }
+
+                    },
+                    100
+                );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   INICIAR STREAMING
+========================================================= */
+
+async function startAdaptiveStreaming() {
 
     if (
-        playerInfoElement
+        !currentFile
     ) {
 
-        playerInfoElement.textContent =
-            `MP4: ${formatTime(duration)} | ` +
-            `Tracks: ${tracks.length} | ` +
-            `Datos descargados: ${formatBytes(totalDownloaded)}`;
+        log(
+            "⚠ Primero carga un archivo MEGA.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    if (
+        streamingActive
+    ) {
+
+        log(
+            "⚠ El streaming ya está activo.",
+            "info"
+        );
+
+        return;
+
+    }
+
+
+    activeOperation =
+        "streaming";
+
+
+    const currentOperation =
+        ++operationId;
+
+
+    streamingActive =
+        true;
+
+    streamingStopped =
+        false;
+
+    streamingLoopRunning =
+        false;
+
+    fetchingRange =
+        false;
+
+
+    playbackStarted =
+        false;
+
+    playbackRequested =
+        false;
+
+    userPaused =
+        false;
+
+
+    mp4Ready =
+        false;
+
+    mp4Error =
+        false;
+
+    mp4Info =
+        null;
+
+
+    totalDownloaded =
+        0;
+
+    totalRequests =
+        0;
+
+    totalSegments =
+        0;
+
+
+    mp4SuggestedPosition =
+        null;
+
+
+    mediaCursor =
+        null;
+
+
+    moovRangeStart =
+        null;
+
+    moovRangeEnd =
+        null;
+
+
+    samePositionCount =
+        0;
+
+
+    requestedRanges.clear();
+
+
+    startPlayerButton.disabled =
+        true;
+
+    stopPlayerButton.disabled =
+        false;
+
+
+    btnInfo.disabled =
+        true;
+
+    btnChunk.disabled =
+        true;
+
+
+    setStatus(
+        "Preparando streaming...",
+        "loading"
+    );
+
+
+    resultBox.className =
+        "result-box";
+
+
+    resultBox.textContent =
+        "Preparando streaming continuo adaptativo...";
+
+
+    log(
+        "=================================================",
+        "info"
+    );
+
+
+    log(
+        "INICIANDO STREAMING CONTINUO ADAPTATIVO",
+        "info"
+    );
+
+
+    log(
+        "=================================================",
+        "info"
+    );
+
+
+    log(
+        `✓ Buffer reproducción: ${PLAYING_TARGET_BUFFER}–${PLAYING_MAX_BUFFER} s`,
+        "info"
+    );
+
+
+    log(
+        `✓ Buffer pausa: hasta ${PAUSED_TARGET_BUFFER} s`,
+        "info"
+    );
+
+
+    log(
+        `✓ Buffer bajo: ${LOW_BUFFER} s`,
+        "info"
+    );
+
+
+    log(
+        `✓ Rango MEGA: ${formatBytes(MEDIA_RANGE_SIZE)}`,
+        "info"
+    );
+
+
+    log(
+        "✓ La precarga continuará aunque el usuario pause.",
+        "success"
+    );
+
+
+    try {
+
+        /* =================================================
+           MEDIASOURCE
+        ================================================= */
+
+        await createMediaSource();
+
+
+        /* =================================================
+           MP4BOX
+        ================================================= */
+
+        mp4box =
+            MP4Box.createFile();
+
+
+        configureMP4Box();
+
+
+        /* =================================================
+           PRIMER BLOQUE
+        ================================================= */
+
+        const firstSize =
+            Math.min(
+                INITIAL_RANGE_SIZE,
+                fileSize
+            );
+
+
+        const first =
+            await readMegaRange(
+                0,
+                firstSize,
+                "MEGA INICIO"
+            );
+
+
+        /*
+         * El cursor multimedia comienza después
+         * del primer bloque.
+         */
+
+        mediaCursor =
+            first.end +
+            1;
+
+
+        /*
+         * Entregamos el primer bloque a MP4Box.
+         */
+
+        mp4SuggestedPosition =
+            mp4box.appendBuffer(
+                first.buffer
+            );
+
+
+        log(
+            `MP4Box indica siguiente posición: ${
+                Number.isFinite(mp4SuggestedPosition)
+                    ? mp4SuggestedPosition.toLocaleString()
+                    : "—"
+            }`,
+            "success"
+        );
+
+
+        /* =================================================
+           LOCALIZAR MOOV SI MP4BOX LO PIDE
+        ================================================= */
+
+        if (
+            Number.isFinite(
+                mp4SuggestedPosition
+            ) &&
+            mp4SuggestedPosition >
+                first.end
+        ) {
+
+            const moovPosition =
+                mp4SuggestedPosition;
+
+
+            const moovSize =
+                Math.min(
+                    MEDIA_RANGE_SIZE,
+                    fileSize -
+                    moovPosition
+                );
+
+
+            if (
+                moovSize >
+                0
+            ) {
+
+                moovRangeStart =
+                    moovPosition;
+
+                moovRangeEnd =
+                    moovPosition +
+                    moovSize -
+                    1;
+
+
+                log(
+                    `MEGA MOOV → ${moovRangeStart.toLocaleString()} → ${moovRangeEnd.toLocaleString()} (${formatBytes(moovSize)})`,
+                    "info"
+                );
+
+
+                const moovBlock =
+                    await readMegaRange(
+                        moovPosition,
+                        moovSize,
+                        "MEGA MOOV"
+                    );
+
+
+                mp4SuggestedPosition =
+                    mp4box.appendBuffer(
+                        moovBlock.buffer
+                    );
+
+
+                log(
+                    `MP4Box después de MOOV indica: ${
+                        Number.isFinite(mp4SuggestedPosition)
+                            ? mp4SuggestedPosition.toLocaleString()
+                            : "—"
+                    }`,
+                    "success"
+                );
+
+            }
+
+        }
+
+
+        /* =================================================
+           ESPERAR ESTRUCTURA
+        ================================================= */
+
+        await waitForMP4Ready(
+            currentOperation
+        );
+
+
+        if (
+            !mp4Ready
+        ) {
+
+            throw new Error(
+                "MP4Box no pudo encontrar la estructura del MP4."
+            );
+
+        }
+
+
+        /* =================================================
+           LOOP CONTINUO
+        ================================================= */
+
+        streamingLoopRunning =
+            true;
+
+
+        await adaptiveStreamingLoop(
+            currentOperation
+        );
+
+
+        if (
+            currentOperation !==
+            operationId
+        ) {
+
+            return;
+
+        }
+
+
+        resultBox.className =
+            "result-box result-success";
+
+
+        resultBox.textContent =
+            `✓ Streaming adaptativo activo. MEGA solicitado: ${formatBytes(totalDownloaded)}.`;
+
+
+    } catch (
+        error
+    ) {
+
+        if (
+            currentOperation !==
+            operationId
+        ) {
+
+            return;
+
+        }
+
+
+        mp4Error =
+            true;
+
+
+        streamingActive =
+            false;
+
+
+        setStatus(
+            "Error de streaming",
+            "error"
+        );
+
+
+        resultBox.className =
+            "result-box result-error";
+
+
+        resultBox.textContent =
+            `Error: ${getErrorMessage(error)}`;
+
+
+        log(
+            `✗ Error de streaming: ${getErrorMessage(error)}`,
+            "error"
+        );
+
+    } finally {
+
+        if (
+            currentOperation ===
+            operationId
+        ) {
+
+            activeOperation =
+                null;
+
+
+            streamingLoopRunning =
+                false;
+
+
+            btnInfo.disabled =
+                false;
+
+            btnChunk.disabled =
+                false;
+
+
+            startPlayerButton.disabled =
+                !currentFile;
+
+
+            stopPlayerButton.disabled =
+                true;
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   LOOP ADAPTATIVO
+========================================================= */
+
+async function adaptiveStreamingLoop(
+    currentOperation
+) {
+
+    while (
+        streamingActive &&
+        !streamingStopped &&
+        !mp4Error &&
+        currentOperation ===
+            operationId
+    ) {
+
+        updatePlayerInfo();
+
+
+        const buffer =
+            getBufferState();
+
+
+        /*
+         * =================================================
+         * DETERMINAR MODO
+         * =================================================
+         */
+
+        const paused =
+            videoElement &&
+            videoElement.paused;
+
+
+        /*
+         * Si está pausado:
+         *
+         * precargar hasta 120 s.
+         */
+
+        const targetBuffer =
+            paused
+                ? PAUSED_TARGET_BUFFER
+                : PLAYING_TARGET_BUFFER;
+
+
+        const maximumBuffer =
+            paused
+                ? PAUSED_MAX_BUFFER
+                : PLAYING_MAX_BUFFER;
+
+
+        /*
+         * =================================================
+         * LOG DE CAMBIO DE MODO
+         * =================================================
+         */
+
+        if (
+            paused &&
+            streamingActive &&
+            !userPaused &&
+            playbackStarted
+        ) {
+
+            userPaused =
+                true;
+
+
+            log(
+                `⏸ Reproductor pausado. PRE-CARGA hasta ${PAUSED_TARGET_BUFFER} s.`,
+                "info"
+            );
+
+        }
+
+
+        /*
+         * =================================================
+         * FIN FÍSICO
+         * =================================================
+         */
+
+        if (
+            Number.isFinite(
+                mediaCursor
+            ) &&
+            mediaCursor >=
+                fileSize
+        ) {
+
+            log(
+                "✓ Se alcanzó el final físico del archivo.",
+                "success"
+            );
+
+
+            /*
+             * Ya no quedan bytes por solicitar.
+             *
+             * MP4Box todavía puede estar entregando
+             * segmentos que estaban en cola.
+             */
+
+            break;
+
+        }
+
+
+        /*
+         * =================================================
+         * BUFFER SUFICIENTE
+         * =================================================
+         */
+
+        if (
+            buffer.ahead >=
+            maximumBuffer
+        ) {
+
+            await sleep(
+                BUFFER_CHECK_INTERVAL
+            );
+
+
+            continue;
+
+        }
+
+
+        /*
+         * =================================================
+         * BUFFER NECESITA DATOS
+         * =================================================
+         */
+
+        if (
+            buffer.ahead <
+            targetBuffer
+        ) {
+
+            if (
+                !fetchingRange
+            ) {
+
+                await fetchNextMediaRange(
+                    currentOperation
+                );
+
+            }
+
+        } else {
+
+            /*
+             * Buffer está entre target y máximo.
+             *
+             * No queremos llenar innecesariamente.
+             */
+
+            await sleep(
+                BUFFER_CHECK_INTERVAL
+            );
+
+        }
+
+
+        /*
+         * =================================================
+         * INTENTAR REPRODUCCIÓN
+         * =================================================
+         */
+
+        await tryStartPlaybackOnce();
+
+
+        await sleep(
+            BUFFER_CHECK_INTERVAL
+        );
+
+    }
+
+
+    streamingLoopRunning =
+        false;
+
+
+    updatePlayerInfo();
+
+}
+
+
+/* =========================================================
+   SOLICITAR SIGUIENTE RANGO MULTIMEDIA
+========================================================= */
+
+async function fetchNextMediaRange(
+    currentOperation
+) {
+
+    if (
+        fetchingRange
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        currentOperation !==
+        operationId
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        !streamingActive ||
+        streamingStopped
+    ) {
+
+        return;
+
+    }
+
+
+    fetchingRange =
+        true;
+
+
+    try {
+
+        /*
+         * =================================================
+         * CURSOR MULTIMEDIA
+         * =================================================
+         *
+         * MUY IMPORTANTE:
+         *
+         * No usamos directamente el valor que MP4Box
+         * devuelve en appendBuffer().
+         *
+         * En nuestro MP4 de prueba el MOOV está muy
+         * lejos, aproximadamente al final del archivo.
+         *
+         * Después de localizar MOOV necesitamos seguir
+         * alimentando a MP4Box con el contenido multimedia
+         * secuencial.
+         */
+
+        let position =
+            Number(
+                mediaCursor
+            );
+
+
+        if (
+            !Number.isFinite(
+                position
+            )
+        ) {
+
+            position =
+                findLastRequestedEnd() +
+                1;
+
+        }
+
+
+        /*
+         * =================================================
+         * PROTECCIÓN
+         * =================================================
+         */
+
+        if (
+            position < 0
+        ) {
+
+            position =
+                0;
+
+        }
+
+
+        if (
+            position >=
+            fileSize
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+         * =================================================
+         * PROTECCIÓN POSICIÓN
+         * =================================================
+         */
+
+        if (
+            position ===
+            mediaCursor
+        ) {
+
+            samePositionCount++;
+
+        } else {
+
+            samePositionCount =
+                0;
+
+        }
+
+
+        if (
+            samePositionCount >
+            MAX_SAME_POSITION_RETRIES
+        ) {
+
+            throw new Error(
+                `El cursor multimedia no avanza: ${position}`
+            );
+
+        }
+
+
+        /*
+         * =================================================
+         * TAMAÑO
+         * =================================================
+         */
+
+        const size =
+            Math.min(
+                MEDIA_RANGE_SIZE,
+                fileSize -
+                position
+            );
+
+
+        if (
+            size <=
+            0
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+         * =================================================
+         * SOLICITAR MEGA
+         * =================================================
+         */
+
+        const block =
+            await readMegaRange(
+                position,
+                size,
+                "MEGA STREAM"
+            );
+
+
+        /*
+         * =================================================
+         * ENTREGAR A MP4BOX
+         * =================================================
+         */
+
+        const returnedPosition =
+            mp4box.appendBuffer(
+                block.buffer
+            );
+
+
+        /*
+         * Guardamos lo que MP4Box diga
+         * solamente para diagnóstico.
+         */
+
+        if (
+            Number.isFinite(
+                returnedPosition
+            )
+        ) {
+
+            mp4SuggestedPosition =
+                Number(
+                    returnedPosition
+                );
+
+        }
+
+
+        /*
+         * =================================================
+         * AVANZAR CURSOR REAL
+         * =================================================
+         */
+
+        mediaCursor =
+            block.end +
+            1;
+
+
+        log(
+            `✓ Cursor multimedia → ${mediaCursor.toLocaleString()}`,
+            "success"
+        );
+
+
+        /*
+         * Si MP4Box vuelve a sugerir una posición
+         * muy lejana, NO saltamos allí automáticamente.
+         *
+         * Eso es precisamente lo que causaba el loop
+         * observado anteriormente.
+         */
+
+        if (
+            Number.isFinite(
+                returnedPosition
+            ) &&
+            returnedPosition !==
+                mediaCursor
+        ) {
+
+            log(
+                `ℹ MP4Box sugiere ${returnedPosition.toLocaleString()}, pero el streaming continúa secuencialmente desde ${mediaCursor.toLocaleString()}.`,
+                "info"
+            );
+
+        }
+
+
+    } finally {
+
+        fetchingRange =
+            false;
 
     }
 
@@ -2554,7 +3822,7 @@ function showMP4Info(
    INTENTAR REPRODUCCIÓN
 ========================================================= */
 
-async function tryStartPlayback() {
+async function tryStartPlaybackOnce() {
 
     if (
         !videoElement
@@ -2565,8 +3833,12 @@ async function tryStartPlayback() {
     }
 
 
+    /*
+     * Ya hicimos la solicitud de reproducción.
+     */
+
     if (
-        playbackStarted
+        playbackRequested
     ) {
 
         return;
@@ -2575,8 +3847,23 @@ async function tryStartPlayback() {
 
 
     /*
-     * Necesitamos al menos algún rango
-     * temporal disponible.
+     * Si el usuario pausó manualmente,
+     * NO intentamos reproducir automáticamente.
+     *
+     * Seguimos precargando.
+     */
+
+    if (
+        userPaused
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+     * Necesitamos metadata.
      */
 
     if (
@@ -2589,6 +3876,28 @@ async function tryStartPlayback() {
     }
 
 
+    const buffer =
+        getBufferState();
+
+
+    /*
+     * No intentar reproducir sin datos.
+     */
+
+    if (
+        buffer.ahead <=
+        0
+    ) {
+
+        return;
+
+    }
+
+
+    playbackRequested =
+        true;
+
+
     try {
 
         await videoElement.play();
@@ -2599,7 +3908,7 @@ async function tryStartPlayback() {
 
 
         log(
-            "▶ El navegador aceptó la reproducción.",
+            "▶ Reproducción iniciada correctamente.",
             "success"
         );
 
@@ -2614,14 +3923,12 @@ async function tryStartPlayback() {
         error
     ) {
 
-        /*
-         * No es necesariamente un error.
-         *
-         * Los navegadores pueden bloquear autoplay.
-         */
+        playbackRequested =
+            false;
+
 
         log(
-            "ℹ El navegador no inició autoplay. Pulsa PLAY en el vídeo.",
+            "ℹ Autoplay bloqueado por el navegador. Pulsa PLAY manualmente.",
             "info"
         );
 
@@ -2631,791 +3938,24 @@ async function tryStartPlayback() {
 
 
 /* =========================================================
-   SIGUIENTE POSICIÓN MP4BOX
+   DETENER STREAMING
 ========================================================= */
 
-function calculateNextPosition(
-    returnedPosition,
-    block
-) {
-
-    if (
-        Number.isFinite(
-            returnedPosition
-        )
-    ) {
-
-        const requested =
-            Number(
-                returnedPosition
-            );
-
-
-        /*
-         * Esta es la situación importante:
-         *
-         * MP4Box pide una posición posterior
-         * al bloque actual.
-         */
-
-        if (
-            requested >
-            block.end &&
-            requested <
-            fileSize
-        ) {
-
-            return requested;
-
-        }
-
-
-        /*
-         * Si pide algo dentro del bloque,
-         * continuar al final evita repetir.
-         */
-
-        if (
-            requested >=
-            block.start &&
-            requested <=
-            block.end
-        ) {
-
-            return (
-                block.end +
-                1
-            );
-
-        }
-
-
-        /*
-         * No retroceder automáticamente.
-         */
-
-        if (
-            requested <
-            block.start
-        ) {
-
-            return (
-                block.end +
-                1
-            );
-
-        }
-
-    }
-
-
-    return (
-        block.end +
-        1
-    );
-
-}
-
-
-/* =========================================================
-   INICIAR REPRODUCTOR EXPERIMENTAL
-========================================================= */
-
-async function startExperimentalPlayer() {
-
-    if (
-        !currentFile
-    ) {
-
-        log(
-            "⚠ Primero carga un archivo MEGA.",
-            "error"
-        );
-
-
-        return;
-
-    }
-
-
-    if (
-        activeOperation
-    ) {
-
-        log(
-            "⚠ Ya existe una operación activa.",
-            "error"
-        );
-
-
-        return;
-
-    }
-
-
-    activeOperation =
-        "player";
-
-
-    const thisOperation =
-        ++operationId;
-
-
-    playerStarted =
-        true;
-
-
-    playerStopped =
-        false;
-
-
-    playbackStarted =
-        false;
-
-
-    mp4Ready =
-        false;
-
-
-    mp4Error =
-        false;
-
-
-    mp4Info =
-        null;
-
-
-    segmentationPrepared =
-        false;
-
-
-    totalSegments =
-        0;
-
-
-    totalDownloaded =
-        0;
-
-
-    requestedRanges.clear();
-
-
-    sourceBuffers.clear();
-
-
-    sourceQueues.clear();
-
-
-    sourceBufferReady.clear();
-
-
-    startPlayerButton.disabled =
-        true;
-
-
-    stopPlayerButton.disabled =
-        false;
-
-
-    btnInfo.disabled =
-        true;
-
-
-    btnChunk.disabled =
-        true;
-
-
-    setStatus(
-        "Preparando reproductor...",
-        "loading"
-    );
-
-
-    resultBox.className =
-        "result-box";
-
-
-    resultBox.textContent =
-        "Preparando reproducción experimental...";
-
-
-    log(
-        "=================================================",
-        "info"
-    );
-
-
-    log(
-        "INICIANDO REPRODUCTOR EXPERIMENTAL",
-        "info"
-    );
-
-
-    log(
-        "=================================================",
-        "info"
-    );
-
-
-    log(
-        `✓ Límite de seguridad: ${formatBytes(MAX_TEST_BYTES)}`,
-        "info"
-    );
-
-
-    try {
-
-        /*
-         * Crear MediaSource primero.
-         */
-
-        await createMediaSource();
-
-
-        /*
-         * Crear MP4Box.
-         */
-
-        mp4box =
-            MP4Box.createFile();
-
-
-        configureMP4Box();
-
-
-        /*
-         * =================================================
-         * PRIMER RANGO
-         * =================================================
-         */
-
-        const firstSize =
-            Math.min(
-                INITIAL_RANGE_SIZE,
-                fileSize
-            );
-
-
-        const firstBlock =
-            await readMegaRange(
-                0,
-                firstSize,
-                "MEGA"
-            );
-
-
-        /*
-         * Entregar primeros 4 MB.
-         */
-
-        let nextPosition =
-            mp4box.appendBuffer(
-                firstBlock.buffer
-            );
-
-
-        if (
-            Number.isFinite(
-                nextPosition
-            )
-        ) {
-
-            log(
-                `MP4Box indica siguiente posición: ${Number(nextPosition).toLocaleString()}`,
-                "success"
-            );
-
-        }
-
-
-        /*
-         * =================================================
-         * LECTURA DIRIGIDA
-         * =================================================
-         */
-
-        let previousPosition =
-            null;
-
-
-        let requests =
-            1;
-
-
-        while (
-            !mp4Ready &&
-            !mp4Error &&
-            !playerStopped &&
-            thisOperation ===
-                operationId &&
-            requests <
-                MAX_DIRECTED_REQUESTS &&
-            totalDownloaded <
-                MAX_TEST_BYTES
-        ) {
-
-            /*
-             * Si MP4Box no indicó una posición,
-             * continuar después del bloque.
-             */
-
-            nextPosition =
-                calculateNextPosition(
-                    nextPosition,
-                    firstBlock
-                );
-
-
-            if (
-                previousPosition ===
-                nextPosition
-            ) {
-
-                log(
-                    `⚠ MP4Box repitió posición ${nextPosition.toLocaleString()}.`,
-                    "error"
-                );
-
-
-                break;
-
-            }
-
-
-            previousPosition =
-                nextPosition;
-
-
-            if (
-                nextPosition >=
-                fileSize
-            ) {
-
-                log(
-                    "⚠ MP4Box llegó al final del archivo.",
-                    "error"
-                );
-
-
-                break;
-
-            }
-
-
-            const remaining =
-                MAX_TEST_BYTES -
-                totalDownloaded;
-
-
-            const size =
-                Math.min(
-                    DIRECTED_RANGE_SIZE,
-                    remaining,
-                    fileSize -
-                    nextPosition
-                );
-
-
-            if (
-                size <=
-                0
-            ) {
-
-                break;
-
-            }
-
-
-            requests++;
-
-
-            const block =
-                await readMegaRange(
-                    nextPosition,
-                    size,
-                    "MEGA DIRIGIDO"
-                );
-
-
-            /*
-             * Enviar a MP4Box.
-             */
-
-            nextPosition =
-                mp4box.appendBuffer(
-                    block.buffer
-                );
-
-
-            if (
-                Number.isFinite(
-                    nextPosition
-                )
-            ) {
-
-                log(
-                    `MP4Box indica siguiente posición: ${Number(nextPosition).toLocaleString()}`,
-                    "success"
-                );
-
-            }
-
-
-            /*
-             * Si MOOV ya fue encontrado,
-             * onReady habrá preparado MSE.
-             */
-
-            if (
-                mp4Ready
-            ) {
-
-                break;
-
-            }
-
-
-            /*
-             * Protección contra loop.
-             */
-
-            if (
-                nextPosition ===
-                block.start
-            ) {
-
-                log(
-                    "⚠ MP4Box está solicitando nuevamente el inicio del mismo rango.",
-                    "error"
-                );
-
-
-                break;
-
-            }
-
-
-            await new Promise(
-                resolve =>
-                    setTimeout(
-                        resolve,
-                        0
-                    )
-            );
-
-        }
-
-
-        /*
-         * =================================================
-         * SI MOOV FUE ENCONTRADO
-         * =================================================
-         */
-
-        if (
-            mp4Ready
-        ) {
-
-            log(
-                "✓ MOOV disponible.",
-                "success"
-            );
-
-
-            /*
-             * Continuar solicitando datos dirigidos
-             * para que MP4Box pueda generar segmentos.
-             */
-
-            let mediaRequests =
-                0;
-
-
-            let lastMediaPosition =
-                null;
-
-
-            while (
-                !playerStopped &&
-                !mp4Error &&
-                thisOperation ===
-                    operationId &&
-                mediaRequests <
-                    MAX_DIRECTED_REQUESTS &&
-                totalDownloaded <
-                    MAX_TEST_BYTES
-            ) {
-
-                /*
-                 * Si MP4Box no devuelve una posición,
-                 * necesitamos observar si ya generó
-                 * segmentos.
-                 */
-
-                if (
-                    !Number.isFinite(
-                        nextPosition
-                    )
-                ) {
-
-                    log(
-                        "ℹ MP4Box no solicita otro rango en este momento.",
-                        "info"
-                    );
-
-
-                    break;
-
-                }
-
-
-                if (
-                    nextPosition >=
-                    fileSize
-                ) {
-
-                    log(
-                        "⚠ No quedan posiciones disponibles.",
-                        "info"
-                    );
-
-
-                    break;
-
-                }
-
-
-                if (
-                    lastMediaPosition ===
-                    nextPosition
-                ) {
-
-                    log(
-                        `⚠ MP4Box repite posición ${nextPosition.toLocaleString()}.`,
-                        "info"
-                    );
-
-
-                    break;
-
-                }
-
-
-                lastMediaPosition =
-                    nextPosition;
-
-
-                const remaining =
-                    MAX_TEST_BYTES -
-                    totalDownloaded;
-
-
-                const size =
-                    Math.min(
-                        DIRECTED_RANGE_SIZE,
-                        remaining,
-                        fileSize -
-                        nextPosition
-                    );
-
-
-                if (
-                    size <=
-                    0
-                ) {
-
-                    break;
-
-                }
-
-
-                mediaRequests++;
-
-
-                const block =
-                    await readMegaRange(
-                        nextPosition,
-                        size,
-                        "DATOS MEDIA"
-                    );
-
-
-                nextPosition =
-                    mp4box.appendBuffer(
-                        block.buffer
-                    );
-
-
-                if (
-                    Number.isFinite(
-                        nextPosition
-                    )
-                ) {
-
-                    log(
-                        `MP4Box solicita siguiente posición: ${Number(nextPosition).toLocaleString()}`,
-                        "success"
-                    );
-
-                }
-
-
-                /*
-                 * Intentar reproducción después
-                 * de cada bloque.
-                 */
-
-                await tryStartPlayback();
-
-
-                await new Promise(
-                    resolve =>
-                        setTimeout(
-                            resolve,
-                            0
-                        )
-                );
-
-            }
-
-
-            /*
-             * Último intento de reproducción.
-             */
-
-            await tryStartPlayback();
-
-
-            setStatus(
-                playbackStarted
-                    ? "Reproduciendo"
-                    : "MP4 preparado / esperando datos",
-                "success"
-            );
-
-
-            resultBox.className =
-                "result-box result-success";
-
-
-            resultBox.textContent =
-                `✓ Reproductor preparado. Datos MEGA utilizados: ${formatBytes(totalDownloaded)} de ${formatBytes(fileSize)}.`;
-
-
-        } else {
-
-            setStatus(
-                "No se pudo preparar el MP4",
-                "error"
-            );
-
-
-            resultBox.className =
-                "result-box result-error";
-
-
-            resultBox.textContent =
-                `MP4Box no encontró la estructura dentro del límite de ${formatBytes(MAX_TEST_BYTES)}.`;
-
-
-            log(
-                "⚠ El reproductor no continuará descargando automáticamente.",
-                "error"
-            );
-
-        }
-
-
-    } catch (
-        error
-    ) {
-
-        mp4Error =
-            true;
-
-
-        setStatus(
-            "Error del reproductor",
-            "error"
-        );
-
-
-        resultBox.className =
-            "result-box result-error";
-
-
-        resultBox.textContent =
-            `Error del reproductor: ${getErrorMessage(error)}`;
-
-
-        log(
-            `✗ Error del reproductor: ${getErrorMessage(error)}`,
-            "error"
-        );
-
-    } finally {
-
-        if (
-            thisOperation ===
-            operationId
-        ) {
-
-            activeOperation =
-                null;
-
-        }
-
-
-        playerStarted =
-            false;
-
-
-        btnInfo.disabled =
-            false;
-
-
-        btnChunk.disabled =
-            false;
-
-
-        if (
-            startPlayerButton
-        ) {
-
-            startPlayerButton.disabled =
-                !currentFile;
-
-        }
-
-
-        if (
-            stopPlayerButton
-        ) {
-
-            stopPlayerButton.disabled =
-                true;
-
-        }
-
-    }
-
-}
-
-
-/* =========================================================
-   DETENER REPRODUCTOR
-========================================================= */
-
-function stopExperimentalPlayer() {
+function stopAdaptiveStreaming() {
 
     operationId++;
 
 
-    playerStopped =
+    streamingActive =
+        false;
+
+    streamingStopped =
         true;
 
+    streamingLoopRunning =
+        false;
 
-    playerStarted =
+    fetchingRange =
         false;
 
 
@@ -3433,13 +3973,22 @@ function stopExperimentalPlayer() {
 
         } catch (
             error
-        ) {
+        ) {}
 
-            console.warn(
-                error
-            );
+    }
 
-        }
+
+    if (
+        videoElement
+    ) {
+
+        try {
+
+            videoElement.pause();
+
+        } catch (
+            error
+        ) {}
 
     }
 
@@ -3456,35 +4005,17 @@ function stopExperimentalPlayer() {
 
         } catch (
             error
-        ) {
-
-            console.warn(
-                error
-            );
-
-        }
+        ) {}
 
     }
 
 
-    if (
-        startPlayerButton
-    ) {
-
-        startPlayerButton.disabled =
-            !currentFile;
-
-    }
+    startPlayerButton.disabled =
+        !currentFile;
 
 
-    if (
-        stopPlayerButton
-    ) {
-
-        stopPlayerButton.disabled =
-            true;
-
-    }
+    stopPlayerButton.disabled =
+        true;
 
 
     btnInfo.disabled =
@@ -3496,43 +4027,56 @@ function stopExperimentalPlayer() {
 
 
     setStatus(
-        "Prueba detenida",
+        "Streaming detenido",
         "idle"
     );
 
 
     log(
-        "⏹ Reproductor experimental detenido.",
+        "⏹ Streaming adaptativo detenido.",
         "info"
     );
+
+
+    updatePlayerInfo();
 
 }
 
 
 /* =========================================================
-   RESET REPRODUCTOR
+   RESET STREAMING
 ========================================================= */
 
-function resetPlayerState() {
+function resetStreamingState() {
 
     operationId++;
 
 
-    playerStarted =
+    streamingActive =
         false;
 
-
-    playerStopped =
+    streamingStopped =
         true;
+
+    streamingLoopRunning =
+        false;
+
+    fetchingRange =
+        false;
 
 
     playbackStarted =
         false;
 
+    playbackRequested =
+        false;
+
+    userPaused =
+        false;
+
 
     mp4Ready =
         false;
-
 
     mp4Error =
         false;
@@ -3542,9 +4086,27 @@ function resetPlayerState() {
         null;
 
 
-    segmentationPrepared =
-        false;
+    mp4SuggestedPosition =
+        null;
 
+
+    mediaCursor =
+        null;
+
+
+    moovRangeStart =
+        null;
+
+    moovRangeEnd =
+        null;
+
+
+    samePositionCount =
+        0;
+
+
+    totalRequests =
+        0;
 
     totalSegments =
         0;
@@ -3560,13 +4122,7 @@ function resetPlayerState() {
 
         } catch (
             error
-        ) {
-
-            console.warn(
-                error
-            );
-
-        }
+        ) {}
 
     }
 
@@ -3577,11 +4133,7 @@ function resetPlayerState() {
 
     sourceBuffers.clear();
 
-
     sourceQueues.clear();
-
-
-    sourceBufferReady.clear();
 
 
     if (
@@ -3596,13 +4148,7 @@ function resetPlayerState() {
 
         } catch (
             error
-        ) {
-
-            console.warn(
-                error
-            );
-
-        }
+        ) {}
 
     }
 
@@ -3623,13 +4169,7 @@ function resetPlayerState() {
 
         } catch (
             error
-        ) {
-
-            console.warn(
-                error
-            );
-
-        }
+        ) {}
 
 
         mediaSourceUrl =
@@ -3654,13 +4194,7 @@ function resetPlayerState() {
 
         } catch (
             error
-        ) {
-
-            console.warn(
-                error
-            );
-
-        }
+        ) {}
 
     }
 
@@ -3688,7 +4222,7 @@ function resetPlayerState() {
 
 
 /* =========================================================
-   PRUEBA INDEPENDIENTE DE BLOQUES
+   PRUEBA SIMPLE DE BLOQUES
 ========================================================= */
 
 async function testMegaBlocks() {
@@ -3702,7 +4236,6 @@ async function testMegaBlocks() {
             "error"
         );
 
-
         return;
 
     }
@@ -3713,10 +4246,9 @@ async function testMegaBlocks() {
     ) {
 
         log(
-            "⚠ Ya existe una operación activa.",
+            "⚠ Existe una operación activa.",
             "error"
         );
-
 
         return;
 
@@ -3727,7 +4259,7 @@ async function testMegaBlocks() {
         "blocks";
 
 
-    const thisOperation =
+    const currentOperation =
         ++operationId;
 
 
@@ -3735,10 +4267,6 @@ async function testMegaBlocks() {
 
 
     totalDownloaded =
-        0;
-
-
-    let correct =
         0;
 
 
@@ -3761,10 +4289,15 @@ async function testMegaBlocks() {
         Math.max(
             0,
             fileSize -
-            TEST_BLOCK_SIZE
+            1024 *
+            1024
         )
 
     ];
+
+
+    let correct =
+        0;
 
 
     log(
@@ -3794,7 +4327,7 @@ async function testMegaBlocks() {
         ) {
 
             if (
-                thisOperation !==
+                currentOperation !==
                 operationId
             ) {
 
@@ -3806,21 +4339,23 @@ async function testMegaBlocks() {
             const block =
                 await readMegaRange(
                     positions[i],
-                    TEST_BLOCK_SIZE,
+                    1024 *
+                    1024,
                     `BLOQUE ${i + 1}`
                 );
 
 
             if (
                 block.size ===
-                TEST_BLOCK_SIZE
+                1024 *
+                1024
             ) {
 
                 correct++;
 
 
                 log(
-                    `✓ Bloque ${i + 1}: 1 MB correcto.`,
+                    `✓ Bloque ${i + 1} correcto.`,
                     "success"
                 );
 
@@ -3835,18 +4370,12 @@ async function testMegaBlocks() {
         );
 
 
-        log(
-            `✓ Datos recibidos: ${formatBytes(totalDownloaded)}`,
-            "success"
-        );
-
-
     } catch (
         error
     ) {
 
         log(
-            `✗ Error en prueba de bloques: ${getErrorMessage(error)}`,
+            `✗ Error: ${getErrorMessage(error)}`,
             "error"
         );
 
@@ -3861,20 +4390,71 @@ async function testMegaBlocks() {
 
 
 /* =========================================================
+   BOTÓN ANÁLISIS DIRIGIDO
+========================================================= */
+
+function createAnalysisButton() {
+
+    let button =
+        document.getElementById(
+            "btn-directed-analysis"
+        );
+
+
+    if (
+        button
+    ) {
+
+        return button;
+
+    }
+
+
+    button =
+        document.createElement(
+            "button"
+        );
+
+
+    button.id =
+        "btn-directed-analysis";
+
+    button.type =
+        "button";
+
+    button.textContent =
+        "Analizar MP4 por rangos";
+
+    button.disabled =
+        true;
+
+
+    btnChunk.parentNode.insertBefore(
+        button,
+        btnChunk.nextSibling
+    );
+
+
+    button.addEventListener(
+        "click",
+        runDirectedAnalysis
+    );
+
+
+    return button;
+
+}
+
+
+/* =========================================================
    ANÁLISIS DIRIGIDO
 ========================================================= */
 
-async function analyzeMP4Directed() {
+async function runDirectedAnalysis() {
 
     if (
         !currentFile
     ) {
-
-        log(
-            "⚠ Primero debes cargar un archivo MEGA.",
-            "error"
-        );
-
 
         return;
 
@@ -3885,12 +4465,6 @@ async function analyzeMP4Directed() {
         activeOperation
     ) {
 
-        log(
-            "⚠ Ya existe una operación activa.",
-            "error"
-        );
-
-
         return;
 
     }
@@ -3900,26 +4474,25 @@ async function analyzeMP4Directed() {
         "analysis";
 
 
-    const thisOperation =
+    const currentOperation =
         ++operationId;
+
+
+    const button =
+        document.getElementById(
+            "btn-directed-analysis"
+        );
+
+
+    button.disabled =
+        true;
 
 
     btnInfo.disabled =
         true;
 
-
     btnChunk.disabled =
         true;
-
-
-    if (
-        startPlayerButton
-    ) {
-
-        startPlayerButton.disabled =
-            true;
-
-    }
 
 
     requestedRanges.clear();
@@ -3932,23 +4505,14 @@ async function analyzeMP4Directed() {
     mp4Ready =
         false;
 
-
     mp4Error =
         false;
 
 
     setStatus(
-        "Analizando MP4 por rangos...",
+        "Analizando MP4...",
         "loading"
     );
-
-
-    resultBox.className =
-        "result-box";
-
-
-    resultBox.textContent =
-        "Analizando estructura del MP4...";
 
 
     log(
@@ -3978,69 +4542,49 @@ async function analyzeMP4Directed() {
         configureMP4Box();
 
 
-        const firstSize =
-            Math.min(
-                INITIAL_RANGE_SIZE,
-                fileSize
-            );
-
-
-        const firstBlock =
+        const first =
             await readMegaRange(
                 0,
-                firstSize,
+                Math.min(
+                    INITIAL_RANGE_SIZE,
+                    fileSize
+                ),
                 "INICIO"
             );
 
 
-        let nextPosition =
+        let next =
             mp4box.appendBuffer(
-                firstBlock.buffer
+                first.buffer
             );
-
-
-        if (
-            Number.isFinite(
-                nextPosition
-            )
-        ) {
-
-            log(
-                `MP4Box indica siguiente posición: ${Number(nextPosition).toLocaleString()}`,
-                "success"
-            );
-
-        }
-
-
-        let previousPosition =
-            null;
-
-
-        let requests =
-            1;
 
 
         while (
             !mp4Ready &&
             !mp4Error &&
-            thisOperation ===
+            currentOperation ===
                 operationId &&
-            requests <
-                MAX_DIRECTED_REQUESTS &&
             totalDownloaded <
-                MAX_TEST_BYTES
+                64 *
+                1024 *
+                1024
         ) {
 
-            nextPosition =
-                calculateNextPosition(
-                    nextPosition,
-                    firstBlock
-                );
+            if (
+                !Number.isFinite(
+                    next
+                )
+            ) {
+
+                next =
+                    first.end +
+                    1;
+
+            }
 
 
             if (
-                nextPosition >=
+                next >=
                 fileSize
             ) {
 
@@ -4049,86 +4593,26 @@ async function analyzeMP4Directed() {
             }
 
 
-            if (
-                previousPosition ===
-                nextPosition
-            ) {
-
-                log(
-                    `⚠ Posición repetida: ${nextPosition.toLocaleString()}`,
-                    "error"
-                );
-
-
-                break;
-
-            }
-
-
-            previousPosition =
-                nextPosition;
-
-
-            const remaining =
-                MAX_TEST_BYTES -
-                totalDownloaded;
-
-
-            const size =
-                Math.min(
-                    DIRECTED_RANGE_SIZE,
-                    remaining,
-                    fileSize -
-                    nextPosition
-                );
-
-
-            requests++;
-
-
             const block =
                 await readMegaRange(
-                    nextPosition,
-                    size,
+                    next,
+                    Math.min(
+                        MEDIA_RANGE_SIZE,
+                        fileSize -
+                        next
+                    ),
                     "RANGO DIRIGIDO"
                 );
 
 
-            nextPosition =
+            next =
                 mp4box.appendBuffer(
                     block.buffer
                 );
 
 
-            if (
-                Number.isFinite(
-                    nextPosition
-                )
-            ) {
-
-                log(
-                    `MP4Box indica siguiente posición: ${Number(nextPosition).toLocaleString()}`,
-                    "success"
-                );
-
-            }
-
-
-            if (
-                mp4Ready
-            ) {
-
-                break;
-
-            }
-
-
-            await new Promise(
-                resolve =>
-                    setTimeout(
-                        resolve,
-                        0
-                    )
+            await sleep(
+                0
             );
 
         }
@@ -4139,7 +4623,7 @@ async function analyzeMP4Directed() {
         ) {
 
             setStatus(
-                "MP4 analizado correctamente",
+                "MP4 analizado",
                 "success"
             );
 
@@ -4149,29 +4633,14 @@ async function analyzeMP4Directed() {
 
 
             resultBox.textContent =
-                `✓ MP4Box encontró la estructura utilizando ${formatBytes(totalDownloaded)} de ${formatBytes(fileSize)}.`;
-
-
-            log(
-                "✓ PRUEBA DIRIGIDA COMPLETADA.",
-                "success"
-            );
+                `✓ MP4Box encontró la estructura utilizando ${formatBytes(totalDownloaded)}.`;
 
 
         } else {
 
-            setStatus(
-                "Estructura no localizada",
-                "error"
+            throw new Error(
+                "MOOV no localizado dentro del límite de prueba."
             );
-
-
-            resultBox.className =
-                "result-box result-error";
-
-
-            resultBox.textContent =
-                `MOOV no fue localizado dentro del límite de ${formatBytes(MAX_TEST_BYTES)}.`;
 
         }
 
@@ -4180,8 +4649,8 @@ async function analyzeMP4Directed() {
         error
     ) {
 
-        setStatus(
-            "Error de análisis",
+        log(
+            `✗ ${getErrorMessage(error)}`,
             "error"
         );
 
@@ -4193,171 +4662,143 @@ async function analyzeMP4Directed() {
         resultBox.textContent =
             `Error: ${getErrorMessage(error)}`;
 
-
-        log(
-            `✗ Error: ${getErrorMessage(error)}`,
-            "error"
-        );
-
     } finally {
 
-        if (
-            thisOperation ===
-            operationId
-        ) {
-
-            activeOperation =
-                null;
-
-        }
+        activeOperation =
+            null;
 
 
         btnInfo.disabled =
             false;
 
-
         btnChunk.disabled =
             false;
 
 
+        button.disabled =
+            !currentFile;
+
+    }
+
+}
+
+
+/* =========================================================
+   SLEEP
+========================================================= */
+
+function sleep(
+    milliseconds
+) {
+
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                milliseconds
+            )
+    );
+
+}
+
+
+/* =========================================================
+   ÚLTIMO RANGO SOLICITADO
+========================================================= */
+
+function findLastRequestedEnd() {
+
+    let highest =
+        -1;
+
+
+    for (
+        const key of
+        requestedRanges
+    ) {
+
+        const parts =
+            key.split(
+                ":"
+            );
+
+
         if (
-            startPlayerButton
+            parts.length !==
+            2
         ) {
 
-            startPlayerButton.disabled =
-                !currentFile;
+            continue;
 
         }
 
-    }
 
-}
-
-
-/* =========================================================
-   CREAR BOTÓN DE ANÁLISIS DIRIGIDO
-========================================================= */
-
-function createDirectedButton() {
-
-    let button =
-        document.getElementById(
-            "btn-directed-analysis"
-        );
+        const end =
+            Number(
+                parts[1]
+            );
 
 
-    if (
-        button
-    ) {
+        if (
+            Number.isFinite(
+                end
+            )
+        ) {
 
-        return button;
-
-    }
-
-
-    button =
-        document.createElement(
-            "button"
-        );
-
-
-    button.id =
-        "btn-directed-analysis";
-
-
-    button.type =
-        "button";
-
-
-    button.textContent =
-        "Analizar MP4 por rangos";
-
-
-    button.disabled =
-        true;
-
-
-    button.style.marginLeft =
-        "8px";
-
-
-    btnChunk.parentNode.insertBefore(
-        button,
-        btnChunk.nextSibling
-    );
-
-
-    button.addEventListener(
-        "click",
-        analyzeMP4Directed
-    );
-
-
-    return button;
-
-}
-
-
-/* =========================================================
-   BOTÓN ANÁLISIS DIRIGIDO
-========================================================= */
-
-const directedButton =
-    createDirectedButton();
-
-
-/* =========================================================
-   OBSERVADOR
-========================================================= */
-
-const buttonObserver =
-    new MutationObserver(
-        () => {
-
-            directedButton.disabled =
-                !currentFile ||
-                Boolean(
-                    activeOperation
+            highest =
+                Math.max(
+                    highest,
+                    end
                 );
 
         }
-    );
 
-
-buttonObserver.observe(
-    btnChunk,
-    {
-        attributes:
-            true
     }
-);
+
+
+    return highest;
+
+}
 
 
 /* =========================================================
-   ACTUALIZACIÓN DEL BOTÓN DIRIGIDO
+   RESET INFORMACIÓN
 ========================================================= */
 
-setInterval(
-    () => {
+function resetInfo() {
 
-        if (
-            !directedButton
-        ) {
-
-            return;
-
-        }
+    fileNameElement.textContent =
+        "—";
 
 
-        directedButton.disabled =
-            !currentFile ||
-            Boolean(
-                activeOperation
-            );
+    fileSizeElement.textContent =
+        "—";
 
-    },
-    250
-);
+
+    fileTypeElement.textContent =
+        "—";
+
+
+    progressBar.style.width =
+        "0%";
+
+
+    progressText.textContent =
+        "0 B";
+
+
+    progressPercent.textContent =
+        "0%";
+
+
+    resultBox.className =
+        "result-box";
+
+
+    resultBox.textContent =
+        "Todavía no se ha realizado ninguna prueba.";
+
+}
 
 
 /* =========================================================
@@ -4373,17 +4814,16 @@ videoSelect.addEventListener(
         ) {
 
             log(
-                "⚠ Hay una operación activa. Deténla primero.",
+                "⚠ Detén la operación actual antes de cambiar de vídeo.",
                 "error"
             );
-
 
             return;
 
         }
 
 
-        resetPlayerState();
+        resetStreamingState();
 
 
         currentFile =
@@ -4405,10 +4845,6 @@ videoSelect.addEventListener(
         requestedRanges.clear();
 
 
-        mp4box =
-            null;
-
-
         resetInfo();
 
 
@@ -4416,8 +4852,20 @@ videoSelect.addEventListener(
             true;
 
 
-        directedButton.disabled =
-            true;
+        const analysisButton =
+            document.getElementById(
+                "btn-directed-analysis"
+            );
+
+
+        if (
+            analysisButton
+        ) {
+
+            analysisButton.disabled =
+                true;
+
+        }
 
 
         setStatus(
@@ -4446,7 +4894,7 @@ videoSelect.addEventListener(
 
 
 /* =========================================================
-   EVENTOS PRINCIPALES
+   EVENTOS
 ========================================================= */
 
 btnInfo.addEventListener(
@@ -4462,7 +4910,38 @@ btnChunk.addEventListener(
 
 
 /* =========================================================
-   INICIO
+   INICIALIZACIÓN
+========================================================= */
+
+const analysisButton =
+    createAnalysisButton();
+
+
+setInterval(
+    () => {
+
+        if (
+            analysisButton
+        ) {
+
+            analysisButton.disabled =
+                !currentFile ||
+                Boolean(
+                    activeOperation
+                );
+
+        }
+
+
+        updatePlayerInfo();
+
+    },
+    500
+);
+
+
+/* =========================================================
+   LOG INICIAL
 ========================================================= */
 
 log(
@@ -4490,19 +4969,31 @@ log(
 
 
 log(
-    "✓ Lectura dirigida activada.",
+    "✓ STREAMING CONTINUO ADAPTATIVO activado.",
     "success"
 );
 
 
 log(
-    `✓ Límite de seguridad: ${formatBytes(MAX_TEST_BYTES)}.`,
+    `✓ Buffer reproduciendo: ${PLAYING_TARGET_BUFFER}–${PLAYING_MAX_BUFFER} s.`,
     "info"
 );
 
 
 log(
-    "✓ Reproductor experimental disponible al cargar un archivo.",
+    `✓ Buffer pausado: hasta ${PAUSED_TARGET_BUFFER} s.`,
+    "info"
+);
+
+
+log(
+    "✓ El buffer seguirá cargándose durante una pausa.",
+    "success"
+);
+
+
+log(
+    "✓ No se descargará automáticamente el archivo completo.",
     "success"
 );
 

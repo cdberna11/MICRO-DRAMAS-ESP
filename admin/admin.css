@@ -804,6 +804,198 @@ body {
 
 
 /* =========================================================
+   BÚSQUEDA
+========================================================= */
+
+.admin-search {
+
+    margin:
+        24px;
+
+    padding:
+        16px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        10px;
+
+    background-color:
+        var(--surface-secondary);
+}
+
+
+.admin-search__input-wrapper {
+
+    position:
+        relative;
+
+    display:
+        flex;
+
+    width:
+        100%;
+
+    align-items:
+        center;
+}
+
+
+.admin-search__icon {
+
+    position:
+        absolute;
+
+    left:
+        14px;
+
+    color:
+        var(--text-secondary);
+
+    font-size:
+        16px;
+
+    pointer-events:
+        none;
+}
+
+
+.admin-search__input {
+
+    width:
+        100%;
+
+    min-height:
+        44px;
+
+    padding:
+        10px 44px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius:
+        8px;
+
+    outline:
+        none;
+
+    background-color:
+        var(--surface);
+
+    color:
+        var(--text);
+
+    font-family:
+        inherit;
+
+    font-size:
+        14px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.admin-search__input::placeholder {
+
+    color:
+        #777782;
+}
+
+
+.admin-search__input:focus {
+
+    border-color:
+        var(--primary);
+
+    box-shadow:
+        0 0 0 3px rgba(
+            229,
+            9,
+            20,
+            0.15
+        );
+}
+
+
+.admin-search__clear {
+
+    position:
+        absolute;
+
+    right:
+        8px;
+
+    display:
+        inline-flex;
+
+    width:
+        30px;
+
+    height:
+        30px;
+
+    border:
+        0;
+
+    border-radius:
+        50%;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    background:
+        transparent;
+
+    color:
+        var(--text-secondary);
+
+    font-size:
+        22px;
+
+    line-height:
+        1;
+
+    cursor:
+        pointer;
+}
+
+
+.admin-search__clear:hover {
+
+    background-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+
+    color:
+        var(--text);
+}
+
+
+.admin-search__result {
+
+    margin-top:
+        9px;
+
+    color:
+        var(--text-secondary);
+
+    font-size:
+        12px;
+}
+
+
+/* =========================================================
    TABLA
 ========================================================= */
 
@@ -1160,6 +1352,13 @@ body {
 
         width:
             100%;
+    }
+
+
+    .admin-search {
+
+        margin:
+            18px;
     }
 
 

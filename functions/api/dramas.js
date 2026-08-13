@@ -11,7 +11,8 @@ export async function onRequestGet(context) {
         {
           status: 500,
           headers: {
-            "Cache-Control": "no-store"
+            "Cache-Control": "no-store",
+            "Content-Type": "application/json; charset=utf-8"
           }
         }
       );
@@ -28,7 +29,6 @@ export async function onRequestGet(context) {
         cover_url,
         views,
         video_url,
-        embed_url,
         status,
         featured,
         sort_order,
@@ -42,7 +42,9 @@ export async function onRequestGet(context) {
         id DESC
     `;
 
-    const result = await database.prepare(query).all();
+    const result = await database
+      .prepare(query)
+      .all();
 
     return Response.json(
       {
@@ -54,12 +56,18 @@ export async function onRequestGet(context) {
       {
         status: 200,
         headers: {
-          "Cache-Control": "no-store"
+          "Cache-Control": "no-store",
+          "Content-Type": "application/json; charset=utf-8"
         }
       }
     );
+
   } catch (error) {
-    console.error("Error al consultar los dramas:", error);
+
+    console.error(
+      "Error al consultar los dramas:",
+      error
+    );
 
     return Response.json(
       {
@@ -69,7 +77,8 @@ export async function onRequestGet(context) {
       {
         status: 500,
         headers: {
-          "Cache-Control": "no-store"
+          "Cache-Control": "no-store",
+          "Content-Type": "application/json; charset=utf-8"
         }
       }
     );

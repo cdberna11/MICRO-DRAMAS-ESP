@@ -707,348 +707,366 @@ async function testFirstMegabyte() {
         0;
 
 
-    /*
-     * -----------------------------------------------------
-     * FUNCIÓN PARA LEER UN BLOQUE
-     * -----------------------------------------------------
-     */
+    /* =========================================================
+   FUNCIÓN PARA LEER UN BLOQUE
+========================================================= */
 
-    async function readBlock(
-        blockNumber,
-        start
-    ) {
+function readBlock(
+    blockNumber,
+    start
+) {
 
-        /*
-         * No permitir posiciones
-         * fuera del archivo.
-         */
+    return new Promise(
+        (
+            resolve,
+            reject
+        ) => {
 
-        if (
-            start >= fileSize
-        ) {
+            /*
+             * IMPORTANTE:
+             *
+             * MEGAJS utiliza END como posición
+             * final INCLUSIVA.
+             *
+             * Por eso, para obtener exactamente
+             * 1 MB:
+             *
+             * start = 0
+             *
+             * end = 1,048,575
+             *
+             * Cantidad:
+             *
+             * 1,048,575 - 0 + 1
+             * = 1,048,576 bytes
+             */
 
-            throw new Error(
-                `El bloque comienza fuera del archivo: ${start}`
+            const end =
+                Math.min(
+                    start + BLOCK_SIZE - 1,
+                    fileSize - 1
+                );
+
+
+            /*
+             * Tamaño exacto esperado.
+             */
+
+            const expectedBytes =
+                end -
+                start +
+                1;
+
+
+            let received =
+                0;
+
+
+            let finished =
+                false;
+
+
+            log(
+                `Bloque ${blockNumber}: ${start.toLocaleString()} → ${end.toLocaleString()}`,
+                "info"
             );
-        }
 
 
-        /*
-         * Calculamos el final solicitado.
-         *
-         * Usamos end como límite del bloque.
-         */
-
-        const end =
-            Math.min(
-                start + BLOCK_SIZE,
-                fileSize
+            log(
+                `Solicitando exactamente ${expectedBytes.toLocaleString()} bytes (${formatBytes(expectedBytes)})...`,
+                "info"
             );
 
 
-        const expectedBytes =
-            end - start;
+            let stream;
 
 
-        log(
-            `Bloque ${blockNumber}: ${formatBytes(start)} → ${formatBytes(end)}`,
-            "info"
-        );
+            try {
+
+                stream =
+                    currentFile.download({
+
+                        start:
+                            start,
+
+                        end:
+                            end,
+
+                        /*
+                         * Una sola conexión.
+                         *
+                         * Queremos observar claramente
+                         * cada solicitud durante la prueba.
+                         */
+
+                        maxConnections:
+                            1,
+
+                        /*
+                         * Tamaño inicial de los chunks
+                         * internos de MEGAJS.
+                         */
+
+                        initialChunkSize:
+                            128 * 1024,
+
+                        chunkSizeIncrement:
+                            128 * 1024,
+
+                        maxChunkSize:
+                            1024 * 1024
+
+                    });
+
+            } catch (error) {
+
+                reject(
+                    error
+                );
+
+                return;
+
+            }
 
 
-        log(
-            `Solicitando ${formatBytes(expectedBytes)}...`,
-            "info"
-        );
+            if (!stream) {
+
+                reject(
+                    new Error(
+                        "MEGAJS no devolvió un stream."
+                    )
+                );
+
+                return;
+
+            }
 
 
-        let received =
-            0;
+            if (
+                typeof stream.on !==
+                "function"
+            ) {
+
+                reject(
+                    new Error(
+                        "El stream de MEGAJS no expone el método on()."
+                    )
+                );
+
+                return;
+
+            }
 
 
-        let ended =
-            false;
+            /*
+             * =================================================
+             * DATOS RECIBIDOS
+             * =================================================
+             */
+
+            stream.on(
+                "data",
+                chunk => {
+
+                    if (!chunk) {
+
+                        return;
+
+                    }
 
 
-        /*
-         * MEGAJS devuelve un stream.
-         *
-         * start/end permiten solicitar
-         * solamente la sección indicada.
-         */
+                    if (
+                        typeof chunk.length ===
+                        "number"
+                    ) {
 
-        const stream =
-            currentFile.download({
+                        received +=
+                            chunk.length;
 
-                start:
-                    start,
+                    } else if (
+                        typeof chunk.byteLength ===
+                        "number"
+                    ) {
 
-                end:
-                    end,
+                        received +=
+                            chunk.byteLength;
 
-                /*
-                 * Para esta prueba utilizamos
-                 * una sola conexión.
-                 *
-                 * Esto facilita saber exactamente
-                 * qué está ocurriendo.
-                 */
+                    }
 
-                maxConnections:
-                    1,
-
-                /*
-                 * Bloques internos de hasta 1 MB.
-                 */
-
-                initialChunkSize:
-                    128 * 1024,
-
-                chunkSizeIncrement:
-                    128 * 1024,
-
-                maxChunkSize:
-                    1024 * 1024
-
-            });
-
-
-        if (!stream) {
-
-            throw new Error(
-                "MEGAJS no devolvió un stream."
+                }
             );
-        }
 
 
-        /*
-         * Promise que se resuelve cuando
-         * termina el bloque.
-         */
+            /*
+             * =================================================
+             * PROGRESO
+             * =================================================
+             */
 
-        await new Promise(
-            (
-                resolve,
-                reject
-            ) => {
+            stream.on(
+                "progress",
+                info => {
 
-                /*
-                 * PROGRESO
-                 */
-
-                if (
-                    typeof stream.on ===
-                    "function"
-                ) {
-
-                    stream.on(
-                        "progress",
-                        info => {
-
-                            const loaded =
-                                Number(
-                                    info?.bytesLoaded || 0
-                                );
+                    const loaded =
+                        Number(
+                            info?.bytesLoaded || 0
+                        );
 
 
-                            /*
-                             * Progreso global
-                             * de la prueba.
-                             */
-
-                            const completedBefore =
-                                totalReceived;
-
-
-                            const currentTotal =
-                                completedBefore +
-                                Math.min(
-                                    loaded,
+                    const percent =
+                        expectedBytes > 0
+                            ? Math.min(
+                                100,
+                                (
+                                    loaded /
                                     expectedBytes
-                                );
+                                ) *
+                                100
+                            )
+                            : 0;
 
 
-                            const overallTotal =
-                                BLOCK_SIZE *
-                                uniquePositions.length;
+                    progressBar.style.width =
+                        `${percent}%`;
 
 
-                            const percent =
-                                Math.min(
-                                    100,
-                                    (
-                                        currentTotal /
-                                        overallTotal
-                                    ) *
-                                    100
-                                );
+                    progressText.textContent =
+                        `Bloque ${blockNumber}: ${loaded.toLocaleString()} / ${expectedBytes.toLocaleString()} bytes`;
 
 
-                            progressBar.style.width =
-                                `${percent}%`;
+                    progressPercent.textContent =
+                        `${percent.toFixed(1)}%`;
+
+                }
+            );
 
 
-                            progressText.textContent =
-                                `${formatBytes(currentTotal)} recibidos`;
+            /*
+             * =================================================
+             * ERROR
+             * =================================================
+             */
+
+            stream.on(
+                "error",
+                error => {
+
+                    if (finished) {
+
+                        return;
+
+                    }
 
 
-                            progressPercent.textContent =
-                                `${percent.toFixed(1)}%`;
+                    finished =
+                        true;
 
-                        }
-                    );
-
-
-                    /*
-                     * DATOS
-                     */
-
-                    stream.on(
-                        "data",
-                        chunk => {
-
-                            if (!chunk) {
-
-                                return;
-                            }
-
-
-                            if (
-                                typeof chunk.length ===
-                                "number"
-                            ) {
-
-                                received +=
-                                    chunk.length;
-
-                            } else if (
-                                typeof chunk.byteLength ===
-                                "number"
-                            ) {
-
-                                received +=
-                                    chunk.byteLength;
-                            }
-
-                        }
-                    );
-
-
-                    /*
-                     * ERROR
-                     */
-
-                    stream.on(
-                        "error",
-                        error => {
-
-                            if (
-                                ended
-                            ) {
-
-                                return;
-                            }
-
-
-                            ended =
-                                true;
-
-
-                            reject(
-                                error
-                            );
-
-                        }
-                    );
-
-
-                    /*
-                     * FIN DEL BLOQUE
-                     */
-
-                    stream.on(
-                        "end",
-                        () => {
-
-                            if (
-                                ended
-                            ) {
-
-                                return;
-                            }
-
-
-                            ended =
-                                true;
-
-
-                            resolve();
-
-                        }
-                    );
-
-                } else {
 
                     reject(
-                        new Error(
-                            "El stream no expone el método on()."
-                        )
+                        error
                     );
 
                 }
-
-            }
-        );
-
-
-        /*
-         * Validamos cuánto recibimos.
-         */
-
-        log(
-            `Bloque ${blockNumber}: recibidos ${formatBytes(received)}`,
-            "info"
-        );
-
-
-        /*
-         * Permitimos una pequeña diferencia
-         * para investigar posteriormente si
-         * MEGAJS interpreta end como inclusivo.
-         *
-         * No damos por correcto todavía un
-         * tamaño diferente al esperado.
-         */
-
-        if (
-            received === expectedBytes
-        ) {
-
-            log(
-                `✓ Bloque ${blockNumber} correcto.`,
-                "success"
             );
 
 
-            successfulBlocks++;
+            /*
+             * =================================================
+             * FIN DEL BLOQUE
+             * =================================================
+             */
 
-        } else {
+            stream.on(
+                "end",
+                () => {
 
-            log(
-                `⚠ Bloque ${blockNumber}: esperado ${formatBytes(expectedBytes)}, recibido ${formatBytes(received)}.`,
-                "error"
+                    if (finished) {
+
+                        return;
+
+                    }
+
+
+                    finished =
+                        true;
+
+
+                    log(
+                        `Bloque ${blockNumber}: recibidos exactamente ${received.toLocaleString()} bytes (${formatBytes(received)}).`,
+                        "info"
+                    );
+
+
+                    /*
+                     * COMPARACIÓN EXACTA
+                     */
+
+                    if (
+                        received ===
+                        expectedBytes
+                    ) {
+
+                        log(
+                            `✓ Bloque ${blockNumber} CORRECTO.`,
+                            "success"
+                        );
+
+                    } else {
+
+                        log(
+                            `✗ Bloque ${blockNumber} DIFERENTE.`,
+                            "error"
+                        );
+
+
+                        log(
+                            `Esperados: ${expectedBytes.toLocaleString()} bytes.`,
+                            "error"
+                        );
+
+
+                        log(
+                            `Recibidos: ${received.toLocaleString()} bytes.`,
+                            "error"
+                        );
+
+
+                        log(
+                            `Diferencia: ${(received - expectedBytes).toLocaleString()} bytes.`,
+                            "error"
+                        );
+
+                    }
+
+
+                    resolve({
+
+                        start:
+                            start,
+
+                        end:
+                            end,
+
+                        expected:
+                            expectedBytes,
+
+                        received:
+                            received,
+
+                        success:
+                            received ===
+                            expectedBytes
+
+                    });
+
+                }
             );
-
-
-            failedBlocks++;
 
         }
+    );
 
-
-        totalReceived +=
-            received;
-
-    }
+}
+     
 
 
     /*

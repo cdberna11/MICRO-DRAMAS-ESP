@@ -1077,45 +1077,74 @@ function readBlock(
 
     try {
 
-        for (
-            let i = 0;
-            i < uniquePositions.length;
-            i++
-        ) {
+       for (
+    let i = 0;
+    i < uniquePositions.length;
+    i++
+) {
 
-            const start =
-                uniquePositions[i];
-
-
-            await readBlock(
-                i + 1,
-                start
-            );
+    const start =
+        uniquePositions[i];
 
 
-            /*
-             * Pausa pequeña entre bloques.
-             *
-             * Esto evita lanzar varias solicitudes
-             * simultáneamente durante la prueba.
-             */
+    /*
+     * Leer el bloque y recibir
+     * el resultado de la prueba.
+     */
 
-            if (
-                i <
-                uniquePositions.length - 1
-            ) {
+    const result =
+        await readBlock(
+            i + 1,
+            start
+        );
 
-                await new Promise(
-                    resolve =>
-                        setTimeout(
-                            resolve,
-                            500
-                        )
-                );
 
-            }
+    /*
+     * Acumular los datos recibidos.
+     */
 
-        }
+    totalReceived +=
+        result.received;
+
+
+    /*
+     * Contabilizar correctamente
+     * los bloques.
+     */
+
+    if (
+        result.success
+    ) {
+
+        successfulBlocks++;
+
+    } else {
+
+        failedBlocks++;
+
+    }
+
+
+    /*
+     * Pausa pequeña entre bloques.
+     */
+
+    if (
+        i <
+        uniquePositions.length - 1
+    ) {
+
+        await new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    500
+                )
+        );
+
+    }
+
+}
 
 
         /*

@@ -5841,10 +5841,10 @@ async function prepararArchivoMega(
 ) {
 
     const url =
-        typeof drama.embed_url ===
-        "string"
-            ? drama.embed_url.trim()
-            : "";
+    typeof drama.video_url ===
+    "string"
+        ? drama.video_url.trim()
+        : "";
 
 
     if (
@@ -5875,10 +5875,7 @@ async function prepararArchivoMega(
      */
 
     const megaUrl =
-        url.replace(
-            "https://mega.nz/embed/",
-            "https://mega.nz/file/"
-        );
+    url;
 
 
     const file =
@@ -5979,16 +5976,16 @@ async function reproducirDrama(
     }
 
 
-    const embedUrl =
-        typeof drama.embed_url ===
-        "string"
-            ? drama.embed_url.trim()
-            : "";
+    const videoUrl =
+    typeof drama.video_url ===
+    "string"
+        ? drama.video_url.trim()
+        : "";
 
 
-    if (
-        !embedUrl
-    ) {
+if (
+    !videoUrl
+) {
 
         mostrarMensajeSinVideo(
             drama.title

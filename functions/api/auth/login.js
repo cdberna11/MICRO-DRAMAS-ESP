@@ -37,7 +37,23 @@ export async function onRequestPost(context) {
         if (!row) return json({ success: false, error: "No encontramos una cuenta con ese correo o teléfono." }, 404);
         if (row.auth_provider === "google") return json({ success: false, code: "GOOGLE_ACCOUNT", error: "Esta cuenta utiliza Google. Inicia sesión con Google." }, 409);
 
+        const pinEnabled = Number(row.pin_enabled) === 1;
+
         if (!hasPin) {
+            if (!pinEnabled && type === "email" && row.auth_method === "email") {
+                return json({
+                    success: true,
+                    requiresPinMigration: true,
+                    user: {
+                        id: row.id,
+                        email: row.email,
+                        displayName: row.display_name,
+                        avatar: row.avatar,
+                        authMethod: row.auth_method
+                    }
+                });
+            }
+
             return json({
                 success: true,
                 requiresPin: true,
@@ -52,6 +68,10 @@ export async function onRequestPost(context) {
                     authProvider: row.auth_provider || "local"
                 }
             });
+        }
+
+        if (!pinEnabled) {
+            return json({ success: false, code: "PIN_MIGRATION_REQUIRED", error: "Esta cuenta necesita actualizarse a un PIN de 4 dígitos." }, 409);
         }
 
         const pin = String(body.pin || "");

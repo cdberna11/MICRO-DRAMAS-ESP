@@ -14,10 +14,8 @@ export async function onRequestGet(context) {
         }
     }
 
-    headers.set("Set-Cookie", [
-        clearSessionCookie(),
-        "microdramas_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0"
-    ].join(", "));
+    headers.append("Set-Cookie", clearSessionCookie());
+    headers.append("Set-Cookie", "microdramas_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0");
     headers.set("Location", "/portal");
 
     return new Response(null, { status: 302, headers });

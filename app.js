@@ -87,6 +87,22 @@ let reproductorActual =
     null;
 
 /* =========================================================
+   CATEGORÍAS DEL PORTAL
+========================================================= */
+
+const API_PUBLIC_CATEGORIES =
+    "/api/categories_public";
+
+let categoriasPortal =
+    [];
+
+let dramasCatalogo =
+    [];
+
+let categoriaActual =
+    null;
+
+/* =========================================================
    MOTOR DE MEDIA SOURCE
    - iPhone/iPad → ManagedMediaSource
    - Android/Chromium → MediaSource
@@ -489,6 +505,1070 @@ async function cargarLibreriasReproductor() {
 
 
 /* =========================================================
+   CATEGORÍAS - PORTAL PÚBLICO
+========================================================= */
+
+/*
+ * Cargar categorías desde D1
+ *
+ * La API devuelve:
+ *
+ * {
+ *   id,
+ *   name,
+ *   slug,
+ *   drama_ids,
+ *   drama_count
+ * }
+ *
+ * No tenemos que modificar este código cuando
+ * se agreguen nuevas categorías desde /admin.
+ */
+
+async function cargarCategoriasPortal() {
+
+    try {
+
+        const respuesta =
+            await fetch(
+                API_PUBLIC_CATEGORIES,
+                {
+                    method:
+                        "GET",
+
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    },
+
+                    cache:
+                        "no-store"
+                }
+            );
+
+
+        if (
+            !respuesta.ok
+        ) {
+
+            throw new Error(
+                `API categorías: ${respuesta.status}`
+            );
+
+        }
+
+
+        const datos =
+            await respuesta.json();
+
+
+        if (
+            !datos.success ||
+            !Array.isArray(
+                datos.categories
+            )
+        ) {
+
+            throw new Error(
+                "Respuesta inválida de categorías."
+            );
+
+        }
+
+
+        categoriasPortal =
+            datos.categories
+                .filter(
+                    categoria =>
+                        categoria &&
+                        categoria.active !== false
+                )
+                .map(
+                    categoria => ({
+
+                        id:
+                            Number(
+                                categoria.id
+                            ),
+
+                        name:
+                            String(
+                                categoria.name ||
+                                ""
+                            )
+                                .trim()
+                                .toUpperCase(),
+
+                        slug:
+                            String(
+                                categoria.slug ||
+                                ""
+                            )
+                                .trim()
+                                .toLowerCase(),
+
+                        sort_order:
+                            Number(
+                                categoria.sort_order
+                            ) || 0,
+
+                        drama_ids:
+                            Array.isArray(
+                                categoria.drama_ids
+                            )
+                                ? categoria.drama_ids
+                                    .map(
+                                        id =>
+                                            Number(
+                                                id
+                                            )
+                                    )
+                                    .filter(
+                                        Number.isFinite
+                                    )
+                                : []
+
+                    })
+                );
+
+
+        renderizarMenuCategorias();
+
+
+        console.log(
+            "[CATEGORÍAS] ✓ Categorías cargadas:",
+            categoriasPortal
+        );
+
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "[CATEGORÍAS] Error:",
+            error
+        );
+
+
+        categoriasPortal =
+            [];
+
+
+        renderizarMenuCategorias();
+
+    }
+
+}
+
+
+/* =========================================================
+   CREAR MENÚ DE CATEGORÍAS
+========================================================= */
+
+function crearMenuCategorias() {
+
+    if (
+        document.getElementById(
+            "menu-categorias-portal"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const menu =
+        document.createElement(
+            "aside"
+        );
+
+
+    menu.id =
+        "menu-categorias-portal";
+
+
+    menu.className =
+        "menu-categorias-portal";
+
+
+    menu.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+
+    menu.innerHTML =
+        `
+        <div class="menu-categorias-portal__panel">
+
+            <div class="menu-categorias-portal__header">
+
+                <h2>
+                    CATEGORÍAS
+                </h2>
+
+                <button
+                    type="button"
+                    class="menu-categorias-portal__close"
+                    aria-label="Cerrar categorías"
+                >
+                    ×
+                </button>
+
+            </div>
+
+            <nav
+                class="menu-categorias-portal__list"
+                aria-label="Categorías de microdramas"
+            >
+            </nav>
+
+        </div>
+        `;
+
+
+    document.body.appendChild(
+        menu
+    );
+
+
+    const botonCerrar =
+        menu.querySelector(
+            ".menu-categorias-portal__close"
+        );
+
+
+    botonCerrar.addEventListener(
+        "click",
+        cerrarMenuCategorias
+    );
+
+
+    /*
+     * Cerrar al pulsar fuera del panel.
+     */
+
+    menu.addEventListener(
+        "click",
+        evento => {
+
+            if (
+                evento.target ===
+                menu
+            ) {
+
+                cerrarMenuCategorias();
+
+            }
+
+        }
+    );
+
+
+    /*
+     * Botón hamburguesa.
+     */
+
+    const botonHamburguesa =
+        document.createElement(
+            "button"
+        );
+
+
+    botonHamburguesa.type =
+        "button";
+
+
+    botonHamburguesa.id =
+        "boton-menu-categorias";
+
+
+    botonHamburguesa.className =
+        "boton-menu-categorias";
+
+
+    botonHamburguesa.setAttribute(
+        "aria-label",
+        "Abrir categorías"
+    );
+
+
+    botonHamburguesa.setAttribute(
+        "aria-expanded",
+        "false"
+    );
+
+
+    botonHamburguesa.innerHTML =
+        `
+        <span></span>
+        <span></span>
+        <span></span>
+        `;
+
+
+    document.body.appendChild(
+        botonHamburguesa
+    );
+
+
+    botonHamburguesa.addEventListener(
+        "click",
+        alternarMenuCategorias
+    );
+
+
+    insertarEstilosCategorias();
+
+}
+
+
+/* =========================================================
+   RENDERIZAR LISTA DE CATEGORÍAS
+========================================================= */
+
+function renderizarMenuCategorias() {
+
+    crearMenuCategorias();
+
+
+    const lista =
+        document.querySelector(
+            ".menu-categorias-portal__list"
+        );
+
+
+    if (
+        !lista
+    ) {
+
+        return;
+
+    }
+
+
+    lista.innerHTML =
+        "";
+
+
+    /*
+     * TODAS
+     */
+
+    const botonTodos =
+        crearBotonCategoria(
+            {
+                id:
+                    "todos",
+
+                name:
+                    "TODOS",
+
+                slug:
+                    "todos",
+
+                drama_ids:
+                    dramasCatalogo.map(
+                        drama =>
+                            Number(
+                                drama.id
+                            )
+                    )
+            },
+            categoriaActual ===
+            null
+        );
+
+
+    lista.appendChild(
+        botonTodos
+    );
+
+
+    /*
+     * Categorías provenientes de D1
+     */
+
+    categoriasPortal.forEach(
+        categoria => {
+
+            const boton =
+                crearBotonCategoria(
+                    categoria,
+                    categoriaActual ===
+                        categoria.slug
+                );
+
+
+            lista.appendChild(
+                boton
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   CREAR BOTÓN DE CATEGORÍA
+========================================================= */
+
+function crearBotonCategoria(
+    categoria,
+    activo
+) {
+
+    const boton =
+        document.createElement(
+            "button"
+        );
+
+
+    boton.type =
+        "button";
+
+
+    boton.className =
+        "menu-categoria-item";
+
+
+    if (
+        activo
+    ) {
+
+        boton.classList.add(
+            "is-active"
+        );
+
+    }
+
+
+    boton.textContent =
+        categoria.name;
+
+
+    boton.dataset.categorySlug =
+        categoria.slug;
+
+
+    boton.addEventListener(
+        "click",
+        () => {
+
+            if (
+                categoria.slug ===
+                "todos"
+            ) {
+
+                categoriaActual =
+                    null;
+
+            } else {
+
+                categoriaActual =
+                    categoria.slug;
+
+            }
+
+
+            filtrarDramasPorCategoria();
+
+
+            cerrarMenuCategorias();
+
+        }
+    );
+
+
+    return boton;
+
+}
+
+
+/* =========================================================
+   FILTRAR DRAMAS
+========================================================= */
+
+function filtrarDramasPorCategoria() {
+
+    const catalogo =
+        document.getElementById(
+            "catalogo"
+        );
+
+
+    if (
+        !catalogo
+    ) {
+
+        return;
+
+    }
+
+
+    catalogo.innerHTML =
+        "";
+
+
+    /*
+     * TODAS
+     */
+
+    if (
+        categoriaActual ===
+        null
+    ) {
+
+        dramasCatalogo.forEach(
+            crearTarjetaDrama
+        );
+
+
+        renderizarMenuCategorias();
+
+
+        return;
+
+    }
+
+
+    /*
+     * Buscar categoría seleccionada.
+     */
+
+    const categoria =
+        categoriasPortal.find(
+            elemento =>
+                elemento.slug ===
+                categoriaActual
+        );
+
+
+    if (
+        !categoria
+    ) {
+
+        dramasCatalogo.forEach(
+            crearTarjetaDrama
+        );
+
+
+        renderizarMenuCategorias();
+
+
+        return;
+
+    }
+
+
+    const ids =
+        new Set(
+            categoria.drama_ids
+                .map(
+                    id =>
+                        Number(
+                            id
+                        )
+                )
+        );
+
+
+    const dramasFiltrados =
+        dramasCatalogo.filter(
+            drama =>
+                ids.has(
+                    Number(
+                        drama.id
+                    )
+                )
+        );
+
+
+    /*
+     * Sin resultados
+     */
+
+    if (
+        dramasFiltrados.length ===
+        0
+    ) {
+
+        catalogo.innerHTML =
+            `
+            <p class="mensaje-vacio">
+                No hay microdramas en la categoría
+                <strong>
+                    ${categoria.name}
+                </strong>.
+            </p>
+            `;
+
+
+        renderizarMenuCategorias();
+
+
+        return;
+
+    }
+
+
+    dramasFiltrados.forEach(
+        crearTarjetaDrama
+    );
+
+
+    renderizarMenuCategorias();
+
+}
+
+
+/* =========================================================
+   ABRIR / CERRAR MENÚ
+========================================================= */
+
+function alternarMenuCategorias() {
+
+    const menu =
+        document.getElementById(
+            "menu-categorias-portal"
+        );
+
+
+    const boton =
+        document.getElementById(
+            "boton-menu-categorias"
+        );
+
+
+    if (
+        !menu
+    ) {
+
+        return;
+
+    }
+
+
+    const abierto =
+        menu.classList.toggle(
+            "is-open"
+        );
+
+
+    menu.setAttribute(
+        "aria-hidden",
+        abierto
+            ? "false"
+            : "true"
+    );
+
+
+    if (
+        boton
+    ) {
+
+        boton.classList.toggle(
+            "is-open",
+            abierto
+        );
+
+
+        boton.setAttribute(
+            "aria-expanded",
+            abierto
+                ? "true"
+                : "false"
+        );
+
+    }
+
+
+    document.body.classList.toggle(
+        "categorias-menu-open",
+        abierto
+    );
+
+}
+
+
+function cerrarMenuCategorias() {
+
+    const menu =
+        document.getElementById(
+            "menu-categorias-portal"
+        );
+
+
+    const boton =
+        document.getElementById(
+            "boton-menu-categorias"
+        );
+
+
+    if (
+        menu
+    ) {
+
+        menu.classList.remove(
+            "is-open"
+        );
+
+
+        menu.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+    }
+
+
+    if (
+        boton
+    ) {
+
+        boton.classList.remove(
+            "is-open"
+        );
+
+
+        boton.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+    }
+
+
+    document.body.classList.remove(
+        "categorias-menu-open"
+    );
+
+}
+
+
+/* =========================================================
+   ESTILOS DEL MENÚ
+========================================================= */
+
+function insertarEstilosCategorias() {
+
+    if (
+        document.getElementById(
+            "categorias-portal-style"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const style =
+        document.createElement(
+            "style"
+        );
+
+
+    style.id =
+        "categorias-portal-style";
+
+
+    style.textContent =
+`
+/* =====================================================
+   BOTÓN HAMBURGUESA
+===================================================== */
+
+.boton-menu-categorias {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    z-index: 99990;
+
+    width: 46px;
+    height: 46px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 5px;
+
+    padding: 0;
+
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 10px;
+
+    background: rgba(15,15,15,0.92);
+    backdrop-filter: blur(10px);
+
+    cursor: pointer;
+
+    box-shadow:
+        0 8px 30px rgba(0,0,0,0.30);
+
+    transition:
+        background .2s ease,
+        transform .2s ease;
+}
+
+.boton-menu-categorias:hover {
+    background: rgba(35,35,35,0.96);
+}
+
+.boton-menu-categorias:active {
+    transform: scale(.95);
+}
+
+.boton-menu-categorias span {
+    display: block;
+
+    width: 22px;
+    height: 2px;
+
+    border-radius: 10px;
+
+    background: #fff;
+
+    transition:
+        transform .2s ease,
+        opacity .2s ease;
+}
+
+.boton-menu-categorias.is-open
+span:nth-child(1) {
+    transform:
+        translateY(7px)
+        rotate(45deg);
+}
+
+.boton-menu-categorias.is-open
+span:nth-child(2) {
+    opacity: 0;
+}
+
+.boton-menu-categorias.is-open
+span:nth-child(3) {
+    transform:
+        translateY(-7px)
+        rotate(-45deg);
+}
+
+
+/* =====================================================
+   PANEL
+===================================================== */
+
+.menu-categorias-portal {
+    position: fixed;
+    inset: 0;
+
+    z-index: 99989;
+
+    visibility: hidden;
+    opacity: 0;
+
+    background:
+        rgba(0,0,0,0.45);
+
+    transition:
+        opacity .2s ease,
+        visibility .2s ease;
+}
+
+.menu-categorias-portal.is-open {
+    visibility: visible;
+    opacity: 1;
+}
+
+
+/* =====================================================
+   PANEL LATERAL
+===================================================== */
+
+.menu-categorias-portal__panel {
+    width: min(320px, 85vw);
+    height: 100%;
+
+    padding: 22px 18px;
+
+    box-sizing: border-box;
+
+    background:
+        #111;
+
+    border-right:
+        1px solid rgba(255,255,255,0.10);
+
+    box-shadow:
+        15px 0 50px rgba(0,0,0,0.40);
+
+    transform:
+        translateX(-100%);
+
+    transition:
+        transform .25s ease;
+
+    overflow-y: auto;
+}
+
+.menu-categorias-portal.is-open
+.menu-categorias-portal__panel {
+    transform:
+        translateX(0);
+}
+
+
+/* =====================================================
+   CABECERA
+===================================================== */
+
+.menu-categorias-portal__header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 20px;
+
+    padding-bottom: 15px;
+
+    border-bottom:
+        1px solid rgba(255,255,255,0.10);
+}
+
+.menu-categorias-portal__header h2 {
+    margin: 0;
+
+    color: #fff;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+    letter-spacing: .5px;
+}
+
+.menu-categorias-portal__close {
+    width: 38px;
+    height: 38px;
+
+    border: 0;
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,0.08);
+
+    color: #fff;
+
+    font-size: 25px;
+
+    cursor: pointer;
+}
+
+
+/* =====================================================
+   LISTA
+===================================================== */
+
+.menu-categorias-portal__list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+}
+
+
+/* =====================================================
+   BOTONES
+===================================================== */
+
+.menu-categoria-item {
+    width: 100%;
+
+    padding: 13px 15px;
+
+    border: 1px solid
+        rgba(255,255,255,0.08);
+
+    border-radius: 8px;
+
+    background:
+        rgba(255,255,255,0.04);
+
+    color: #fff;
+
+    text-align: left;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background .18s ease,
+        border-color .18s ease,
+        transform .18s ease;
+}
+
+.menu-categoria-item:hover {
+    background:
+        rgba(255,255,255,0.09);
+}
+
+.menu-categoria-item.is-active {
+    background:
+        rgba(255,255,255,0.14);
+
+    border-color:
+        rgba(255,255,255,0.28);
+
+    font-weight: 700;
+}
+
+.menu-categoria-item:active {
+    transform:
+        scale(.98);
+}
+
+
+/* =====================================================
+   MÓVIL
+===================================================== */
+
+@media (max-width: 600px) {
+
+    .boton-menu-categorias {
+        top: 12px;
+        left: 12px;
+
+        width: 42px;
+        height: 42px;
+    }
+
+    .menu-categorias-portal__panel {
+        width: min(300px, 88vw);
+    }
+
+}
+`;
+
+
+    document.head.appendChild(
+        style
+    );
+
+}
+
+/* =========================================================
    CARGAR CATÁLOGO
 ========================================================= */
 
@@ -548,7 +1628,20 @@ async function cargarDramas() {
             );
 
         }
+/* =====================================================
+   GUARDAR CATÁLOGO ORIGINAL
+===================================================== */
 
+dramasCatalogo =
+    datos.dramas;
+
+
+/* =====================================================
+   CARGAR CATEGORÍAS
+===================================================== */
+
+await cargarCategoriasPortal();
+       
 
         catalogo.innerHTML =
             "";

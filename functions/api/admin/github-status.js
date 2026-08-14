@@ -20,17 +20,6 @@ function respuestaJson(datos, estado = 200) {
     );
 }
 
-function tieneSesion(request) {
-    const cookies =
-        request.headers.get("Cookie") || "";
-
-    return cookies
-        .split(";")
-        .some(cookie =>
-            cookie.trim() === "microdramas_session=1"
-        );
-}
-
 function fechaValida(valor) {
     return /^\d{4}-\d{2}-\d{2}$/.test(
         String(valor || "")
@@ -58,16 +47,6 @@ function obtenerDiasRestantes(fechaISO) {
 }
 
 export async function onRequestGet(context) {
-
-    if (!tieneSesion(context.request)) {
-        return respuestaJson(
-            {
-                success: false,
-                error: "No autorizado."
-            },
-            401
-        );
-    }
 
     const token =
         context.env.GITHUB_TOKEN;

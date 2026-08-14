@@ -14,13 +14,15 @@ const DESCRIPCION_AUTOMATICA =
 const API_ADMIN_CATEGORIES =
     "/api/admin/categories";
 
+
 let categoriasDisponibles = [];
 
 let dramasActuales = [];
 
 let textoBusqueda = "";
 
-let modoFormulario = "nuevo";
+let modoFormulario =
+    "nuevo";
 
 
 /* =========================================================
@@ -38,6 +40,8 @@ document.addEventListener(
         inicializarBuscador();
 
         inicializarNuevaCategoria();
+
+        inicializarNuevaPlataforma();
 
         cargarCategoriasAdministrativas();
 
@@ -58,20 +62,24 @@ function inicializarFormulario() {
             "boton-nuevo"
         );
 
+
     const botonCancelar =
         document.getElementById(
             "boton-cancelar"
         );
+
 
     const formulario =
         document.getElementById(
             "form-nuevo-drama"
         );
 
+
     const campoTitulo =
         document.getElementById(
             "title"
         );
+
 
     const campoPlataforma =
         document.getElementById(
@@ -140,16 +148,8 @@ function inicializarFormulario() {
         campoPlataforma
     ) {
 
-        campoPlataforma.addEventListener(
-            "change",
-            manejarCambioPlataforma
-        );
-
-
-        manejarCambioPlataforma({
-            target:
-                campoPlataforma
-        });
+        campoPlataforma.dataset.previousValue =
+            campoPlataforma.value || "";
 
     }
 
@@ -173,6 +173,7 @@ async function cargarCategoriasAdministrativas() {
     ) {
 
         return;
+
     }
 
 
@@ -242,7 +243,9 @@ async function cargarCategoriasAdministrativas() {
         );
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "Error al cargar categorías:",
@@ -285,12 +288,17 @@ function renderizarSelectorCategorias(
     ) {
 
         return;
+
     }
 
 
     selector.innerHTML =
         "";
 
+
+    /* -----------------------------------------------------
+       OPCIÓN INICIAL
+    ----------------------------------------------------- */
 
     const opcionInicial =
         document.createElement(
@@ -310,6 +318,10 @@ function renderizarSelectorCategorias(
         opcionInicial
     );
 
+
+    /* -----------------------------------------------------
+       CATEGORÍAS EXISTENTES
+    ----------------------------------------------------- */
 
     categoriasDisponibles.forEach(
         categoria => {
@@ -344,6 +356,10 @@ function renderizarSelectorCategorias(
     );
 
 
+    /* -----------------------------------------------------
+       SEPARADOR
+    ----------------------------------------------------- */
+
     const separador =
         document.createElement(
             "option"
@@ -363,6 +379,10 @@ function renderizarSelectorCategorias(
     );
 
 
+    /* -----------------------------------------------------
+       NUEVA CATEGORÍA
+    ----------------------------------------------------- */
+
     const opcionNueva =
         document.createElement(
             "option"
@@ -381,6 +401,10 @@ function renderizarSelectorCategorias(
         opcionNueva
     );
 
+
+    /* -----------------------------------------------------
+       RESTAURAR CATEGORÍA
+    ----------------------------------------------------- */
 
     if (
         Array.isArray(
@@ -438,35 +462,42 @@ function inicializarNuevaCategoria() {
             "categorias-selector"
         );
 
+
     const modal =
         document.getElementById(
             "modal-nueva-categoria"
         );
+
 
     const campo =
         document.getElementById(
             "nueva-categoria"
         );
 
+
     const botonCrear =
         document.getElementById(
             "boton-crear-categoria"
         );
+
 
     const botonCancelar =
         document.getElementById(
             "boton-cancelar-categoria"
         );
 
+
     const botonCerrar =
         document.getElementById(
             "boton-cerrar-modal-categoria"
         );
 
+
     const backdrop =
         document.getElementById(
             "category-modal-backdrop"
         );
+
 
     const mensaje =
         document.getElementById(
@@ -482,8 +513,13 @@ function inicializarNuevaCategoria() {
     ) {
 
         return;
+
     }
 
+
+    /* -----------------------------------------------------
+       SELECT
+    ----------------------------------------------------- */
 
     selector.addEventListener(
         "change",
@@ -497,6 +533,7 @@ function inicializarNuevaCategoria() {
                 abrirModal();
 
                 return;
+
             }
 
 
@@ -507,11 +544,19 @@ function inicializarNuevaCategoria() {
     );
 
 
+    /* -----------------------------------------------------
+       CREAR
+    ----------------------------------------------------- */
+
     botonCrear.addEventListener(
         "click",
         crearCategoria
     );
 
+
+    /* -----------------------------------------------------
+       CANCELAR
+    ----------------------------------------------------- */
 
     if (
         botonCancelar
@@ -525,6 +570,10 @@ function inicializarNuevaCategoria() {
     }
 
 
+    /* -----------------------------------------------------
+       CERRAR X
+    ----------------------------------------------------- */
+
     if (
         botonCerrar
     ) {
@@ -537,6 +586,10 @@ function inicializarNuevaCategoria() {
     }
 
 
+    /* -----------------------------------------------------
+       CERRAR FONDO
+    ----------------------------------------------------- */
+
     if (
         backdrop
     ) {
@@ -548,6 +601,10 @@ function inicializarNuevaCategoria() {
 
     }
 
+
+    /* -----------------------------------------------------
+       TECLADO
+    ----------------------------------------------------- */
 
     campo.addEventListener(
         "keydown",
@@ -579,6 +636,10 @@ function inicializarNuevaCategoria() {
         }
     );
 
+
+    /* -----------------------------------------------------
+       ABRIR MODAL
+    ----------------------------------------------------- */
 
     function abrirModal() {
 
@@ -615,6 +676,10 @@ function inicializarNuevaCategoria() {
     }
 
 
+    /* -----------------------------------------------------
+       CERRAR MODAL
+    ----------------------------------------------------- */
+
     function cerrarModal() {
 
         modal.hidden =
@@ -645,6 +710,10 @@ function inicializarNuevaCategoria() {
     }
 
 
+    /* -----------------------------------------------------
+       CREAR CATEGORÍA
+    ----------------------------------------------------- */
+
     async function crearCategoria() {
 
         const nombre =
@@ -667,11 +736,13 @@ function inicializarNuevaCategoria() {
             campo.focus();
 
             return;
+
         }
 
 
         if (
-            nombre.length < 2
+            nombre.length <
+            2
         ) {
 
             mostrarError(
@@ -681,6 +752,7 @@ function inicializarNuevaCategoria() {
             campo.focus();
 
             return;
+
         }
 
 
@@ -842,7 +914,9 @@ function inicializarNuevaCategoria() {
             );
 
 
-        } catch (error) {
+        } catch (
+            error
+        ) {
 
             console.error(
                 "Error al crear categoría:",
@@ -927,6 +1001,7 @@ function obtenerCategoriasSeleccionadas() {
     ) {
 
         return [];
+
     }
 
 
@@ -945,6 +1020,7 @@ function obtenerCategoriasSeleccionadas() {
     ) {
 
         return [];
+
     }
 
 
@@ -1004,9 +1080,6 @@ function abrirFormularioNuevo() {
 
 
     establecerDescripcionAutomatica();
-
-
-    establecerSiguienteOrdenVisual();
 
 
     document.getElementById(
@@ -1108,12 +1181,6 @@ function abrirFormularioEdicion(
         drama.featured === "1";
 
 
-    document.getElementById(
-        "sort_order"
-    ).value =
-        drama.sort_order || "1";
-
-
     establecerDescripcionAutomatica();
 
 
@@ -1163,48 +1230,113 @@ function establecerPlataformaEdicion(
         );
 
 
-    const campoNueva =
-        document.getElementById(
-            "nueva-plataforma"
-        );
+    if (
+        !select
+    ) {
+
+        return;
+
+    }
 
 
-    const plataformaPredefinida =
-        Array.from(
-            select.options
-        ).some(
-            opcion =>
-                opcion.value ===
-                plataforma
-        );
+    const valor =
+        String(
+            plataforma || ""
+        )
+            .trim();
 
 
     if (
-        plataformaPredefinida
+        valor === ""
     ) {
 
         select.value =
-            plataforma;
-
-
-        campoNueva.value =
             "";
 
 
-        desactivarNuevaPlataforma();
-
+        select.dataset.previousValue =
+            "";
 
         return;
+
+    }
+
+
+    /*
+     * Buscar plataforma existente.
+     */
+
+    let opcion =
+        Array.from(
+            select.options
+        ).find(
+            elemento =>
+                String(
+                    elemento.value
+                )
+                    .trim()
+                    .toLowerCase() ===
+                valor.toLowerCase()
+        );
+
+
+    /*
+     * Si no existe, crearla temporalmente.
+     *
+     * Esto permite editar microdramas antiguos
+     * que tengan una plataforma personalizada.
+     */
+
+    if (
+        !opcion
+    ) {
+
+        opcion =
+            document.createElement(
+                "option"
+            );
+
+
+        opcion.value =
+            valor;
+
+
+        opcion.textContent =
+            valor;
+
+
+        const opcionNueva =
+            select.querySelector(
+                'option[value="__NUEVA_PLATAFORMA__"]'
+            );
+
+
+        if (
+            opcionNueva
+        ) {
+
+            select.insertBefore(
+                opcion,
+                opcionNueva
+            );
+
+        } else {
+
+            select.appendChild(
+                opcion
+            );
+
+        }
+
     }
 
 
     select.value =
-        "";
+        valor;
 
 
-    activarNuevaPlataforma(
-        plataforma
-    );
+    select.dataset.previousValue =
+        valor;
 
 }
 
@@ -1217,99 +1349,28 @@ function manejarCambioPlataforma(
     evento
 ) {
 
+    const select =
+        evento.target;
+
+
     const valor =
-        evento.target.value;
+        select.value;
 
 
     if (
-        valor === ""
+        valor ===
+        "__NUEVA_PLATAFORMA__"
     ) {
 
-        activarNuevaPlataforma();
+        abrirModalNuevaPlataforma();
 
         return;
-    }
-
-
-    desactivarNuevaPlataforma();
-
-}
-
-
-/* =========================================================
-   ACTIVAR NUEVA PLATAFORMA
-========================================================= */
-
-function activarNuevaPlataforma(
-    valorInicial = ""
-) {
-
-    const contenedor =
-        document.getElementById(
-            "nueva-plataforma-container"
-        );
-
-
-    const campo =
-        document.getElementById(
-            "nueva-plataforma"
-        );
-
-
-    contenedor.hidden =
-        false;
-
-
-    campo.disabled =
-        false;
-
-
-    campo.required =
-        true;
-
-
-    campo.placeholder =
-        "Escribe el nombre de la plataforma";
-
-
-    if (
-        valorInicial !== ""
-    ) {
-
-        campo.value =
-            valorInicial;
 
     }
 
-}
 
-
-/* =========================================================
-   DESACTIVAR NUEVA PLATAFORMA
-========================================================= */
-
-function desactivarNuevaPlataforma() {
-
-    const campo =
-        document.getElementById(
-            "nueva-plataforma"
-        );
-
-
-    campo.disabled =
-        true;
-
-
-    campo.required =
-        false;
-
-
-    campo.value =
-        "";
-
-
-    campo.placeholder =
-        "Selecciona una plataforma predefinida";
+    select.dataset.previousValue =
+        valor;
 
 }
 
@@ -1326,22 +1387,414 @@ function obtenerPlataformaFinal() {
         );
 
 
-    const campoNueva =
-        document.getElementById(
-            "nueva-plataforma"
-        );
-
-
     if (
-        select.value !== ""
+        !select
     ) {
 
-        return select.value.trim();
+        return "";
 
     }
 
 
-    return campoNueva.value.trim();
+    const valor =
+        String(
+            select.value || ""
+        )
+            .trim();
+
+
+    if (
+        valor ===
+        "__NUEVA_PLATAFORMA__"
+    ) {
+
+        return "";
+
+    }
+
+
+    return valor;
+
+}
+
+
+/* =========================================================
+   INICIALIZAR NUEVA PLATAFORMA
+========================================================= */
+
+function inicializarNuevaPlataforma() {
+
+    const selector =
+        document.getElementById(
+            "platform"
+        );
+
+
+    const modal =
+        document.getElementById(
+            "modal-nueva-plataforma"
+        );
+
+
+    const campo =
+        document.getElementById(
+            "nueva-plataforma-modal"
+        );
+
+
+    const botonCrear =
+        document.getElementById(
+            "boton-crear-plataforma"
+        );
+
+
+    const botonCancelar =
+        document.getElementById(
+            "boton-cancelar-categoria-plataforma"
+        );
+
+
+    const botonCerrar =
+        document.getElementById(
+            "boton-cerrar-modal-plataforma"
+        );
+
+
+    const backdrop =
+        document.getElementById(
+            "platform-modal-backdrop"
+        );
+
+
+    const mensaje =
+        document.getElementById(
+            "mensaje-nueva-plataforma"
+        );
+
+
+    if (
+        !selector ||
+        !modal ||
+        !campo ||
+        !botonCrear
+    ) {
+
+        return;
+
+    }
+
+
+    selector.addEventListener(
+        "change",
+        manejarCambioPlataforma
+    );
+
+
+    botonCrear.addEventListener(
+        "click",
+        usarNuevaPlataforma
+    );
+
+
+    if (
+        botonCancelar
+    ) {
+
+        botonCancelar.addEventListener(
+            "click",
+            cerrarModalNuevaPlataforma
+        );
+
+    }
+
+
+    if (
+        botonCerrar
+    ) {
+
+        botonCerrar.addEventListener(
+            "click",
+            cerrarModalNuevaPlataforma
+        );
+
+    }
+
+
+    if (
+        backdrop
+    ) {
+
+        backdrop.addEventListener(
+            "click",
+            cerrarModalNuevaPlataforma
+        );
+
+    }
+
+
+    campo.addEventListener(
+        "keydown",
+        evento => {
+
+            if (
+                evento.key ===
+                "Enter"
+            ) {
+
+                evento.preventDefault();
+
+                usarNuevaPlataforma();
+
+            }
+
+
+            if (
+                evento.key ===
+                "Escape"
+            ) {
+
+                evento.preventDefault();
+
+                cerrarModalNuevaPlataforma();
+
+            }
+
+        }
+    );
+
+
+    function abrirModalNuevaPlataforma() {
+
+        campo.value =
+            "";
+
+
+        mensaje.hidden =
+            true;
+
+
+        mensaje.textContent =
+            "";
+
+
+        modal.hidden =
+            false;
+
+
+        document.body.classList.add(
+            "category-modal-open"
+        );
+
+
+        setTimeout(
+            () => {
+
+                campo.focus();
+
+            },
+            50
+        );
+
+    }
+
+
+    function cerrarModalNuevaPlataforma() {
+
+        modal.hidden =
+            true;
+
+
+        document.body.classList.remove(
+            "category-modal-open"
+        );
+
+
+        selector.value =
+            selector.dataset.previousValue ||
+            "";
+
+
+        campo.value =
+            "";
+
+
+        mensaje.hidden =
+            true;
+
+
+        mensaje.textContent =
+            "";
+
+    }
+
+
+    function usarNuevaPlataforma() {
+
+        const nombre =
+            campo.value
+                .trim()
+                .replace(
+                    /\s+/g,
+                    " "
+                );
+
+
+        if (
+            !nombre
+        ) {
+
+            mostrarErrorPlataforma(
+                "Escribe el nombre de la plataforma."
+            );
+
+            campo.focus();
+
+            return;
+
+        }
+
+
+        if (
+            nombre.length <
+            2
+        ) {
+
+            mostrarErrorPlataforma(
+                "El nombre de la plataforma es demasiado corto."
+            );
+
+            campo.focus();
+
+            return;
+
+        }
+
+
+        /*
+         * Buscar si ya existe.
+         */
+
+        let opcion =
+            Array.from(
+                selector.options
+            ).find(
+                elemento =>
+                    String(
+                        elemento.value
+                    )
+                        .trim()
+                        .toLowerCase() ===
+                    nombre.toLowerCase()
+            );
+
+
+        /*
+         * Si no existe, crear opción.
+         */
+
+        if (
+            !opcion
+        ) {
+
+            opcion =
+                document.createElement(
+                    "option"
+                );
+
+
+            opcion.value =
+                nombre;
+
+
+            opcion.textContent =
+                nombre;
+
+
+            const opcionNueva =
+                selector.querySelector(
+                    'option[value="__NUEVA_PLATAFORMA__"]'
+                );
+
+
+            if (
+                opcionNueva
+            ) {
+
+                selector.insertBefore(
+                    opcion,
+                    opcionNueva
+                );
+
+            } else {
+
+                selector.appendChild(
+                    opcion
+                );
+
+            }
+
+        }
+
+
+        /*
+         * Seleccionar nueva plataforma.
+         */
+
+        selector.value =
+            opcion.value;
+
+
+        selector.dataset.previousValue =
+            opcion.value;
+
+
+        /*
+         * Cerrar modal.
+         */
+
+        modal.hidden =
+            true;
+
+
+        document.body.classList.remove(
+            "category-modal-open"
+        );
+
+
+        campo.value =
+            "";
+
+
+        mensaje.hidden =
+            true;
+
+
+        mensaje.textContent =
+            "";
+
+    }
+
+
+    function mostrarErrorPlataforma(
+        texto
+    ) {
+
+        mensaje.textContent =
+            texto;
+
+
+        mensaje.className =
+            "category-modal__message category-modal__message--error";
+
+
+        mensaje.hidden =
+            false;
+
+    }
+
+
+    window.abrirModalNuevaPlataforma =
+        abrirModalNuevaPlataforma;
 
 }
 
@@ -1360,12 +1813,15 @@ function generarSlug(
     ) {
 
         return "";
+
     }
 
 
     return texto
 
-        .normalize("NFD")
+        .normalize(
+            "NFD"
+        )
 
         .replace(
             /[\u0300-\u036f]/g,
@@ -1413,69 +1869,20 @@ function generarSlug(
 
 function establecerDescripcionAutomatica() {
 
-    document.getElementById(
-        "description"
-    ).value =
-        DESCRIPCION_AUTOMATICA;
+    const campo =
+        document.getElementById(
+            "description"
+        );
 
-}
-
-
-/* =========================================================
-   ORDEN VISUAL
-========================================================= */
-
-function establecerSiguienteOrdenVisual() {
 
     if (
-        !Array.isArray(
-            dramasActuales
-        )
+        campo
     ) {
 
-        document.getElementById(
-            "sort_order"
-        ).value =
-            "1";
+        campo.value =
+            DESCRIPCION_AUTOMATICA;
 
-        return;
     }
-
-
-    let mayor =
-        0;
-
-
-    dramasActuales.forEach(
-        drama => {
-
-            const orden =
-                Number(
-                    drama.sort_order
-                );
-
-
-            if (
-                Number.isInteger(
-                    orden
-                ) &&
-                orden > mayor
-            ) {
-
-                mayor =
-                    orden;
-            }
-
-        }
-    );
-
-
-    document.getElementById(
-        "sort_order"
-    ).value =
-        String(
-            mayor + 1
-        );
 
 }
 
@@ -1506,11 +1913,12 @@ async function guardarFormulario(
     ) {
 
         mostrarMensajeAdmin(
-            "Debes seleccionar una plataforma o escribir una nueva plataforma.",
+            "Debes seleccionar una plataforma.",
             "error"
         );
 
         return;
+
     }
 
 
@@ -1530,6 +1938,7 @@ async function guardarFormulario(
         );
 
         return;
+
     }
 
 
@@ -1538,7 +1947,8 @@ async function guardarFormulario(
 
 
     if (
-        categorias.length !== 1
+        categorias.length !==
+        1
     ) {
 
         mostrarMensajeAdmin(
@@ -1547,6 +1957,7 @@ async function guardarFormulario(
         );
 
         return;
+
     }
 
 
@@ -1566,6 +1977,7 @@ async function guardarFormulario(
         );
 
         return;
+
     }
 
 
@@ -1726,7 +2138,9 @@ async function guardarFormulario(
         );
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "Error al guardar microdrama:",
@@ -1787,61 +2201,74 @@ function cerrarFormulario() {
 
 function limpiarFormulario() {
 
-    document.getElementById(
-        "form-nuevo-drama"
-    ).reset();
-
-
-    document.getElementById(
-        "drama-id"
-    ).value =
-        "";
-
-
-    document.getElementById(
-        "description"
-    ).value =
-        DESCRIPCION_AUTOMATICA;
-
-
-    document.getElementById(
-        "sort_order"
-    ).value =
-        "1";
-
-
-    const campoNueva =
+    const formulario =
         document.getElementById(
-            "nueva-plataforma"
+            "form-nuevo-drama"
         );
 
 
-    campoNueva.disabled =
-        false;
+    if (
+        formulario
+    ) {
+
+        formulario.reset();
+
+    }
 
 
-    campoNueva.required =
-        true;
+    const dramaId =
+        document.getElementById(
+            "drama-id"
+        );
 
 
-    campoNueva.value =
-        "";
+    if (
+        dramaId
+    ) {
+
+        dramaId.value =
+            "";
+
+    }
 
 
-    campoNueva.placeholder =
-        "Escribe el nombre de la plataforma";
+    establecerDescripcionAutomatica();
 
 
-    document.getElementById(
-        "platform"
-    ).value =
-        "";
+    const plataforma =
+        document.getElementById(
+            "platform"
+        );
 
 
-    document.getElementById(
-        "status"
-    ).value =
-        "published";
+    if (
+        plataforma
+    ) {
+
+        plataforma.value =
+            "";
+
+
+        plataforma.dataset.previousValue =
+            "";
+
+    }
+
+
+    const status =
+        document.getElementById(
+            "status"
+        );
+
+
+    if (
+        status
+    ) {
+
+        status.value =
+            "published";
+
+    }
 
 
     renderizarSelectorCategorias(
@@ -1875,6 +2302,7 @@ function inicializarSeleccionMultiple() {
     ) {
 
         return;
+
     }
 
 
@@ -1944,7 +2372,8 @@ function actualizarEstadoSeleccion() {
     ) {
 
         botonEliminar.disabled =
-            seleccionadas.length === 0;
+            seleccionadas.length ===
+            0;
 
 
         botonEliminar.textContent =
@@ -2020,15 +2449,18 @@ async function eliminarSeleccionados() {
 
 
     if (
-        ids.length === 0
+        ids.length ===
+        0
     ) {
 
         return;
+
     }
 
 
     const mensaje =
-        ids.length === 1
+        ids.length ===
+            1
             ? "¿Seguro que deseas eliminar este microdrama?"
             : `¿Seguro que deseas eliminar los ${ids.length} microdramas seleccionados?`;
 
@@ -2044,6 +2476,7 @@ async function eliminarSeleccionados() {
     ) {
 
         return;
+
     }
 
 
@@ -2120,7 +2553,9 @@ async function eliminarSeleccionados() {
         );
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "Error al eliminar:",
@@ -2168,6 +2603,7 @@ function inicializarBuscador() {
     ) {
 
         return;
+
     }
 
 
@@ -2180,7 +2616,8 @@ function inicializarBuscador() {
 
 
             botonLimpiar.hidden =
-                textoBusqueda === "";
+                textoBusqueda ===
+                "";
 
 
             aplicarFiltroDramas();
@@ -2237,11 +2674,6 @@ function obtenerCategoriaDramaAdmin(
         drama.categories;
 
 
-    /*
-     * categories puede llegar como JSON
-     * o como arreglo.
-     */
-
     if (
         typeof categorias ===
             "string" &&
@@ -2265,10 +2697,6 @@ function obtenerCategoriaDramaAdmin(
 
     }
 
-
-    /*
-     * Cada microdrama tiene una sola categoría.
-     */
 
     if (
         Array.isArray(
@@ -2318,6 +2746,7 @@ function aplicarFiltroDramas() {
     ) {
 
         return;
+
     }
 
 
@@ -2328,7 +2757,8 @@ function aplicarFiltroDramas() {
 
 
     if (
-        textoBusqueda === ""
+        textoBusqueda ===
+        ""
     ) {
 
         renderizarDramas(
@@ -2343,7 +2773,8 @@ function aplicarFiltroDramas() {
 
             resultadoBusqueda.textContent =
                 `${dramasActuales.length} microdrama${
-                    dramasActuales.length === 1
+                    dramasActuales.length ===
+                    1
                         ? ""
                         : "s"
                 }`;
@@ -2354,6 +2785,7 @@ function aplicarFiltroDramas() {
         actualizarEstadoSeleccion();
 
         return;
+
     }
 
 
@@ -2394,10 +2826,18 @@ function aplicarFiltroDramas() {
 
 
                 return (
-                    id.includes(busqueda) ||
-                    titulo.includes(busqueda) ||
-                    plataforma.includes(busqueda) ||
-                    categoria.includes(busqueda)
+                    id.includes(
+                        busqueda
+                    ) ||
+                    titulo.includes(
+                        busqueda
+                    ) ||
+                    plataforma.includes(
+                        busqueda
+                    ) ||
+                    categoria.includes(
+                        busqueda
+                    )
                 );
 
             }
@@ -2415,14 +2855,16 @@ function aplicarFiltroDramas() {
     ) {
 
         resultadoBusqueda.textContent =
-            dramasFiltrados.length === 0
+            dramasFiltrados.length ===
+            0
                 ? "No se encontraron microdramas que coincidan con la búsqueda."
                 : `Mostrando ${
                     dramasFiltrados.length
                 } de ${
                     dramasActuales.length
                 } microdrama${
-                    dramasActuales.length === 1
+                    dramasActuales.length ===
+                    1
                         ? ""
                         : "s"
                 }.`;
@@ -2446,7 +2888,9 @@ function normalizarTextoBusqueda(
     return String(
         valor ?? ""
     )
-        .normalize("NFD")
+        .normalize(
+            "NFD"
+        )
         .replace(
             /[\u0300-\u036f]/g,
             ""
@@ -2472,6 +2916,7 @@ async function cargarDramasAdministrativos() {
     ) {
 
         return;
+
     }
 
 
@@ -2544,7 +2989,9 @@ async function cargarDramasAdministrativos() {
         actualizarEstadoSeleccion();
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "Error al cargar microdramas:",
@@ -2618,6 +3065,7 @@ function obtenerElementos() {
 
 
         return null;
+
     }
 
 
@@ -2694,13 +3142,15 @@ function renderizarDramas(
     ) {
 
         contenedorBusqueda.hidden =
-            dramasActuales.length === 0;
+            dramasActuales.length ===
+            0;
 
     }
 
 
     if (
-        dramas.length === 0
+        dramas.length ===
+        0
     ) {
 
         elementos.contenedorTabla.hidden =
@@ -2712,12 +3162,14 @@ function renderizarDramas(
 
 
         elementos.estadoVacio.textContent =
-            textoBusqueda === ""
+            textoBusqueda ===
+                ""
                 ? "No hay microdramas registrados."
                 : "No se encontraron microdramas que coincidan con la búsqueda.";
 
 
         return;
+
     }
 
 
@@ -2882,6 +3334,13 @@ function crearFilaDrama(
         )
     );
 
+
+    /*
+     * ORDEN
+     *
+     * Se mantiene únicamente en la tabla.
+     * Ya no existe como campo editable del formulario.
+     */
 
     fila.appendChild(
         crearCelda(
@@ -3171,7 +3630,8 @@ function crearCeldaEstado(
 
 
     if (
-        estado === "published"
+        estado ===
+        "published"
     ) {
 
         indicador.classList.add(
@@ -3298,6 +3758,7 @@ function formatearFecha(
     ) {
 
         return "—";
+
     }
 
 
@@ -3356,6 +3817,7 @@ function mostrarMensajeAdmin(
     ) {
 
         return;
+
     }
 
 
@@ -3364,7 +3826,8 @@ function mostrarMensajeAdmin(
 
 
     elemento.className =
-        tipo === "success"
+        tipo ===
+            "success"
             ? "admin-message admin-message--success"
             : "admin-message admin-message--error";
 

@@ -451,6 +451,7 @@
                         <select
                             id="categorias-selector"
                             name="category"
+                            required
                         >
 
                             <option
@@ -464,6 +465,8 @@
 
                         <small>
                             Selecciona una categoría para este microdrama.
+                            Si necesitas una nueva, selecciónala desde
+                            la última opción de la lista.
                         </small>
 
                     </div>
@@ -544,6 +547,100 @@
                     </div>
 
                 </form>
+
+            </div>
+
+
+            <!-- =================================================
+                 POPUP NUEVA CATEGORÍA
+            ================================================== -->
+
+            <div
+                id="modal-nueva-categoria"
+                class="category-modal"
+                hidden
+            >
+
+                <div
+                    id="category-modal-backdrop"
+                    class="category-modal__backdrop"
+                ></div>
+
+
+                <div
+                    class="category-modal__dialog"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="titulo-modal-categoria"
+                >
+
+                    <div class="category-modal__header">
+
+                        <h3 id="titulo-modal-categoria">
+                            Nueva categoría
+                        </h3>
+
+
+                        <button
+                            type="button"
+                            id="boton-cerrar-modal-categoria"
+                            class="category-modal__close"
+                            aria-label="Cerrar"
+                            title="Cerrar"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+
+                    <div class="category-modal__body">
+
+                        <label for="nueva-categoria">
+                            Nombre de la categoría
+                        </label>
+
+
+                        <input
+                            type="text"
+                            id="nueva-categoria"
+                            maxlength="100"
+                            autocomplete="off"
+                            placeholder="Ejemplo: SISTEMA"
+                        >
+
+
+                        <div
+                            id="mensaje-nueva-categoria"
+                            class="category-modal__message"
+                            hidden
+                        ></div>
+
+                    </div>
+
+
+                    <div class="category-modal__actions">
+
+                        <button
+                            type="button"
+                            id="boton-cancelar-categoria"
+                            class="button button--secondary"
+                        >
+                            Cancelar
+                        </button>
+
+
+                        <button
+                            type="button"
+                            id="boton-crear-categoria"
+                            class="button button--primary"
+                        >
+                            Crear categoría
+                        </button>
+
+                    </div>
+
+                </div>
 
             </div>
 

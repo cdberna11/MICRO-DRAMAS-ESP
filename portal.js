@@ -10,6 +10,7 @@ function showMessage(message, type = "error") { authMessage.textContent = messag
 function clearMessage() { authMessage.hidden = true; authMessage.textContent = ""; }
 function showPanel(panel) { [loginPanel, registerPanel, profilePanel, forgotPanel].forEach(item => { item.hidden = item !== panel; }); clearMessage(); }
 function avatarUrl(name) { return `/assets/${encodeURIComponent(name)}`; }
+function validPassword(password) { return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password); }
 
 async function api(url, options = {}) {
     const response = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) }, credentials: "same-origin" });
@@ -65,7 +66,10 @@ $("#register-form").addEventListener("submit", async event => {
     const identifier = $("#register-identifier").value.trim();
     const password = $("#register-password").value;
     const confirm = $("#register-confirm").value;
-    if (password.length < 8) { showMessage("La contraseña debe tener al menos 8 caracteres."); return; }
+    if (!validPassword(password)) {
+        showMessage("La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.");
+        return;
+    }
     if (password !== confirm) { showMessage("Las contraseñas no coinciden."); return; }
     const button = $("#register-submit"); button.disabled = true;
     const { response, data } = await api("/api/auth/register", { method: "POST", body: JSON.stringify({ displayName, identifier, password }) });

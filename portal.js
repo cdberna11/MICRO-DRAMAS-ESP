@@ -5,7 +5,6 @@ const registerPanel = $("#register-panel");
 const profilePanel = $("#profile-panel");
 const forgotPanel = $("#forgot-panel");
 const authMessage = $("#auth-message");
-let googleCsrfToken = null;
 
 function showMessage(message, type = "error") { authMessage.textContent = message; authMessage.className = `auth-message ${type}`; authMessage.hidden = false; }
 function clearMessage() { authMessage.hidden = true; authMessage.textContent = ""; }
@@ -39,48 +38,10 @@ async function loadSession() {
     if (!response.ok || !data.authenticated) { showPanel(loginPanel); return; }
     $("#profile-name").textContent = data.user.displayName;
     $("#profile-avatar-img").src = avatarUrl(data.user.avatar);
-    $("#profile-account").textContent = data.user.authProvider === "google" ? `${data.user.email} · Google` : data.user.email;
+    $("#profile-account").textContent = data.user.email;
     $("#profile-display-name").value = data.user.displayName;
     renderAvatarOptions(data.user.avatar);
     showPanel(profilePanel);
-}
-
-async function initGoogleSignIn() {
-    const loginBox = $("#google-login-button");
-    const registerBox = $("#google-register-button");
-    try {
-        const response = await fetch("/api/auth/google-config", { credentials: "same-origin", cache: "no-store" });
-        const config = await response.json();
-        googleCsrfToken = config.csrfToken || null;
-        if (!config.configured || !config.clientId || !googleCsrfToken) {
-            const unavailable = "Google estará disponible cuando terminemos su configuración.";
-            loginBox.innerHTML = `<div class="google-unavailable">${unavailable}</div>`;
-            registerBox.innerHTML = `<div class="google-unavailable">${unavailable}</div>`;
-            return;
-        }
-        window.handleGoogleCredential = async credentialResponse => {
-            if (!credentialResponse?.credential || !googleCsrfToken) { showMessage("No se recibió una credencial válida de Google."); return; }
-            const form = new URLSearchParams({ credential: credentialResponse.credential, g_csrf_token: googleCsrfToken });
-            const response = await fetch("/api/auth/google", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: form.toString(), credentials: "same-origin" });
-            let data = {};
-            try { data = await response.json(); } catch {}
-            if (!response.ok || !data.success) { showMessage(data.error || "No se pudo validar la cuenta de Google."); return; }
-            await loadSession();
-        };
-        const script = document.createElement("script");
-        script.src = "https://accounts.google.com/gsi/client";
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-            google.accounts.id.initialize({ client_id: config.clientId, callback: window.handleGoogleCredential, ux_mode: "popup" });
-            google.accounts.id.renderButton(loginBox, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 360 });
-            google.accounts.id.renderButton(registerBox, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 360 });
-        };
-        document.head.appendChild(script);
-    } catch {
-        loginBox.innerHTML = `<div class="google-unavailable">No se pudo cargar Google.</div>`;
-        registerBox.innerHTML = `<div class="google-unavailable">No se pudo cargar Google.</div>`;
-    }
 }
 
 $("#go-register").addEventListener("click", () => showPanel(registerPanel));
@@ -104,6 +65,7 @@ $("#register-form").addEventListener("submit", async event => {
     const identifier = $("#register-identifier").value.trim();
     const password = $("#register-password").value;
     const confirm = $("#register-confirm").value;
+    if (password.length < 8) { showMessage("La contraseña debe tener al menos 8 caracteres."); return; }
     if (password !== confirm) { showMessage("Las contraseñas no coinciden."); return; }
     const button = $("#register-submit"); button.disabled = true;
     const { response, data } = await api("/api/auth/register", { method: "POST", body: JSON.stringify({ displayName, identifier, password }) });
@@ -117,13 +79,14 @@ $("#forgot-form").addEventListener("submit", async event => {
     const identifier = $("#forgot-identifier").value.trim();
     const newPassword = $("#forgot-password").value;
     const confirm = $("#forgot-confirm").value;
+    if (newPassword.length < 8) { showMessage("La nueva contraseña debe tener al menos 8 caracteres."); return; }
     if (newPassword !== confirm) { showMessage("Las contraseñas no coinciden."); return; }
     const button = $("#forgot-submit"); button.disabled = true;
     const { response, data } = await api("/api/auth/forgot", { method: "POST", body: JSON.stringify({ identifier, newPassword }) });
     button.disabled = false;
     if (!response.ok || !data.success) { showMessage(data.error || "No se pudo restablecer la contraseña."); return; }
     showMessage("Contraseña restablecida correctamente.", "success");
-    setTimeout(loadSession, 700);
+    setTimeout(() => showPanel(loginPanel), 700);
 });
 
 $("#profile-form").addEventListener("submit", async event => {
@@ -138,4 +101,3 @@ $("#enter-catalog").addEventListener("click", () => { window.location.href = "/"
 $("#logout-button").addEventListener("click", () => { window.location.href = "/api/session/logout"; });
 
 loadSession();
-initGoogleSignIn();

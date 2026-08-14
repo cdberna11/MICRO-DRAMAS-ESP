@@ -24,6 +24,8 @@ body {
 
     width: 100%;
 
+    min-width: 100%;
+
     height: 100%;
 
     margin: 0;
@@ -51,8 +53,11 @@ body {
         Helvetica,
         sans-serif;
 
-    overflow:
+    overflow-x:
         hidden;
+
+    overflow-y:
+        auto;
 }
 
 
@@ -62,22 +67,35 @@ body {
 
 .portal-screen {
 
-    width: 100%;
+    position:
+        relative;
 
-    min-height: 100vh;
+    width:
+        100vw;
 
-    display: flex;
+    min-height:
+        100vh;
 
-    flex-direction: column;
+    display:
+        flex;
 
-    align-items: center;
+    flex-direction:
+        column;
 
-    justify-content: center;
+    align-items:
+        center;
+
+    justify-content:
+        center;
 
     padding:
         40px 20px;
 
-    text-align: center;
+    margin:
+        0;
+
+    text-align:
+        center;
 }
 
 
@@ -87,7 +105,8 @@ body {
 
 .portal-logo {
 
-    display: block;
+    display:
+        block;
 
     width:
         430px;
@@ -99,18 +118,24 @@ body {
         auto;
 
     margin:
-        0 0 48px;
+        0 auto 48px auto;
 }
 
 
 /* =========================================================
-   TITULO
+   TÍTULO
 ========================================================= */
 
 .portal-title {
 
+    display:
+        block;
+
+    width:
+        100%;
+
     margin:
-        0 0 38px;
+        0 auto 38px auto;
 
     color:
         #ffffff;
@@ -131,14 +156,20 @@ body {
 
     line-height:
         1.2;
+
+    text-align:
+        center;
 }
 
 
 /* =========================================================
-   PERFILES
+   CONTENEDOR DE PERFILES
 ========================================================= */
 
 .profiles {
+
+    width:
+        100%;
 
     display:
         flex;
@@ -149,8 +180,11 @@ body {
     align-items:
         flex-start;
 
-    gap:
-        30px;
+    margin:
+        0 auto;
+
+    padding:
+        0;
 }
 
 
@@ -175,6 +209,9 @@ body {
     width:
         170px;
 
+    margin:
+        0 auto;
+
     color:
         #ffffff;
 
@@ -185,6 +222,9 @@ body {
         pointer;
 
     outline:
+        none;
+
+    user-select:
         none;
 }
 
@@ -250,6 +290,9 @@ body {
 
     object-fit:
         cover;
+
+    pointer-events:
+        none;
 }
 
 
@@ -259,8 +302,8 @@ body {
 
 .profile-name {
 
-    margin-top:
-        14px;
+    margin:
+        14px auto 0 auto;
 
     color:
         #b3b3b3;
@@ -278,6 +321,9 @@ body {
 
     line-height:
         1.2;
+
+    text-align:
+        center;
 
     transition:
         color 0.22s ease;
@@ -346,6 +392,12 @@ body {
 
     .portal-screen {
 
+        width:
+            100vw;
+
+        min-height:
+            100vh;
+
         padding:
             30px 16px;
     }
@@ -359,15 +411,15 @@ body {
         max-width:
             85vw;
 
-        margin-bottom:
-            38px;
+        margin:
+            0 auto 38px auto;
     }
 
 
     .portal-title {
 
-        margin-bottom:
-            30px;
+        margin:
+            0 auto 30px auto;
 
         font-size:
             21px;
@@ -406,8 +458,8 @@ body {
         width:
             260px;
 
-        margin-bottom:
-            32px;
+        margin:
+            0 auto 32px auto;
     }
 
 
@@ -416,8 +468,8 @@ body {
         font-size:
             19px;
 
-        margin-bottom:
-            26px;
+        margin:
+            0 auto 26px auto;
     }
 
 

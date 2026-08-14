@@ -57,27 +57,30 @@
 
         <section class="profiles">
 
-           <a
-    href="/index.html"
-    class="profile-card"
-    aria-label="Entrar como Invitado"
->
+            <div
+                class="profile-card"
+                role="button"
+                tabindex="0"
+                aria-label="Entrar como Invitado"
+                onclick="entrarComoInvitado()"
+                onkeydown="if (event.key === 'Enter' || event.key === ' ') entrarComoInvitado()"
+            >
 
-    <div class="profile-avatar">
+                <div class="profile-avatar">
 
-        <img
-            src="/assets/avatar-1.png"
-            alt="Invitado"
-        >
+                    <img
+                        src="/assets/avatar-1.png"
+                        alt="Invitado"
+                    >
 
-    </div>
+                </div>
 
 
-    <div class="profile-name">
-        Invitado
-    </div>
+                <div class="profile-name">
+                    Invitado
+                </div>
 
-</a>
+            </div>
 
         </section>
 
@@ -89,7 +92,15 @@
          NAVEGACIÓN
     ====================================================== -->
 
-   
+    <script>
+
+        function entrarComoInvitado() {
+
+            window.location.href = " https://micro-dramas-esp.pages.dev/index.html";
+
+        }
+
+    </script>
 
 
 </body>

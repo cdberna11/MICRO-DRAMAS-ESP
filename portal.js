@@ -80,6 +80,7 @@ $("#go-register").addEventListener("click", () => showPanel(registerPanel));
 $("#register-go-login").addEventListener("click", () => showPanel(loginPanel));
 $("#forgot-go-login").addEventListener("click", () => showPanel(loginPanel));
 $("#go-forgot").addEventListener("click", () => showPanel(forgotPanel));
+$("#profile-avatar-img").addEventListener("click", () => { window.location.href = "/"; });
 
 $("#register-method-email").addEventListener("change", () => {
     $("#register-identifier").type = "email";

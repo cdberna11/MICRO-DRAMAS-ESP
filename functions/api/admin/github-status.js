@@ -3,8 +3,9 @@
    MICRO-DRAMAS-ESP
 
    Comprueba que el token de GitHub exista y tenga acceso al
-   repositorio. La fecha de expiración se obtiene de la variable
-   GITHUB_TOKEN_EXPIRES_AT de Cloudflare.
+   repositorio. La fecha de expiración se obtiene de Cloudflare.
+   Si la variable no está configurada, se utiliza la fecha del
+   token actualmente creado: 14/08/2027.
 ========================================================= */
 
 function respuestaJson(datos, estado = 200) {
@@ -128,16 +129,16 @@ export async function onRequestGet(context) {
             );
         }
 
-        const fechaISO =
+        const fechaVariable =
             String(
                 context.env.GITHUB_TOKEN_EXPIRES_AT ||
                 ""
             ).trim();
 
         const fechaConfigurada =
-            fechaValida(fechaISO)
-                ? fechaISO
-                : null;
+            fechaValida(fechaVariable)
+                ? fechaVariable
+                : "2027-08-14";
 
         return respuestaJson(
             {

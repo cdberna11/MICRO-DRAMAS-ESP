@@ -17,7 +17,9 @@ function validPassword(password) {
 
 export async function onRequestPost(context) {
     const db = context.env.DB;
-    if (!db) return json({ success: false, error: "La base de datos no está disponible." }, 500);
+    if (!db) {
+        return json({ success: false, code: "DB_UNAVAILABLE", error: "La base de datos no está disponible." }, 500);
+    }
 
     try {
         const body = await context.request.json();
@@ -27,23 +29,23 @@ export async function onRequestPost(context) {
         const confirmPassword = String(body.confirmPassword || "");
 
         if (displayName.length < 2) {
-            return json({ success: false, error: "Escribe un nombre válido." }, 400);
+            return json({ success: false, code: "INVALID_NAME", error: "Escribe un nombre válido." }, 400);
         }
         if (!validEmail(email)) {
-            return json({ success: false, error: "Escribe un correo electrónico válido." }, 400);
+            return json({ success: false, code: "INVALID_EMAIL", error: "Escribe un correo electrónico válido." }, 400);
         }
         if (!validPassword(password)) {
-            return json({ success: false, error: "La contraseña debe tener al menos 8 caracteres." }, 400);
+            return json({ success: false, code: "PASSWORD_TOO_SHORT", error: "La contraseña debe tener al menos 8 caracteres." }, 400);
         }
         if (password !== confirmPassword) {
             return json({ success: false, code: "PASSWORD_MISMATCH", error: "Las contraseñas no son iguales." }, 400);
         }
 
-        const duplicate = await db.prepare(
-            `SELECT id FROM users WHERE email = ? LIMIT 1`
+        const existingUser = await db.prepare(
+            `SELECT id FROM users WHERE lower(email) = ? LIMIT 1`
         ).bind(email).first();
 
-        if (duplicate) {
+        if (existingUser) {
             return json({
                 success: false,
                 code: "EMAIL_ALREADY_REGISTERED",
@@ -52,10 +54,12 @@ export async function onRequestPost(context) {
         }
 
         const passwordHash = await hashPassword(password);
-        let userId;
 
+        let createdUser;
         try {
-            const result = await db.prepare(`
+            // RETURNING evita depender de meta.last_row_id y funciona directamente
+            // con la tabla users existente de Cloudflare D1.
+            createdUser = await db.prepare(`
                 INSERT INTO users (
                     email,
                     phone,
@@ -66,28 +70,43 @@ export async function onRequestPost(context) {
                     phone_verified,
                     email_verified
                 ) VALUES (?, NULL, ?, 'email', ?, 'avatar-1.png', 0, 0)
-            `).bind(email, passwordHash, displayName).run();
-
-            userId = result.meta?.last_row_id;
-            if (!userId) throw new Error("D1 no devolvió el ID del usuario creado.");
+                RETURNING id, email, display_name, avatar
+            `).bind(email, passwordHash, displayName).first();
         } catch (insertError) {
             console.error("Error INSERT users:", insertError);
             const message = String(insertError?.message || insertError || "");
             if (/unique|constraint/i.test(message)) {
-                return json({ success: false, code: "EMAIL_ALREADY_REGISTERED", error: "Este correo ya está registrado." }, 409);
+                return json({
+                    success: false,
+                    code: "EMAIL_ALREADY_REGISTERED",
+                    error: "Este correo ya está registrado."
+                }, 409);
             }
-            return json({ success: false, error: "No se pudo guardar la cuenta en la base de datos." }, 500);
+            return json({
+                success: false,
+                code: "USER_INSERT_FAILED",
+                error: "No se pudo guardar la cuenta en la base de datos."
+            }, 500);
+        }
+
+        if (!createdUser?.id) {
+            console.error("D1 no devolvió el usuario creado después del INSERT.");
+            return json({
+                success: false,
+                code: "USER_INSERT_NO_ID",
+                error: "La cuenta no pudo confirmarse en la base de datos."
+            }, 500);
         }
 
         try {
-            const session = await createUserSession(db, userId);
+            const session = await createUserSession(db, createdUser.id);
             return json(
                 {
                     success: true,
                     user: {
-                        id: userId,
-                        displayName,
-                        avatar: "avatar-1.png",
+                        id: createdUser.id,
+                        displayName: createdUser.display_name,
+                        avatar: createdUser.avatar,
                         authMethod: "email",
                         authProvider: "local"
                     }
@@ -97,14 +116,14 @@ export async function onRequestPost(context) {
             );
         } catch (sessionError) {
             console.error("Error creando sesión después del registro:", sessionError);
-            // La cuenta ya existe. No la eliminamos: el usuario puede iniciar sesión normalmente.
+            // La cuenta ya fue creada correctamente. No la eliminamos.
             return json({
                 success: true,
                 sessionCreated: false,
                 user: {
-                    id: userId,
-                    displayName,
-                    avatar: "avatar-1.png",
+                    id: createdUser.id,
+                    displayName: createdUser.display_name,
+                    avatar: createdUser.avatar,
                     authMethod: "email",
                     authProvider: "local"
                 },
@@ -113,6 +132,10 @@ export async function onRequestPost(context) {
         }
     } catch (error) {
         console.error("Error general al registrar usuario:", error);
-        return json({ success: false, error: "No se pudo completar el registro." }, 500);
+        return json({
+            success: false,
+            code: "REGISTER_UNEXPECTED_ERROR",
+            error: "No se pudo completar el registro."
+        }, 500);
     }
 }

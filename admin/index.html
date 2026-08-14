@@ -7,6 +7,7 @@
     <title>Administración | Micro Dramas ESP</title>
     <link rel="stylesheet" href="/admin/admin.css">
     <link rel="stylesheet" href="/admin/cover-uploader.css">
+    <link rel="stylesheet" href="/admin/github-status.css">
 </head>
 <body>
 
@@ -36,6 +37,17 @@
                         Nuevo microdrama
                     </button>
                 </div>
+            </div>
+
+            <div id="estado-github" class="github-status" aria-live="polite">
+                <div class="github-status__main">
+                    <span id="github-status-indicator" class="github-status__indicator" aria-hidden="true"></span>
+                    <div>
+                        <strong id="github-status-title">GitHub: comprobando...</strong>
+                        <span id="github-status-detail">Verificando token y permisos...</span>
+                    </div>
+                </div>
+                <div id="github-status-expiration" class="github-status__expiration"></div>
             </div>
 
             <div id="mensaje-admin" class="admin-message" role="status" aria-live="polite" hidden></div>
@@ -203,6 +215,7 @@
 
     <script src="/admin/admin.js" defer></script>
     <script src="/admin/cover-uploader.js" defer></script>
+    <script src="/admin/github-status.js" defer></script>
 
 </body>
 </html>

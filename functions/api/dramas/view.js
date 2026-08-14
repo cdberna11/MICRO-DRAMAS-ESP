@@ -94,19 +94,128 @@ export async function onRequestPost(context) {
         }
 
         /* -----------------------------------------------------
-           Incrementar reproducciones
+           Obtener estado actual del microdrama
+        ----------------------------------------------------- */
+
+        const dramaAntes =
+            await database
+                .prepare(`
+                    SELECT
+                        id,
+                        views,
+                        top_period_start,
+                        top_period_views
+                    FROM dramas
+                    WHERE id = ?
+                    AND status = 'published'
+                    LIMIT 1
+                `)
+                .bind(id)
+                .first();
+
+        if (!dramaAntes) {
+            return Response.json(
+                {
+                    success: false,
+                    error:
+                        "El microdrama no existe o no está publicado."
+                },
+                {
+                    status: 404,
+                    headers: {
+                        "Cache-Control": "no-store"
+                    }
+                }
+            );
+        }
+
+        /* -----------------------------------------------------
+           Determinar inicio del bloque actual
+        ----------------------------------------------------- */
+
+        const ahora = Date.now();
+
+        let inicioPeriodo = null;
+
+        if (
+            typeof dramaAntes.top_period_start === "string" &&
+            dramaAntes.top_period_start.trim() !== ""
+        ) {
+            const valor =
+                dramaAntes.top_period_start
+                    .trim()
+                    .replace(" ", "T");
+
+            const fecha =
+                new Date(
+                    valor.endsWith("Z")
+                        ? valor
+                        : `${valor}Z`
+                );
+
+            if (
+                !Number.isNaN(
+                    fecha.getTime()
+                )
+            ) {
+                inicioPeriodo =
+                    fecha.getTime();
+            }
+        }
+
+        const UNA_SEMANA =
+            7 *
+            24 *
+            60 *
+            60 *
+            1000;
+
+        const periodoTerminado =
+            !inicioPeriodo ||
+            ahora - inicioPeriodo >= UNA_SEMANA;
+
+        /* -----------------------------------------------------
+           Registrar reproducción
+
+           BLOQUE ACTUAL:
+               views aumenta.
+               top_period_views permanece igual.
+
+           NUEVO BLOQUE:
+               views aumenta.
+               top_period_views toma el valor anterior
+               de views.
+
+           La reproducción que inicia el nuevo bloque
+           se convierte en la primera vista del nuevo
+           periodo.
         ----------------------------------------------------- */
 
         const actualizacion =
-            await database
-                .prepare(`
-                    UPDATE dramas
-                    SET views = views + 1
-                    WHERE id = ?
-                    AND status = 'published'
-                `)
-                .bind(id)
-                .run();
+            periodoTerminado
+                ? await database
+                    .prepare(`
+                        UPDATE dramas
+                        SET
+                            views = views + 1,
+                            top_period_start = CURRENT_TIMESTAMP,
+                            top_period_views = views
+                        WHERE id = ?
+                        AND status = 'published'
+                    `)
+                    .bind(id)
+                    .run()
+
+                : await database
+                    .prepare(`
+                        UPDATE dramas
+                        SET
+                            views = views + 1
+                        WHERE id = ?
+                        AND status = 'published'
+                    `)
+                    .bind(id)
+                    .run();
 
         if (!actualizacion.success) {
             throw new Error(
@@ -115,7 +224,7 @@ export async function onRequestPost(context) {
         }
 
         /* -----------------------------------------------------
-           Comprobar que el microdrama existe
+           Obtener valores actualizados
         ----------------------------------------------------- */
 
         const drama =
@@ -123,7 +232,9 @@ export async function onRequestPost(context) {
                 .prepare(`
                     SELECT
                         id,
-                        views
+                        views,
+                        top_period_start,
+                        top_period_views
                     FROM dramas
                     WHERE id = ?
                     AND status = 'published'
@@ -149,6 +260,25 @@ export async function onRequestPost(context) {
         }
 
         /* -----------------------------------------------------
+           Calcular reproducciones nuevas del bloque
+        ----------------------------------------------------- */
+
+        const viewsActuales =
+            Number(drama.views) || 0;
+
+        const viewsInicioPeriodo =
+            Number(
+                drama.top_period_views
+            ) || 0;
+
+        const reproduccionesPeriodo =
+            Math.max(
+                0,
+                viewsActuales -
+                viewsInicioPeriodo
+            );
+
+        /* -----------------------------------------------------
            Respuesta
         ----------------------------------------------------- */
 
@@ -156,7 +286,13 @@ export async function onRequestPost(context) {
             {
                 success: true,
                 id: drama.id,
-                views: Number(drama.views) || 0
+                views: viewsActuales,
+                top_period_start:
+                    drama.top_period_start,
+                top_period_views:
+                    viewsInicioPeriodo,
+                period_views:
+                    reproduccionesPeriodo
             },
             {
                 status: 200,

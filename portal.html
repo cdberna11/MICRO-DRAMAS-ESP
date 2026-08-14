@@ -81,10 +81,10 @@
 
                 <button id="profile-avatar-button" class="profile-avatar-button" type="button" aria-label="Entrar a la cartelera">
                     <img id="profile-avatar-img" src="/assets/avatar-1.png" alt="Avatar">
+                    <span class="avatar-edit-overlay" aria-hidden="true">✎</span>
                 </button>
 
                 <p class="profile-avatar-label">Entrar a la cartelera</p>
-
                 <button id="manage-profile-button" class="secondary-button manage-profile-button" type="button">Administrar perfil</button>
                 <button id="logout-button" class="text-button danger-button" type="button">Cerrar sesión</button>
             </section>
@@ -99,10 +99,8 @@
             <form id="edit-profile-form" novalidate>
                 <label for="edit-display-name">Nombre del usuario</label>
                 <input id="edit-display-name" type="text" maxlength="60" required>
-
                 <label>Avatar</label>
                 <div id="edit-avatars" class="avatar-options modal-avatar-options"></div>
-
                 <button id="edit-save" class="primary-button" type="submit">Guardar</button>
             </form>
         </section>

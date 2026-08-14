@@ -292,10 +292,6 @@ function renderizarSelectorCategorias(
         "";
 
 
-    /* -----------------------------------------------------
-       OPCIÓN INICIAL
-    ----------------------------------------------------- */
-
     const opcionInicial =
         document.createElement(
             "option"
@@ -314,10 +310,6 @@ function renderizarSelectorCategorias(
         opcionInicial
     );
 
-
-    /* -----------------------------------------------------
-       CATEGORÍAS EXISTENTES
-    ----------------------------------------------------- */
 
     categoriasDisponibles.forEach(
         categoria => {
@@ -352,10 +344,6 @@ function renderizarSelectorCategorias(
     );
 
 
-    /* -----------------------------------------------------
-       SEPARADOR
-    ----------------------------------------------------- */
-
     const separador =
         document.createElement(
             "option"
@@ -375,10 +363,6 @@ function renderizarSelectorCategorias(
     );
 
 
-    /* -----------------------------------------------------
-       NUEVA CATEGORÍA
-    ----------------------------------------------------- */
-
     const opcionNueva =
         document.createElement(
             "option"
@@ -397,10 +381,6 @@ function renderizarSelectorCategorias(
         opcionNueva
     );
 
-
-    /* -----------------------------------------------------
-       RESTAURAR CATEGORÍA
-    ----------------------------------------------------- */
 
     if (
         Array.isArray(
@@ -505,10 +485,6 @@ function inicializarNuevaCategoria() {
     }
 
 
-    /* -----------------------------------------------------
-       SELECT
-    ----------------------------------------------------- */
-
     selector.addEventListener(
         "change",
         () => {
@@ -531,19 +507,11 @@ function inicializarNuevaCategoria() {
     );
 
 
-    /* -----------------------------------------------------
-       CREAR
-    ----------------------------------------------------- */
-
     botonCrear.addEventListener(
         "click",
         crearCategoria
     );
 
-
-    /* -----------------------------------------------------
-       CANCELAR
-    ----------------------------------------------------- */
 
     if (
         botonCancelar
@@ -557,10 +525,6 @@ function inicializarNuevaCategoria() {
     }
 
 
-    /* -----------------------------------------------------
-       CERRAR X
-    ----------------------------------------------------- */
-
     if (
         botonCerrar
     ) {
@@ -573,10 +537,6 @@ function inicializarNuevaCategoria() {
     }
 
 
-    /* -----------------------------------------------------
-       CERRAR FONDO
-    ----------------------------------------------------- */
-
     if (
         backdrop
     ) {
@@ -588,10 +548,6 @@ function inicializarNuevaCategoria() {
 
     }
 
-
-    /* -----------------------------------------------------
-       TECLADO
-    ----------------------------------------------------- */
 
     campo.addEventListener(
         "keydown",
@@ -623,10 +579,6 @@ function inicializarNuevaCategoria() {
         }
     );
 
-
-    /* -----------------------------------------------------
-       ABRIR MODAL
-    ----------------------------------------------------- */
 
     function abrirModal() {
 
@@ -663,10 +615,6 @@ function inicializarNuevaCategoria() {
     }
 
 
-    /* -----------------------------------------------------
-       CERRAR MODAL
-    ----------------------------------------------------- */
-
     function cerrarModal() {
 
         modal.hidden =
@@ -696,10 +644,6 @@ function inicializarNuevaCategoria() {
 
     }
 
-
-    /* -----------------------------------------------------
-       CREAR CATEGORÍA
-    ----------------------------------------------------- */
 
     async function crearCategoria() {
 
@@ -833,10 +777,6 @@ function inicializarNuevaCategoria() {
             }
 
 
-            /* -------------------------------------------------
-               AGREGAR A MEMORIA
-            ------------------------------------------------- */
-
             categoriasDisponibles.push(
                 nuevaCategoria
             );
@@ -864,10 +804,6 @@ function inicializarNuevaCategoria() {
                     .toUpperCase();
 
 
-            /* -------------------------------------------------
-               RECONSTRUIR SELECT
-            ------------------------------------------------- */
-
             renderizarSelectorCategorias(
                 [
                     nombreCategoria
@@ -882,10 +818,6 @@ function inicializarNuevaCategoria() {
             selector.dataset.previousValue =
                 nombreCategoria;
 
-
-            /* -------------------------------------------------
-               CERRAR
-            ------------------------------------------------- */
 
             modal.hidden =
                 true;
@@ -1015,10 +947,6 @@ function obtenerCategoriasSeleccionadas() {
         return [];
     }
 
-
-    /*
-     * UNA SOLA CATEGORÍA
-     */
 
     return [
         valor
@@ -2289,6 +2217,93 @@ function inicializarBuscador() {
 
 
 /* =========================================================
+   OBTENER CATEGORÍA DEL DRAMA
+========================================================= */
+
+function obtenerCategoriaDramaAdmin(
+    drama
+) {
+
+    if (
+        !drama
+    ) {
+
+        return "Sin categoría";
+
+    }
+
+
+    let categorias =
+        drama.categories;
+
+
+    /*
+     * categories puede llegar como JSON
+     * o como arreglo.
+     */
+
+    if (
+        typeof categorias ===
+            "string" &&
+        categorias.trim() !==
+            ""
+    ) {
+
+        try {
+
+            categorias =
+                JSON.parse(
+                    categorias
+                );
+
+        } catch {
+
+            categorias =
+                [];
+
+        }
+
+    }
+
+
+    /*
+     * Cada microdrama tiene una sola categoría.
+     */
+
+    if (
+        Array.isArray(
+            categorias
+        ) &&
+        categorias.length > 0
+    ) {
+
+        const nombre =
+            String(
+                categorias[0] ||
+                ""
+            )
+                .trim()
+                .toUpperCase();
+
+
+        if (
+            nombre !==
+            ""
+        ) {
+
+            return nombre;
+
+        }
+
+    }
+
+
+    return "Sin categoría";
+
+}
+
+
+/* =========================================================
    APLICAR FILTRO
 ========================================================= */
 
@@ -2370,10 +2385,19 @@ function aplicarFiltroDramas() {
                     );
 
 
+                const categoria =
+                    normalizarTextoBusqueda(
+                        obtenerCategoriaDramaAdmin(
+                            drama
+                        )
+                    );
+
+
                 return (
                     id.includes(busqueda) ||
                     titulo.includes(busqueda) ||
-                    plataforma.includes(busqueda)
+                    plataforma.includes(busqueda) ||
+                    categoria.includes(busqueda)
                 );
 
             }
@@ -2827,6 +2851,19 @@ function crearFilaDrama(
             normalizarTexto(
                 drama.platform,
                 "—"
+            )
+        )
+    );
+
+
+    /* =====================================================
+       CATEGORÍA
+    ===================================================== */
+
+    fila.appendChild(
+        crearCelda(
+            obtenerCategoriaDramaAdmin(
+                drama
             )
         )
     );

@@ -9,6 +9,7 @@ const registerPanel = $("#register-panel");
 const profilePanel = $("#profile-panel");
 const forgotPanel = $("#forgot-panel");
 const authMessage = $("#auth-message");
+const registerIdentifierLabel = $("label[for='register-identifier']");
 
 function showMessage(message, type = "error") {
     authMessage.textContent = message;
@@ -85,11 +86,13 @@ $("#profile-avatar-img").addEventListener("click", () => { window.location.href 
 $("#register-method-email").addEventListener("change", () => {
     $("#register-identifier").type = "email";
     $("#register-identifier").placeholder = "correo@ejemplo.com";
+    registerIdentifierLabel.textContent = "Correo";
 });
 
 $("#register-method-phone").addEventListener("change", () => {
     $("#register-identifier").type = "tel";
     $("#register-identifier").placeholder = "+507 6000 0000";
+    registerIdentifierLabel.textContent = "Número de WhatsApp";
 });
 
 $("#login-form").addEventListener("submit", async event => {

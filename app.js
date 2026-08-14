@@ -828,7 +828,6 @@ async function registrarVista(
 
 
         return {
-
             views:
                 Number(
                     datos.views
@@ -847,7 +846,6 @@ async function registrarVista(
                 Number(
                     datos.top_period_views
                 ) || 0
-
         };
 
 

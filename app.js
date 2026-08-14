@@ -1555,9 +1555,16 @@ function actualizarTextoVistas(
 
 }
 
-
 /* =========================================================
-   ACTUALIZAR VISTAS
+   ACTUALIZAR VISTAS Y TOP
+   ---------------------------------------------------------
+   TOP semanal:
+
+   0 - 4 reproducciones nuevas → SIN TOP
+   5 o más reproducciones nuevas → TOP
+
+   El cálculo utiliza únicamente:
+       drama.period_views
 ========================================================= */
 
 function actualizarVistasTarjeta(
@@ -1601,6 +1608,10 @@ function actualizarVistasTarjeta(
             }
 
 
+            /* -------------------------------------------------
+               Actualizar contador histórico
+            ------------------------------------------------- */
+
             const vistas =
                 tarjeta.querySelector(
                     ".drama-card__views"
@@ -1613,45 +1624,72 @@ function actualizarVistasTarjeta(
             );
 
 
-            if (
-                Number(
-                    views
-                ) >=
-                3 &&
-                !tarjeta.querySelector(
+            /* -------------------------------------------------
+               Eliminar TOP anterior
+            ------------------------------------------------- */
+
+            const topExistente =
+                tarjeta.querySelector(
                     ".drama-card__top"
+                );
+
+
+            if (
+                topExistente
+            ) {
+
+                topExistente.remove();
+
+            }
+
+
+            /* -------------------------------------------------
+               Evaluar TOP nuevamente
+            ------------------------------------------------- */
+
+            if (
+                !esDramaTop(
+                    drama
                 )
             ) {
 
-                const top =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                top.className =
-                    "drama-card__top";
-
-
-                top.innerHTML =
-                    `
-                    <span aria-hidden="true">
-                        🔥
-                    </span>
-                    TOP
-                    `;
-
-
-                tarjeta.appendChild(
-                    top
-                );
+                return;
 
             }
+
+
+            /* -------------------------------------------------
+               Crear TOP
+            ------------------------------------------------- */
+
+            const top =
+                document.createElement(
+                    "div"
+                );
+
+
+            top.className =
+                "drama-card__top";
+
+
+            top.innerHTML =
+                `
+                <span aria-hidden="true">
+                    🔥
+                </span>
+                TOP
+                `;
+
+
+            tarjeta.appendChild(
+                top
+            );
 
         }
     );
 
 }
+
 
 
 /* =========================================================
@@ -6704,31 +6742,59 @@ if (
 
 
     registrarVista(
-        drama
-    ).then(
-        views => {
+    drama
+).then(
+    resultado => {
 
-            if (
-                views ===
-                null
-            ) {
+        if (
+            resultado ===
+            null
+        ) {
 
-                return;
-
-            }
-
-
-            drama.views =
-                views;
-
-
-            actualizarVistasTarjeta(
-                drama,
-                views
-            );
+            return;
 
         }
-    );
+
+
+        /* -------------------------------------------------
+           Total histórico
+        ------------------------------------------------- */
+
+        drama.views =
+            resultado.views;
+
+
+        /* -------------------------------------------------
+           Reproducciones nuevas del bloque semanal
+        ------------------------------------------------- */
+
+        drama.period_views =
+            resultado.period_views;
+
+
+        /* -------------------------------------------------
+           Datos del bloque actual
+        ------------------------------------------------- */
+
+        drama.top_period_start =
+            resultado.top_period_start;
+
+
+        drama.top_period_views =
+            resultado.top_period_views;
+
+
+        /* -------------------------------------------------
+           Actualizar visualmente la tarjeta
+        ------------------------------------------------- */
+
+        actualizarVistasTarjeta(
+            drama,
+            resultado.views
+        );
+
+    }
+);
 
 
     try {

@@ -746,6 +746,15 @@ function esDramaRecienPublicado(
 
 /* =========================================================
    REGISTRAR VISTA
+   ---------------------------------------------------------
+   El servidor devuelve:
+
+   - views
+   - period_views
+   - top_period_start
+   - top_period_views
+
+   TOP depende exclusivamente de period_views.
 ========================================================= */
 
 async function registrarVista(
@@ -818,9 +827,28 @@ async function registrarVista(
         }
 
 
-        return Number(
-            datos.views
-        ) || 0;
+        return {
+
+            views:
+                Number(
+                    datos.views
+                ) || 0,
+
+            period_views:
+                Number(
+                    datos.period_views
+                ) || 0,
+
+            top_period_start:
+                datos.top_period_start ||
+                null,
+
+            top_period_views:
+                Number(
+                    datos.top_period_views
+                ) || 0
+
+        };
 
 
     } catch (
@@ -836,6 +864,47 @@ async function registrarVista(
         return null;
 
     }
+
+}
+
+
+/* =========================================================
+   TOP SEMANAL
+   ---------------------------------------------------------
+   Regla:
+
+   0 - 4 reproducciones nuevas → SIN TOP
+   5 o más reproducciones nuevas → TOP
+
+   Solo se utiliza period_views.
+========================================================= */
+
+function esDramaTop(
+    drama
+) {
+
+    if (
+        !drama ||
+        esDramaBorrador(
+            drama
+        )
+    ) {
+
+        return false;
+
+    }
+
+
+    const reproduccionesPeriodo =
+        Number(
+            drama.period_views
+        ) || 0;
+
+
+    return (
+        reproduccionesPeriodo >=
+        5
+    );
 
 }
 
@@ -879,6 +948,16 @@ function crearTarjetaDrama(
         );
 
 
+    /* =====================================================
+       CINTILLO DE ESTADO
+       -----------------------------------------------------
+       Borrador:
+           PRÓXIMO ESTRENO
+
+       Publicado durante menos de 7 días:
+           RECIÉN AGREGADO
+    ===================================================== */
+
     if (
         esBorrador
     ) {
@@ -903,10 +982,10 @@ function crearTarjetaDrama(
 
 
     } else if (
-    esDramaRecienPublicado(
-        drama.published_at
-    )
-) {
+        esDramaRecienPublicado(
+            drama.published_at
+        )
+    ) {
 
         const etiqueta =
             document.createElement(
@@ -929,11 +1008,27 @@ function crearTarjetaDrama(
     }
 
 
+    /* =====================================================
+       CINTILLO TOP
+       -----------------------------------------------------
+       TOP depende ÚNICAMENTE de las reproducciones
+       nuevas del bloque semanal actual.
+
+       0 - 4 reproducciones:
+           SIN TOP
+
+       5 o más reproducciones:
+           TOP
+
+       IMPORTANTE:
+       NO utilizamos drama.views aquí porque views
+       representa el total histórico.
+    ===================================================== */
+
     if (
-        Number(
-            drama.views
-        ) >=
-        3
+        esDramaTop(
+            drama
+        )
     ) {
 
         const top =
@@ -961,6 +1056,10 @@ function crearTarjetaDrama(
 
     }
 
+
+    /* =====================================================
+       PORTADA
+    ===================================================== */
 
     const portada =
         document.createElement(
@@ -1016,6 +1115,10 @@ function crearTarjetaDrama(
     );
 
 
+    /* =====================================================
+       OVERLAY
+    ===================================================== */
+
     const overlay =
         document.createElement(
             "div"
@@ -1025,6 +1128,10 @@ function crearTarjetaDrama(
     overlay.className =
         "drama-card__overlay";
 
+
+    /* =====================================================
+       TÍTULO
+    ===================================================== */
 
     const titulo =
         document.createElement(
@@ -1040,6 +1147,10 @@ function crearTarjetaDrama(
         drama.title;
 
 
+    /* =====================================================
+       TIPO
+    ===================================================== */
+
     const tipo =
         document.createElement(
             "p"
@@ -1053,6 +1164,10 @@ function crearTarjetaDrama(
     tipo.textContent =
         "Microdrama doblado al español.";
 
+
+    /* =====================================================
+       PLATAFORMA
+    ===================================================== */
 
     const plataforma =
         document.createElement(
@@ -1091,6 +1206,10 @@ function crearTarjetaDrama(
     );
 
 
+    /* =====================================================
+       CONTROLES
+    ===================================================== */
+
     const controles =
         document.createElement(
             "div"
@@ -1104,6 +1223,10 @@ function crearTarjetaDrama(
     let botonVer =
         null;
 
+
+    /* =====================================================
+       BOTÓN VER
+    ===================================================== */
 
     if (
         !esBorrador
@@ -1163,6 +1286,10 @@ function crearTarjetaDrama(
     }
 
 
+    /* =====================================================
+       BOTÓN MÁS
+    ===================================================== */
+
     const botonMas =
         document.createElement(
             "button"
@@ -1186,6 +1313,10 @@ function crearTarjetaDrama(
         "false"
     );
 
+
+    /* =====================================================
+       DESCRIPCIÓN
+    ===================================================== */
 
     const descripcion =
         document.createElement(
@@ -1248,6 +1379,10 @@ function crearTarjetaDrama(
     );
 
 
+    /* =====================================================
+       VISTAS
+    ===================================================== */
+
     const vistas =
         document.createElement(
             "span"
@@ -1265,6 +1400,10 @@ function crearTarjetaDrama(
         ) || 0
     );
 
+
+    /* =====================================================
+       AGREGAR CONTROLES
+    ===================================================== */
 
     if (
         botonVer
@@ -1286,6 +1425,10 @@ function crearTarjetaDrama(
         vistas
     );
 
+
+    /* =====================================================
+       CONSTRUIR OVERLAY
+    ===================================================== */
 
     overlay.appendChild(
         titulo
@@ -1312,6 +1455,10 @@ function crearTarjetaDrama(
     );
 
 
+    /* =====================================================
+       CONSTRUIR TARJETA
+    ===================================================== */
+
     tarjeta.appendChild(
         portada
     );
@@ -1321,6 +1468,10 @@ function crearTarjetaDrama(
         overlay
     );
 
+
+    /* =====================================================
+       DETALLE MÓVIL
+    ===================================================== */
 
     tarjeta.addEventListener(
         "click",
@@ -1354,11 +1505,17 @@ function crearTarjetaDrama(
     );
 
 
+    /* =====================================================
+       AGREGAR AL CATÁLOGO
+    ===================================================== */
+
     catalogo.appendChild(
         tarjeta
     );
 
 }
+
+
 
 
 /* =========================================================

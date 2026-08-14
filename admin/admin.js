@@ -16,24 +16,10 @@ const API_ADMIN_CATEGORIES =
 
 let categoriasDisponibles = [];
 
-
-/*
- * Mantiene en memoria los registros cargados.
- * Sirve para calcular visualmente el siguiente orden
- * y para editar los registros existentes.
- */
 let dramasActuales = [];
 
-
-/*
- * Texto utilizado actualmente en el buscador.
- */
 let textoBusqueda = "";
 
-
-/*
- * Indica si el formulario está creando o editando.
- */
 let modoFormulario = "nuevo";
 
 
@@ -50,6 +36,8 @@ document.addEventListener(
         inicializarSeleccionMultiple();
 
         inicializarBuscador();
+
+        inicializarNuevaCategoria();
 
         cargarCategoriasAdministrativas();
 
@@ -91,55 +79,80 @@ function inicializarFormulario() {
         );
 
 
-    botonNuevo.addEventListener(
-        "click",
-        abrirFormularioNuevo
-    );
+    if (
+        botonNuevo
+    ) {
+
+        botonNuevo.addEventListener(
+            "click",
+            abrirFormularioNuevo
+        );
+
+    }
 
 
-    botonCancelar.addEventListener(
-        "click",
-        cerrarFormulario
-    );
+    if (
+        botonCancelar
+    ) {
+
+        botonCancelar.addEventListener(
+            "click",
+            cerrarFormulario
+        );
+
+    }
 
 
-    formulario.addEventListener(
-        "submit",
-        guardarFormulario
-    );
+    if (
+        formulario
+    ) {
+
+        formulario.addEventListener(
+            "submit",
+            guardarFormulario
+        );
+
+    }
 
 
-    campoTitulo.addEventListener(
-        "input",
-        () => {
+    if (
+        campoTitulo
+    ) {
 
-            document.getElementById(
-                "slug"
-            ).value =
-                generarSlug(
-                    campoTitulo.value
-                );
+        campoTitulo.addEventListener(
+            "input",
+            () => {
 
-        }
-    );
+                document.getElementById(
+                    "slug"
+                ).value =
+                    generarSlug(
+                        campoTitulo.value
+                    );
+
+            }
+        );
+
+    }
 
 
-    campoPlataforma.addEventListener(
-        "change",
-        manejarCambioPlataforma
-    );
+    if (
+        campoPlataforma
+    ) {
+
+        campoPlataforma.addEventListener(
+            "change",
+            manejarCambioPlataforma
+        );
 
 
-    /*
-     * Estado inicial:
-     * ninguna plataforma seleccionada,
-     * por lo tanto se habilita el campo
-     * de nueva plataforma.
-     */
+        manejarCambioPlataforma({
+            target:
+                campoPlataforma
+        });
 
-    manejarCambioPlataforma({
-        target: campoPlataforma
-    });
+    }
+
 }
 
 
@@ -169,6 +182,7 @@ async function cargarCategoriasAdministrativas() {
             await fetch(
                 API_ADMIN_CATEGORIES,
                 {
+
                     method:
                         "GET",
 
@@ -182,6 +196,7 @@ async function cargarCategoriasAdministrativas() {
 
                     cache:
                         "no-store"
+
                 }
             );
 
@@ -221,13 +236,6 @@ async function cargarCategoriasAdministrativas() {
                     categoria.active === true
             );
 
-
-        /*
-         * Cargar el selector con las categorías
-         * disponibles.
-         *
-         * Al inicio no hay ninguna seleccionada.
-         */
 
         renderizarSelectorCategorias(
             []
@@ -280,17 +288,13 @@ function renderizarSelectorCategorias(
     }
 
 
-    /*
-     * Limpiar selector actual.
-     */
-
     selector.innerHTML =
         "";
 
 
-    /*
-     * Opción inicial.
-     */
+    /* -----------------------------------------------------
+       OPCIÓN INICIAL
+    ----------------------------------------------------- */
 
     const opcionInicial =
         document.createElement(
@@ -306,18 +310,14 @@ function renderizarSelectorCategorias(
         "Seleccione una categoría";
 
 
-    opcionInicial.selected =
-        true;
-
-
     selector.appendChild(
         opcionInicial
     );
 
 
-    /*
-     * Crear las categorías activas.
-     */
+    /* -----------------------------------------------------
+       CATEGORÍAS EXISTENTES
+    ----------------------------------------------------- */
 
     categoriasDisponibles.forEach(
         categoria => {
@@ -352,18 +352,55 @@ function renderizarSelectorCategorias(
     );
 
 
-    /*
-     * Cuando estamos editando un microdrama,
-     * D1 devuelve categories como un arreglo.
-     *
-     * Ejemplo:
-     *
-     * ["SUPERACION"]
-     *
-     * Como ahora solamente permitimos una
-     * categoría, utilizamos únicamente
-     * la primera posición.
-     */
+    /* -----------------------------------------------------
+       SEPARADOR
+    ----------------------------------------------------- */
+
+    const separador =
+        document.createElement(
+            "option"
+        );
+
+
+    separador.disabled =
+        true;
+
+
+    separador.textContent =
+        "────────────────────────";
+
+
+    selector.appendChild(
+        separador
+    );
+
+
+    /* -----------------------------------------------------
+       NUEVA CATEGORÍA
+    ----------------------------------------------------- */
+
+    const opcionNueva =
+        document.createElement(
+            "option"
+        );
+
+
+    opcionNueva.value =
+        "__NUEVA_CATEGORIA__";
+
+
+    opcionNueva.textContent =
+        "+ NUEVA CATEGORÍA";
+
+
+    selector.appendChild(
+        opcionNueva
+    );
+
+
+    /* -----------------------------------------------------
+       RESTAURAR CATEGORÍA
+    ----------------------------------------------------- */
 
     if (
         Array.isArray(
@@ -379,11 +416,6 @@ function renderizarSelectorCategorias(
                 .trim()
                 .toUpperCase();
 
-
-        /*
-         * Comprobar que la categoría todavía
-         * esté activa.
-         */
 
         const existe =
             categoriasDisponibles.some(
@@ -405,6 +437,541 @@ function renderizarSelectorCategorias(
                 categoriaActual;
 
         }
+
+    }
+
+
+    selector.dataset.previousValue =
+        selector.value || "";
+
+}
+
+
+/* =========================================================
+   INICIALIZAR NUEVA CATEGORÍA
+========================================================= */
+
+function inicializarNuevaCategoria() {
+
+    const selector =
+        document.getElementById(
+            "categorias-selector"
+        );
+
+    const modal =
+        document.getElementById(
+            "modal-nueva-categoria"
+        );
+
+    const campo =
+        document.getElementById(
+            "nueva-categoria"
+        );
+
+    const botonCrear =
+        document.getElementById(
+            "boton-crear-categoria"
+        );
+
+    const botonCancelar =
+        document.getElementById(
+            "boton-cancelar-categoria"
+        );
+
+    const botonCerrar =
+        document.getElementById(
+            "boton-cerrar-modal-categoria"
+        );
+
+    const backdrop =
+        document.getElementById(
+            "category-modal-backdrop"
+        );
+
+    const mensaje =
+        document.getElementById(
+            "mensaje-nueva-categoria"
+        );
+
+
+    if (
+        !selector ||
+        !modal ||
+        !campo ||
+        !botonCrear
+    ) {
+
+        return;
+    }
+
+
+    /* -----------------------------------------------------
+       SELECT
+    ----------------------------------------------------- */
+
+    selector.addEventListener(
+        "change",
+        () => {
+
+            if (
+                selector.value ===
+                "__NUEVA_CATEGORIA__"
+            ) {
+
+                abrirModal();
+
+                return;
+            }
+
+
+            selector.dataset.previousValue =
+                selector.value;
+
+        }
+    );
+
+
+    /* -----------------------------------------------------
+       CREAR
+    ----------------------------------------------------- */
+
+    botonCrear.addEventListener(
+        "click",
+        crearCategoria
+    );
+
+
+    /* -----------------------------------------------------
+       CANCELAR
+    ----------------------------------------------------- */
+
+    if (
+        botonCancelar
+    ) {
+
+        botonCancelar.addEventListener(
+            "click",
+            cerrarModal
+        );
+
+    }
+
+
+    /* -----------------------------------------------------
+       CERRAR X
+    ----------------------------------------------------- */
+
+    if (
+        botonCerrar
+    ) {
+
+        botonCerrar.addEventListener(
+            "click",
+            cerrarModal
+        );
+
+    }
+
+
+    /* -----------------------------------------------------
+       CERRAR FONDO
+    ----------------------------------------------------- */
+
+    if (
+        backdrop
+    ) {
+
+        backdrop.addEventListener(
+            "click",
+            cerrarModal
+        );
+
+    }
+
+
+    /* -----------------------------------------------------
+       TECLADO
+    ----------------------------------------------------- */
+
+    campo.addEventListener(
+        "keydown",
+        evento => {
+
+            if (
+                evento.key ===
+                "Enter"
+            ) {
+
+                evento.preventDefault();
+
+                crearCategoria();
+
+            }
+
+
+            if (
+                evento.key ===
+                "Escape"
+            ) {
+
+                evento.preventDefault();
+
+                cerrarModal();
+
+            }
+
+        }
+    );
+
+
+    /* -----------------------------------------------------
+       ABRIR MODAL
+    ----------------------------------------------------- */
+
+    function abrirModal() {
+
+        campo.value =
+            "";
+
+
+        mensaje.hidden =
+            true;
+
+
+        mensaje.textContent =
+            "";
+
+
+        modal.hidden =
+            false;
+
+
+        document.body.classList.add(
+            "category-modal-open"
+        );
+
+
+        setTimeout(
+            () => {
+
+                campo.focus();
+
+            },
+            50
+        );
+
+    }
+
+
+    /* -----------------------------------------------------
+       CERRAR MODAL
+    ----------------------------------------------------- */
+
+    function cerrarModal() {
+
+        modal.hidden =
+            true;
+
+
+        document.body.classList.remove(
+            "category-modal-open"
+        );
+
+
+        selector.value =
+            selector.dataset.previousValue ||
+            "";
+
+
+        campo.value =
+            "";
+
+
+        mensaje.hidden =
+            true;
+
+
+        mensaje.textContent =
+            "";
+
+    }
+
+
+    /* -----------------------------------------------------
+       CREAR CATEGORÍA
+    ----------------------------------------------------- */
+
+    async function crearCategoria() {
+
+        const nombre =
+            campo.value
+                .trim()
+                .replace(
+                    /\s+/g,
+                    " "
+                );
+
+
+        if (
+            !nombre
+        ) {
+
+            mostrarError(
+                "Escribe el nombre de la categoría."
+            );
+
+            campo.focus();
+
+            return;
+        }
+
+
+        if (
+            nombre.length < 2
+        ) {
+
+            mostrarError(
+                "El nombre de la categoría es demasiado corto."
+            );
+
+            campo.focus();
+
+            return;
+        }
+
+
+        botonCrear.disabled =
+            true;
+
+
+        if (
+            botonCancelar
+        ) {
+
+            botonCancelar.disabled =
+                true;
+
+        }
+
+
+        if (
+            botonCerrar
+        ) {
+
+            botonCerrar.disabled =
+                true;
+
+        }
+
+
+        botonCrear.textContent =
+            "Creando...";
+
+
+        try {
+
+            const respuesta =
+                await fetch(
+                    API_ADMIN_CATEGORIES,
+                    {
+
+                        method:
+                            "POST",
+
+                        credentials:
+                            "same-origin",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json",
+
+                            "Accept":
+                                "application/json"
+
+                        },
+
+                        body:
+                            JSON.stringify({
+                                name:
+                                    nombre
+                            })
+
+                    }
+                );
+
+
+            const resultado =
+                await respuesta.json();
+
+
+            if (
+                !respuesta.ok ||
+                !resultado.success
+            ) {
+
+                throw new Error(
+                    resultado.error ||
+                    "No se pudo crear la categoría."
+                );
+
+            }
+
+
+            const nuevaCategoria =
+                resultado.category;
+
+
+            if (
+                !nuevaCategoria
+            ) {
+
+                throw new Error(
+                    "La API no devolvió la categoría creada."
+                );
+
+            }
+
+
+            /* -------------------------------------------------
+               AGREGAR A MEMORIA
+            ------------------------------------------------- */
+
+            categoriasDisponibles.push(
+                nuevaCategoria
+            );
+
+
+            categoriasDisponibles.sort(
+                (
+                    a,
+                    b
+                ) =>
+                    Number(
+                        a.sort_order
+                    ) -
+                    Number(
+                        b.sort_order
+                    )
+            );
+
+
+            const nombreCategoria =
+                String(
+                    nuevaCategoria.name
+                )
+                    .trim()
+                    .toUpperCase();
+
+
+            /* -------------------------------------------------
+               RECONSTRUIR SELECT
+            ------------------------------------------------- */
+
+            renderizarSelectorCategorias(
+                [
+                    nombreCategoria
+                ]
+            );
+
+
+            selector.value =
+                nombreCategoria;
+
+
+            selector.dataset.previousValue =
+                nombreCategoria;
+
+
+            /* -------------------------------------------------
+               CERRAR
+            ------------------------------------------------- */
+
+            modal.hidden =
+                true;
+
+
+            document.body.classList.remove(
+                "category-modal-open"
+            );
+
+
+            campo.value =
+                "";
+
+
+            mensaje.hidden =
+                true;
+
+
+            mostrarMensajeAdmin(
+                `Categoría "${nombreCategoria}" creada correctamente.`,
+                "success"
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Error al crear categoría:",
+                error
+            );
+
+
+            mostrarError(
+                error.message ||
+                "No se pudo crear la categoría."
+            );
+
+
+        } finally {
+
+            botonCrear.disabled =
+                false;
+
+
+            if (
+                botonCancelar
+            ) {
+
+                botonCancelar.disabled =
+                    false;
+
+            }
+
+
+            if (
+                botonCerrar
+            ) {
+
+                botonCerrar.disabled =
+                    false;
+
+            }
+
+
+            botonCrear.textContent =
+                "Crear categoría";
+
+        }
+
+    }
+
+
+    function mostrarError(
+        texto
+    ) {
+
+        mensaje.textContent =
+            texto;
+
+
+        mensaje.className =
+            "category-modal__message category-modal__message--error";
+
+
+        mensaje.hidden =
+            false;
 
     }
 
@@ -439,12 +1006,10 @@ function obtenerCategoriasSeleccionadas() {
             .toUpperCase();
 
 
-    /*
-     * No hay categoría seleccionada.
-     */
-
     if (
-        valor === ""
+        valor === "" ||
+        valor ===
+            "__NUEVA_CATEGORIA__"
     ) {
 
         return [];
@@ -452,18 +1017,7 @@ function obtenerCategoriasSeleccionadas() {
 
 
     /*
-     * IMPORTANTE:
-     *
-     * El administrador permite solamente
-     * UNA categoría.
-     *
-     * Conservamos el formato de arreglo
-     * porque así está almacenado actualmente
-     * en la columna categories de D1.
-     *
-     * Ejemplo:
-     *
-     * ["SUPERACION"]
+     * UNA SOLA CATEGORÍA
      */
 
     return [
@@ -485,11 +1039,6 @@ function abrirFormularioNuevo() {
 
     limpiarFormulario();
 
-
-    /*
-     * Un nuevo microdrama comienza
-     * sin categoría seleccionada.
-     */
 
     renderizarSelectorCategorias(
         []
@@ -535,11 +1084,12 @@ function abrirFormularioNuevo() {
     document.getElementById(
         "title"
     ).focus();
+
 }
 
 
 /* =========================================================
-   ABRIR FORMULARIO DE EDICIÓN
+   ABRIR FORMULARIO EDICIÓN
 ========================================================= */
 
 function abrirFormularioEdicion(
@@ -552,14 +1102,6 @@ function abrirFormularioEdicion(
 
     limpiarFormulario();
 
-
-    /*
-     * Cargar la categoría que ya tiene
-     * asignada el microdrama.
-     *
-     * El backend devuelve categories
-     * como arreglo JSON.
-     */
 
     renderizarSelectorCategorias(
         Array.isArray(
@@ -618,16 +1160,6 @@ function abrirFormularioEdicion(
         drama.cover_url || "";
 
 
-    /*
-     * NUEVA ESTRUCTURA:
-     *
-     * video_url es ahora la columna oficial
-     * donde se almacenan los enlaces MEGA.
-     *
-     * video_url_2 NO se carga en el formulario
-     * porque es una columna histórica/respaldo.
-     */
-
     document.getElementById(
         "video_url"
     ).value =
@@ -685,6 +1217,7 @@ function abrirFormularioEdicion(
     document.getElementById(
         "title"
     ).focus();
+
 }
 
 
@@ -712,8 +1245,9 @@ function establecerPlataformaEdicion(
         Array.from(
             select.options
         ).some(
-            (opcion) =>
-                opcion.value === plataforma
+            opcion =>
+                opcion.value ===
+                plataforma
         );
 
 
@@ -736,11 +1270,6 @@ function establecerPlataformaEdicion(
     }
 
 
-    /*
-     * Si no está en las opciones predefinidas,
-     * significa que es una plataforma personalizada.
-     */
-
     select.value =
         "";
 
@@ -748,6 +1277,7 @@ function establecerPlataformaEdicion(
     activarNuevaPlataforma(
         plataforma
     );
+
 }
 
 
@@ -763,11 +1293,6 @@ function manejarCambioPlataforma(
         evento.target.value;
 
 
-    /*
-     * Sin selección:
-     * habilitar plataforma personalizada.
-     */
-
     if (
         valor === ""
     ) {
@@ -778,12 +1303,8 @@ function manejarCambioPlataforma(
     }
 
 
-    /*
-     * Plataforma predefinida:
-     * bloquear campo personalizado.
-     */
-
     desactivarNuevaPlataforma();
+
 }
 
 
@@ -831,6 +1352,7 @@ function activarNuevaPlataforma(
             valorInicial;
 
     }
+
 }
 
 
@@ -860,6 +1382,7 @@ function desactivarNuevaPlataforma() {
 
     campo.placeholder =
         "Selecciona una plataforma predefinida";
+
 }
 
 
@@ -881,23 +1404,17 @@ function obtenerPlataformaFinal() {
         );
 
 
-    /*
-     * Plataforma predefinida.
-     */
-
     if (
         select.value !== ""
     ) {
 
         return select.value.trim();
+
     }
 
 
-    /*
-     * Plataforma personalizada.
-     */
-
     return campoNueva.value.trim();
+
 }
 
 
@@ -910,7 +1427,8 @@ function generarSlug(
 ) {
 
     if (
-        typeof texto !== "string"
+        typeof texto !==
+        "string"
     ) {
 
         return "";
@@ -957,6 +1475,7 @@ function generarSlug(
             /-+$/g,
             ""
         );
+
 }
 
 
@@ -970,6 +1489,7 @@ function establecerDescripcionAutomatica() {
         "description"
     ).value =
         DESCRIPCION_AUTOMATICA;
+
 }
 
 
@@ -999,7 +1519,7 @@ function establecerSiguienteOrdenVisual() {
 
 
     dramasActuales.forEach(
-        (drama) => {
+        drama => {
 
             const orden =
                 Number(
@@ -1028,6 +1548,7 @@ function establecerSiguienteOrdenVisual() {
         String(
             mayor + 1
         );
+
 }
 
 
@@ -1084,19 +1605,12 @@ async function guardarFormulario(
     }
 
 
-    /*
-     * NUEVA REGLA:
-     *
-     * Cada microdrama debe tener
-     * exactamente una categoría.
-     */
-
     const categorias =
         obtenerCategoriasSeleccionadas();
 
 
     if (
-        categorias.length === 0
+        categorias.length !== 1
     ) {
 
         mostrarMensajeAdmin(
@@ -1127,10 +1641,6 @@ async function guardarFormulario(
     }
 
 
-    /*
-     * Actualizamos visualmente el campo.
-     */
-
     document.getElementById(
         "slug"
     ).value =
@@ -1142,76 +1652,45 @@ async function guardarFormulario(
         title:
             titulo,
 
-
         slug:
             slug,
-
 
         platform:
             plataforma,
 
-
         description:
             DESCRIPCION_AUTOMATICA,
-
 
         video_description:
             document.getElementById(
                 "video_description"
             ).value.trim(),
 
-
         cover_url:
             document.getElementById(
                 "cover_url"
             ).value.trim(),
-
-
-        /*
-         * NUEVA ESTRUCTURA:
-         *
-         * Los enlaces MEGA nuevos se envían
-         * exclusivamente como video_url.
-         *
-         * video_url_2 nunca se envía desde el
-         * panel administrativo.
-         */
 
         video_url:
             document.getElementById(
                 "video_url"
             ).value.trim(),
 
-
         status:
             document.getElementById(
                 "status"
             ).value,
-
 
         featured:
             document.getElementById(
                 "featured"
             ).checked,
 
-
-        /*
-         * UNA SOLA CATEGORÍA
-         *
-         * D1 seguirá recibiendo un arreglo JSON:
-         *
-         * ["SUPERACION"]
-         */
-
         categories:
             categorias
 
     };
 
-
-    /*
-     * En edición necesitamos el ID.
-     */
 
     if (
         modoFormulario ===
@@ -1224,6 +1703,7 @@ async function guardarFormulario(
                     "drama-id"
                 ).value
             );
+
     }
 
 
@@ -1251,10 +1731,8 @@ async function guardarFormulario(
                             ? "PUT"
                             : "POST",
 
-
                     credentials:
                         "same-origin",
-
 
                     headers: {
 
@@ -1265,7 +1743,6 @@ async function guardarFormulario(
                             "application/json"
 
                     },
-
 
                     body:
                         JSON.stringify(
@@ -1289,6 +1766,7 @@ async function guardarFormulario(
             throw new Error(
                 "El servidor devolvió una respuesta inválida."
             );
+
         }
 
 
@@ -1301,6 +1779,7 @@ async function guardarFormulario(
                 resultado.error ||
                 "No se pudo guardar el microdrama."
             );
+
         }
 
 
@@ -1345,7 +1824,9 @@ async function guardarFormulario(
                 "editar"
                 ? "Guardar cambios"
                 : "Guardar microdrama";
+
     }
+
 }
 
 
@@ -1368,6 +1849,7 @@ function cerrarFormulario() {
 
 
     limpiarFormulario();
+
 }
 
 
@@ -1434,30 +1916,16 @@ function limpiarFormulario() {
         "published";
 
 
-    /*
-     * Limpiar categoría.
-     */
-
     renderizarSelectorCategorias(
         []
     );
+
 }
 
 
 /* =========================================================
    SELECCIÓN MÚLTIPLE DE REGISTROS
 ========================================================= */
-
-/*
- * IMPORTANTE:
- *
- * Esta selección múltiple NO corresponde
- * a las categorías.
- *
- * Se utiliza exclusivamente para poder
- * seleccionar varios microdramas de la tabla
- * y eliminarlos.
- */
 
 function inicializarSeleccionMultiple() {
 
@@ -1473,6 +1941,15 @@ function inicializarSeleccionMultiple() {
         );
 
 
+    if (
+        !seleccionarTodos ||
+        !botonEliminar
+    ) {
+
+        return;
+    }
+
+
     seleccionarTodos.addEventListener(
         "change",
         () => {
@@ -1484,7 +1961,7 @@ function inicializarSeleccionMultiple() {
 
 
             casillas.forEach(
-                (casilla) => {
+                casilla => {
 
                     casilla.checked =
                         seleccionarTodos.checked;
@@ -1494,6 +1971,7 @@ function inicializarSeleccionMultiple() {
 
 
             actualizarEstadoSeleccion();
+
         }
     );
 
@@ -1502,6 +1980,7 @@ function inicializarSeleccionMultiple() {
         "click",
         eliminarSeleccionados
     );
+
 }
 
 
@@ -1521,7 +2000,7 @@ function actualizarEstadoSeleccion() {
 
     const seleccionadas =
         casillas.filter(
-            (casilla) =>
+            casilla =>
                 casilla.checked
         );
 
@@ -1532,14 +2011,20 @@ function actualizarEstadoSeleccion() {
         );
 
 
-    botonEliminar.disabled =
-        seleccionadas.length === 0;
+    if (
+        botonEliminar
+    ) {
+
+        botonEliminar.disabled =
+            seleccionadas.length === 0;
 
 
-    botonEliminar.textContent =
-        seleccionadas.length > 0
-            ? `Eliminar seleccionados (${seleccionadas.length})`
-            : "Eliminar seleccionados";
+        botonEliminar.textContent =
+            seleccionadas.length > 0
+                ? `Eliminar seleccionados (${seleccionadas.length})`
+                : "Eliminar seleccionados";
+
+    }
 
 
     const seleccionarTodos =
@@ -1548,16 +2033,23 @@ function actualizarEstadoSeleccion() {
         );
 
 
-    seleccionarTodos.checked =
-        casillas.length > 0 &&
-        seleccionadas.length ===
-            casillas.length;
+    if (
+        seleccionarTodos
+    ) {
+
+        seleccionarTodos.checked =
+            casillas.length > 0 &&
+            seleccionadas.length ===
+                casillas.length;
 
 
-    seleccionarTodos.indeterminate =
-        seleccionadas.length > 0 &&
-        seleccionadas.length <
-            casillas.length;
+        seleccionarTodos.indeterminate =
+            seleccionadas.length > 0 &&
+            seleccionadas.length <
+                casillas.length;
+
+    }
+
 }
 
 
@@ -1573,18 +2065,19 @@ function obtenerIdsSeleccionados() {
         )
     )
         .map(
-            (casilla) =>
+            casilla =>
                 Number(
                     casilla.value
                 )
         )
         .filter(
-            (id) =>
+            id =>
                 Number.isInteger(
                     id
                 ) &&
                 id > 0
         );
+
 }
 
 
@@ -1650,10 +2143,8 @@ async function eliminarSeleccionados() {
                     method:
                         "DELETE",
 
-
                     credentials:
                         "same-origin",
-
 
                     headers: {
 
@@ -1665,13 +2156,10 @@ async function eliminarSeleccionados() {
 
                     },
 
-
                     body:
-                        JSON.stringify(
-                            {
-                                ids
-                            }
-                        )
+                        JSON.stringify({
+                            ids
+                        })
 
                 }
             );
@@ -1690,6 +2178,7 @@ async function eliminarSeleccionados() {
                 resultado.error ||
                 "No se pudieron eliminar los microdramas."
             );
+
         }
 
 
@@ -1721,7 +2210,9 @@ async function eliminarSeleccionados() {
     } finally {
 
         actualizarEstadoSeleccion();
+
     }
+
 }
 
 
@@ -1747,10 +2238,6 @@ function inicializarBuscador() {
         !buscador ||
         !botonLimpiar
     ) {
-
-        console.error(
-            "No se pudo inicializar el buscador de microdramas."
-        );
 
         return;
     }
@@ -1797,6 +2284,7 @@ function inicializarBuscador() {
 
         }
     );
+
 }
 
 
@@ -1823,11 +2311,6 @@ function aplicarFiltroDramas() {
             "resultado-busqueda"
         );
 
-
-    /*
-     * Sin búsqueda:
-     * mostrar todos los registros.
-     */
 
     if (
         textoBusqueda === ""
@@ -1859,14 +2342,6 @@ function aplicarFiltroDramas() {
     }
 
 
-    /*
-     * Normalizamos la búsqueda para ignorar:
-     *
-     * - Mayúsculas
-     * - Minúsculas
-     * - Acentos
-     */
-
     const busqueda =
         normalizarTextoBusqueda(
             textoBusqueda
@@ -1875,7 +2350,7 @@ function aplicarFiltroDramas() {
 
     const dramasFiltrados =
         dramasActuales.filter(
-            (drama) => {
+            drama => {
 
                 const id =
                     normalizarTextoBusqueda(
@@ -1900,6 +2375,7 @@ function aplicarFiltroDramas() {
                     titulo.includes(busqueda) ||
                     plataforma.includes(busqueda)
                 );
+
             }
         );
 
@@ -1926,15 +2402,17 @@ function aplicarFiltroDramas() {
                         ? ""
                         : "s"
                 }.`;
+
     }
 
 
     actualizarEstadoSeleccion();
+
 }
 
 
 /* =========================================================
-   NORMALIZAR TEXTO PARA BÚSQUEDA
+   NORMALIZAR BÚSQUEDA
 ========================================================= */
 
 function normalizarTextoBusqueda(
@@ -1951,6 +2429,7 @@ function normalizarTextoBusqueda(
         )
         .toLowerCase()
         .trim();
+
 }
 
 
@@ -1987,18 +2466,13 @@ async function cargarDramasAdministrativos() {
                     method:
                         "GET",
 
-
                     credentials:
                         "same-origin",
 
-
                     headers: {
-
                         "Accept":
                             "application/json"
-
                     },
-
 
                     cache:
                         "no-store"
@@ -2014,6 +2488,7 @@ async function cargarDramasAdministrativos() {
             throw new Error(
                 `La API respondió con el estado ${respuesta.status}.`
             );
+
         }
 
 
@@ -2031,6 +2506,7 @@ async function cargarDramasAdministrativos() {
             throw new Error(
                 "La API administrativa devolvió una respuesta no válida."
             );
+
         }
 
 
@@ -2057,7 +2533,9 @@ async function cargarDramasAdministrativos() {
             error.message ||
             "No se pudieron cargar los microdramas."
         );
+
     }
+
 }
 
 
@@ -2120,6 +2598,7 @@ function obtenerElementos() {
 
 
     return elementos;
+
 }
 
 
@@ -2158,12 +2637,14 @@ function mostrarEstadoCarga(
 
         contenedorBusqueda.hidden =
             true;
+
     }
+
 }
 
 
 /* =========================================================
-   RENDERIZAR
+   RENDERIZAR DRAMAS
 ========================================================= */
 
 function renderizarDramas(
@@ -2184,19 +2665,13 @@ function renderizarDramas(
         );
 
 
-    /*
-     * La barra de búsqueda se muestra siempre
-     * que existan microdramas cargados,
-     * incluso cuando la búsqueda actual
-     * no produce resultados.
-     */
-
     if (
         contenedorBusqueda
     ) {
 
         contenedorBusqueda.hidden =
             dramasActuales.length === 0;
+
     }
 
 
@@ -2226,16 +2701,12 @@ function renderizarDramas(
         true;
 
 
-    elementos.estadoVacio.textContent =
-        "No hay microdramas registrados.";
-
-
     const fragmento =
         document.createDocumentFragment();
 
 
     dramas.forEach(
-        (drama) => {
+        drama => {
 
             fragmento.appendChild(
                 crearFilaDrama(
@@ -2254,6 +2725,7 @@ function renderizarDramas(
 
     elementos.contenedorTabla.hidden =
         false;
+
 }
 
 
@@ -2278,10 +2750,6 @@ function crearFilaDrama(
     fila.title =
         "Haz clic para editar este microdrama";
 
-
-    /* -----------------------------------------------------
-       SELECCIÓN
-    ----------------------------------------------------- */
 
     const celdaSeleccion =
         document.createElement(
@@ -2313,7 +2781,7 @@ function crearFilaDrama(
 
     casilla.addEventListener(
         "click",
-        (evento) => {
+        evento => {
 
             evento.stopPropagation();
 
@@ -2337,10 +2805,6 @@ function crearFilaDrama(
     );
 
 
-    /* -----------------------------------------------------
-       ID
-    ----------------------------------------------------- */
-
     fila.appendChild(
         crearCelda(
             normalizarTexto(
@@ -2351,20 +2815,12 @@ function crearFilaDrama(
     );
 
 
-    /* -----------------------------------------------------
-       MICRODRAMA
-    ----------------------------------------------------- */
-
     fila.appendChild(
         crearCeldaInformacionDrama(
             drama
         )
     );
 
-
-    /* -----------------------------------------------------
-       PLATAFORMA
-    ----------------------------------------------------- */
 
     fila.appendChild(
         crearCelda(
@@ -2376,10 +2832,6 @@ function crearFilaDrama(
     );
 
 
-    /* -----------------------------------------------------
-       ESTADO
-    ----------------------------------------------------- */
-
     fila.appendChild(
         crearCeldaEstado(
             drama.status
@@ -2387,20 +2839,12 @@ function crearFilaDrama(
     );
 
 
-    /* -----------------------------------------------------
-       DESTACADO
-    ----------------------------------------------------- */
-
     fila.appendChild(
         crearCeldaDestacado(
             drama.featured
         )
     );
 
-
-    /* -----------------------------------------------------
-       ORDEN
-    ----------------------------------------------------- */
 
     fila.appendChild(
         crearCelda(
@@ -2412,10 +2856,6 @@ function crearFilaDrama(
     );
 
 
-    /* -----------------------------------------------------
-       ACTUALIZACIÓN
-    ----------------------------------------------------- */
-
     fila.appendChild(
         crearCelda(
             formatearFecha(
@@ -2424,10 +2864,6 @@ function crearFilaDrama(
         )
     );
 
-
-    /* -----------------------------------------------------
-       EDITAR
-    ----------------------------------------------------- */
 
     const celdaAcciones =
         document.createElement(
@@ -2455,7 +2891,7 @@ function crearFilaDrama(
 
     botonEditar.addEventListener(
         "click",
-        (evento) => {
+        evento => {
 
             evento.stopPropagation();
 
@@ -2478,10 +2914,6 @@ function crearFilaDrama(
     );
 
 
-    /* -----------------------------------------------------
-       CLICK SOBRE TODA LA FILA
-    ----------------------------------------------------- */
-
     fila.addEventListener(
         "click",
         () => {
@@ -2495,6 +2927,7 @@ function crearFilaDrama(
 
 
     return fila;
+
 }
 
 
@@ -2517,6 +2950,7 @@ function crearCelda(
 
 
     return celda;
+
 }
 
 
@@ -2588,7 +3022,8 @@ function crearCeldaInformacionDrama(
 
         },
         {
-            once: true
+            once:
+                true
         }
     );
 
@@ -2663,6 +3098,7 @@ function crearCeldaInformacionDrama(
 
 
     return celda;
+
 }
 
 
@@ -2718,6 +3154,7 @@ function crearCeldaEstado(
 
         indicador.textContent =
             "Borrador";
+
     }
 
 
@@ -2727,6 +3164,7 @@ function crearCeldaEstado(
 
 
     return celda;
+
 }
 
 
@@ -2763,6 +3201,7 @@ function crearCeldaDestacado(
 
 
     return celda;
+
 }
 
 
@@ -2774,14 +3213,11 @@ function obtenerRutaPortada(
     coverUrl
 ) {
 
-    const portada =
-        normalizarTexto(
-            coverUrl,
-            ""
-        ).trim();
+    return normalizarTexto(
+        coverUrl,
+        ""
+    ).trim();
 
-
-    return portada;
 }
 
 
@@ -2801,12 +3237,14 @@ function normalizarTexto(
     ) {
 
         return valorPorDefecto;
+
     }
 
 
     return String(
         valor
     );
+
 }
 
 
@@ -2841,6 +3279,7 @@ function formatearFecha(
         return String(
             fechaOriginal
         );
+
     }
 
 
@@ -2856,6 +3295,7 @@ function formatearFecha(
     ).format(
         fecha
     );
+
 }
 
 
@@ -2874,6 +3314,14 @@ function mostrarMensajeAdmin(
         );
 
 
+    if (
+        !elemento
+    ) {
+
+        return;
+    }
+
+
     elemento.textContent =
         mensaje;
 
@@ -2886,6 +3334,7 @@ function mostrarMensajeAdmin(
 
     elemento.hidden =
         false;
+
 }
 
 
@@ -2922,6 +3371,7 @@ function mostrarError(
 
         contenedorBusqueda.hidden =
             true;
+
     }
 
 
@@ -2929,4 +3379,5 @@ function mostrarError(
         mensaje,
         "error"
     );
+
 }

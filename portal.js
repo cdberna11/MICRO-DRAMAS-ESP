@@ -32,6 +32,7 @@ function showPanel(panel) {
     [loginPanel, pinPanel, registerPanel, forgotPanel, onboardingPanel, profilePanel].forEach(item => {
         item.hidden = item !== panel;
     });
+    document.body.classList.toggle("pin-mode", panel === pinPanel);
     clearMessage();
     if (panel !== pinPanel) clearPinInputs();
 }
@@ -66,11 +67,6 @@ function updatePinVisualState() {
         input.classList.toggle("filled", Boolean(input.value));
         input.classList.toggle("active", document.activeElement === input);
     });
-}
-
-function setPinDigit(input, value) {
-    input.value = String(value || "").replace(/\D/g, "").slice(-1);
-    updatePinVisualState();
 }
 
 function preparePinInputs() {
@@ -116,7 +112,7 @@ function preparePinInputs() {
             if (pasted.length === 4) setTimeout(() => $("#pin-form").requestSubmit(), 80);
         });
     });
-});
+}
 
 function renderAvatarOptions(containerSelector, selected) {
     const container = $(containerSelector);

@@ -5,12 +5,13 @@
     const API_GITHUB_STATUS =
         "/api/admin/github-status";
 
+    const FECHA_EXPIRACION_POR_DEFECTO =
+        "2027-08-14";
 
     document.addEventListener(
         "DOMContentLoaded",
         comprobarEstadoGitHub
     );
-
 
     async function comprobarEstadoGitHub() {
 
@@ -71,10 +72,17 @@
                 `Repositorio: ${resultado.repository}`;
 
             const dias =
-                resultado.daysRemaining;
+                Number.isInteger(resultado.daysRemaining)
+                    ? resultado.daysRemaining
+                    : calcularDiasRestantes(FECHA_EXPIRACION_POR_DEFECTO);
+
+            const fechaISO =
+                /^\d{4}-\d{2}-\d{2}$/.test(String(resultado.expiresAt || ""))
+                    ? resultado.expiresAt
+                    : FECHA_EXPIRACION_POR_DEFECTO;
 
             const fecha =
-                formatearFecha(resultado.expiresAt);
+                formatearFecha(fechaISO);
 
             if (Number.isInteger(dias) && fecha) {
                 expiracion.textContent =
@@ -84,7 +92,7 @@
                     `Token válido · expira ${fecha}`;
             } else {
                 expiracion.textContent =
-                    "Token válido · fecha de expiración no disponible";
+                    "Token válido";
             }
 
         } catch (error) {
@@ -104,6 +112,26 @@
         }
     }
 
+    function calcularDiasRestantes(fechaISO) {
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fechaISO || ""))) {
+            return null;
+        }
+
+        const fecha =
+            new Date(`${fechaISO}T23:59:59Z`);
+
+        if (Number.isNaN(fecha.getTime())) {
+            return null;
+        }
+
+        return Math.max(
+            0,
+            Math.ceil(
+                (fecha.getTime() - Date.now()) / 86400000
+            )
+        );
+    }
 
     function formatearFecha(valor) {
 

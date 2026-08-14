@@ -51,6 +51,8 @@ document.addEventListener(
 
         inicializarBuscador();
 
+        cargarCategoriasAdministrativas();
+
         cargarDramasAdministrativos();
 
     }
@@ -403,6 +405,7 @@ function obtenerCategoriasSeleccionadas() {
 
 }
 
+
 /* =========================================================
    ABRIR FORMULARIO NUEVO
 ========================================================= */
@@ -414,6 +417,16 @@ function abrirFormularioNuevo() {
 
 
     limpiarFormulario();
+
+
+    /*
+     * Un nuevo microdrama siempre comienza
+     * sin categorías seleccionadas.
+     */
+
+    renderizarSelectorCategorias(
+        []
+    );
 
 
     document.getElementById(
@@ -473,6 +486,23 @@ function abrirFormularioEdicion(
     limpiarFormulario();
 
 
+    /*
+     * Cargar las categorías que ya tiene
+     * asignadas el microdrama.
+     *
+     * El backend devuelve categories
+     * como arreglo JSON.
+     */
+
+    renderizarSelectorCategorias(
+        Array.isArray(
+            drama.categories
+        )
+            ? drama.categories
+            : []
+    );
+
+
     document.getElementById(
         "titulo-formulario"
     ).textContent =
@@ -530,6 +560,7 @@ function abrirFormularioEdicion(
      * video_url_2 NO se carga en el formulario
      * porque es una columna histórica/respaldo.
      */
+
     document.getElementById(
         "video_url"
     ).value =
@@ -1054,6 +1085,7 @@ async function guardarFormulario(
          * video_url_2 nunca se envía desde el
          * panel administrativo.
          */
+
         video_url:
             document.getElementById(
                 "video_url"
@@ -1069,7 +1101,18 @@ async function guardarFormulario(
         featured:
             document.getElementById(
                 "featured"
-            ).checked
+            ).checked,
+
+
+        /*
+         * CATEGORÍAS
+         *
+         * Se envían únicamente las categorías
+         * seleccionadas en el formulario.
+         */
+
+        categories:
+            obtenerCategoriasSeleccionadas()
 
     };
 
@@ -1297,6 +1340,18 @@ function limpiarFormulario() {
         "status"
     ).value =
         "published";
+
+
+    /*
+     * Limpiar selección de categorías.
+     *
+     * Si las categorías ya fueron cargadas,
+     * se muestran todas desmarcadas.
+     */
+
+    renderizarSelectorCategorias(
+        []
+    );
 }
 
 

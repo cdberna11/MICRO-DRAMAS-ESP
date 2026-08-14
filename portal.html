@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Micro Dramas en Español</title>
     <link rel="stylesheet" href="/portal.css">
 </head>
@@ -17,47 +17,67 @@
                 <h1>Iniciar sesión</h1>
                 <p class="panel-subtitle">Accede a tu cuenta para entrar a la cartelera.</p>
                 <form id="login-form" novalidate>
-                    <label for="login-identifier">Correo</label>
-                    <input id="login-identifier" type="email" autocomplete="username" placeholder="correo@ejemplo.com" required>
-                    <label for="login-password">Contraseña</label>
-                    <input id="login-password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required>
-                    <button id="login-submit" class="primary-button" type="submit">Iniciar sesión</button>
+                    <label for="login-identifier">Correo o teléfono</label>
+                    <input id="login-identifier" type="text" inputmode="email" autocomplete="username" placeholder="correo@ejemplo.com o +507..." required>
+                    <button id="login-submit" class="primary-button" type="submit">Continuar</button>
                 </form>
-                <button id="go-forgot" class="text-button" type="button">¿Olvidaste tu contraseña?</button>
+                <button id="go-forgot" class="text-button" type="button">¿Olvidaste tu PIN?</button>
                 <div class="panel-divider"><span>o</span></div>
                 <button id="go-register" class="secondary-button" type="button">Crear una cuenta</button>
             </section>
 
+            <section id="pin-panel" class="panel pin-panel" hidden>
+                <h1>Ingresa tu PIN</h1>
+                <p class="panel-subtitle">Introduce el PIN de 4 dígitos de tu cuenta.</p>
+                <form id="pin-form" novalidate>
+                    <div id="pin-inputs" class="pin-inputs" role="group" aria-label="PIN de 4 dígitos">
+                        <input class="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" aria-label="Primer dígito">
+                        <input class="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Segundo dígito">
+                        <input class="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Tercer dígito">
+                        <input class="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Cuarto dígito">
+                    </div>
+                    <p id="pin-account-label" class="pin-account-label"></p>
+                    <button id="pin-submit" class="primary-button" type="submit">Entrar</button>
+                </form>
+                <button id="pin-back-login" class="text-button" type="button">Volver</button>
+            </section>
+
             <section id="register-panel" class="panel" hidden>
                 <h1>Crear cuenta</h1>
-                <p class="panel-subtitle">Regístrate con tu correo y crea tu contraseña.</p>
+                <p class="panel-subtitle">Registra tu cuenta y crea un PIN personal de 4 dígitos.</p>
                 <form id="register-form" novalidate>
                     <label for="register-name">Nombre</label>
                     <input id="register-name" type="text" autocomplete="name" placeholder="Tu nombre" maxlength="60" required>
-                    <label for="register-identifier">Correo</label>
-                    <input id="register-identifier" type="email" autocomplete="email" placeholder="correo@ejemplo.com" required>
-                    <label for="register-password">Contraseña</label>
-                    <input id="register-password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" minlength="8" required>
-                    <p class="password-hint">La contraseña puede contener cualquier combinación de caracteres. Mínimo 8 caracteres.</p>
-                    <label for="register-confirm">Confirmar contraseña</label>
-                    <input id="register-confirm" type="password" autocomplete="new-password" placeholder="Repite tu contraseña" minlength="8" required>
+
+                    <label for="register-email">Correo electrónico</label>
+                    <input id="register-email" type="email" autocomplete="email" placeholder="correo@ejemplo.com" required>
+                    <p class="password-hint">Tu correo quedará guardado para futuras funciones de recuperación y confirmación.</p>
+
+                    <label>Forma de acceso</label>
+                    <div class="auth-method-options" role="group" aria-label="Forma de acceso">
+                        <button type="button" class="auth-method-option selected" data-method="email">Correo</button>
+                        <button type="button" class="auth-method-option" data-method="phone">Teléfono</button>
+                    </div>
+
+                    <label id="register-identifier-label" for="register-identifier">Correo de acceso</label>
+                    <input id="register-identifier" type="email" autocomplete="username" placeholder="correo@ejemplo.com" required>
+
+                    <label for="register-pin">PIN</label>
+                    <input id="register-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password" placeholder="4 dígitos" required>
+                    <p class="password-hint">El PIN debe tener exactamente 4 números.</p>
+
+                    <label for="register-pin-confirm">Confirmar PIN</label>
+                    <input id="register-pin-confirm" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password" placeholder="Repite tu PIN" required>
+
                     <button id="register-submit" class="primary-button" type="submit">Crear cuenta</button>
                 </form>
                 <button id="register-go-login" class="text-button" type="button">Ya tengo una cuenta</button>
             </section>
 
             <section id="forgot-panel" class="panel" hidden>
-                <h1>Restablecer contraseña</h1>
-                <p class="panel-subtitle">Introduce el correo asociado a tu cuenta.</p>
-                <form id="forgot-form" novalidate>
-                    <label for="forgot-identifier">Correo</label>
-                    <input id="forgot-identifier" type="email" autocomplete="username" placeholder="correo@ejemplo.com" required>
-                    <label for="forgot-password">Nueva contraseña</label>
-                    <input id="forgot-password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" minlength="8" required>
-                    <label for="forgot-confirm">Confirmar contraseña</label>
-                    <input id="forgot-confirm" type="password" autocomplete="new-password" placeholder="Repite tu contraseña" minlength="8" required>
-                    <button id="forgot-submit" class="primary-button" type="submit">Cambiar contraseña</button>
-                </form>
+                <h1>Restablecer PIN</h1>
+                <p class="panel-subtitle">La recuperación mediante correo o teléfono estará disponible cuando habilitemos el envío de códigos.</p>
+                <button id="forgot-disabled" class="secondary-button" type="button">Recuperación próximamente</button>
                 <button id="forgot-go-login" class="text-button" type="button">Volver a iniciar sesión</button>
             </section>
 
@@ -78,12 +98,10 @@
                     <h1>¡Bienvenido, <span id="profile-name">Usuario</span>!</h1>
                     <p id="profile-account" class="panel-subtitle"></p>
                 </div>
-
                 <button id="profile-avatar-button" class="profile-avatar-button" type="button" aria-label="Entrar a la cartelera">
                     <img id="profile-avatar-img" src="/assets/avatar-1.png" alt="Avatar">
                     <span class="avatar-edit-overlay" aria-hidden="true">✎</span>
                 </button>
-
                 <p class="profile-avatar-label">Entrar a la cartelera</p>
                 <button id="manage-profile-button" class="secondary-button manage-profile-button" type="button">Administrar perfil</button>
                 <button id="logout-button" class="text-button danger-button" type="button">Cerrar sesión</button>

@@ -1,4 +1,4 @@
-import { hashPassword, normalizeEmail, validEmail, createUserSession, buildSessionCookie } from "../../lib/user-auth.js";
+import { ensureUserSchema, normalizeEmail, normalizePhone, validEmail, validPhone, hashPassword, createUserSession, buildSessionCookie } from "../../lib/user-auth.js";
 
 function json(data, status = 200, extraHeaders = {}) {
     return Response.json(data, {
@@ -17,58 +17,79 @@ export async function onRequestPost(context) {
 
     let body;
     try {
+        await ensureUserSchema(db);
         body = await context.request.json();
     } catch (error) {
-        console.error("REGISTER_JSON_ERROR:", error);
+        console.error("REGISTER_INIT_ERROR:", error);
         return json({ success: false, code: "INVALID_REQUEST", error: "La solicitud de registro no es válida." }, 400);
     }
 
     const displayName = String(body?.displayName || "").trim().slice(0, 60);
-    const email = normalizeEmail(body?.identifier);
-    const password = String(body?.password || "");
-    const confirmPassword = String(body?.confirmPassword || "");
+    const email = normalizeEmail(body?.email);
+    const authMethod = body?.authMethod === "phone" ? "phone" : "email";
+    const identifier = authMethod === "phone" ? normalizePhone(body?.identifier) : normalizeEmail(body?.identifier);
+    const pin = String(body?.pin || "");
+    const confirmPin = String(body?.confirmPin || "");
 
     if (displayName.length < 2) return json({ success: false, code: "INVALID_NAME", error: "Escribe un nombre válido." }, 400);
-    if (!validEmail(email)) return json({ success: false, code: "INVALID_EMAIL", error: "Escribe un correo electrónico válido." }, 400);
-    if (password.length < 8) return json({ success: false, code: "PASSWORD_TOO_SHORT", error: "La contraseña debe tener al menos 8 caracteres." }, 400);
-    if (password !== confirmPassword) return json({ success: false, code: "PASSWORD_MISMATCH", error: "Las contraseñas no son iguales." }, 400);
+    if (!validEmail(email)) return json({ success: false, code: "INVALID_EMAIL", error: "Introduce un correo electrónico válido." }, 400);
+    if (authMethod === "phone" && !validPhone(identifier)) return json({ success: false, code: "INVALID_PHONE", error: "Introduce un número de teléfono válido, incluyendo el código de país." }, 400);
+    if (authMethod === "email" && !validEmail(identifier)) return json({ success: false, code: "INVALID_LOGIN_EMAIL", error: "Introduce un correo de acceso válido." }, 400);
+    if (!/^\d{4}$/.test(pin)) return json({ success: false, code: "INVALID_PIN", error: "El PIN debe tener exactamente 4 números." }, 400);
+    if (pin !== confirmPin) return json({ success: false, code: "PIN_MISMATCH", error: "Los PIN no son iguales." }, 400);
 
     try {
-        const existingUser = await db.prepare(`SELECT id FROM users WHERE lower(email) = ? LIMIT 1`).bind(email).first();
-        if (existingUser) return json({ success: false, code: "EMAIL_ALREADY_REGISTERED", error: "Este correo ya está registrado." }, 409);
+        const existingEmail = await db.prepare(`SELECT id FROM users WHERE lower(email) = ? LIMIT 1`).bind(email).first();
+        if (existingEmail) return json({ success: false, code: "EMAIL_ALREADY_REGISTERED", error: "Este correo ya está registrado." }, 409);
+
+        if (authMethod === "phone") {
+            const existingPhone = await db.prepare(`SELECT id FROM users WHERE phone = ? LIMIT 1`).bind(identifier).first();
+            if (existingPhone) return json({ success: false, code: "PHONE_ALREADY_REGISTERED", error: "Este número de teléfono ya está registrado." }, 409);
+        }
     } catch (error) {
-        console.error("REGISTER_EMAIL_CHECK_ERROR:", error);
-        return json({ success: false, code: "EMAIL_CHECK_FAILED", error: "No se pudo comprobar el correo en la base de datos." }, 500);
+        console.error("REGISTER_IDENTIFIER_CHECK_ERROR:", error);
+        return json({ success: false, code: "IDENTIFIER_CHECK_FAILED", error: "No se pudo comprobar la cuenta en la base de datos." }, 500);
     }
 
-    let passwordHash;
+    let pinHash;
     try {
-        passwordHash = await hashPassword(password);
+        pinHash = await hashPassword(pin);
     } catch (error) {
-        console.error("REGISTER_PASSWORD_HASH_ERROR:", error);
-        return json({ success: false, code: "PASSWORD_HASH_FAILED", error: "No se pudo preparar la contraseña." }, 500);
+        console.error("REGISTER_PIN_HASH_ERROR:", error);
+        return json({ success: false, code: "PIN_HASH_FAILED", error: "No se pudo preparar el PIN." }, 500);
     }
 
     try {
         await db.prepare(`
             INSERT INTO users (
                 email, phone, password_hash, auth_method, display_name, avatar,
-                profile_completed, phone_verified, email_verified
-            ) VALUES (?, NULL, ?, 'email', ?, 'avatar-1.png', 0, 0, 0)
-        `).bind(email, passwordHash, displayName).run();
+                profile_completed, phone_verified, email_verified, auth_provider
+            ) VALUES (?, ?, ?, ?, ?, 'avatar-1.png', 0, 0, 0, 'local')
+        `).bind(
+            email,
+            authMethod === "phone" ? identifier : null,
+            pinHash,
+            authMethod,
+            displayName
+        ).run();
     } catch (error) {
         console.error("REGISTER_INSERT_ERROR:", error);
         const message = String(error?.message || error || "");
-        if (/unique|constraint/i.test(message)) return json({ success: false, code: "EMAIL_ALREADY_REGISTERED", error: "Este correo ya está registrado." }, 409);
+        if (/unique|constraint/i.test(message)) {
+            if (/phone/i.test(message)) return json({ success: false, code: "PHONE_ALREADY_REGISTERED", error: "Este número de teléfono ya está registrado." }, 409);
+            return json({ success: false, code: "EMAIL_ALREADY_REGISTERED", error: "Este correo ya está registrado." }, 409);
+        }
         return json({ success: false, code: "USER_INSERT_FAILED", error: "No se pudo guardar la cuenta en la base de datos." }, 500);
     }
 
     let createdUser;
     try {
         createdUser = await db.prepare(`
-            SELECT id, email, display_name, avatar, profile_completed
-            FROM users WHERE lower(email) = ? LIMIT 1
-        `).bind(email).first();
+            SELECT id, email, phone, display_name, avatar, profile_completed, auth_method
+            FROM users
+            WHERE id = (SELECT MAX(id) FROM users)
+            LIMIT 1
+        `).first();
     } catch (error) {
         console.error("REGISTER_USER_LOOKUP_ERROR:", error);
         return json({ success: false, code: "USER_LOOKUP_FAILED", error: "La cuenta se guardó, pero no pudo confirmarse." }, 500);
@@ -83,10 +104,11 @@ export async function onRequestPost(context) {
             user: {
                 id: createdUser.id,
                 email: createdUser.email,
+                phone: createdUser.phone,
                 displayName: createdUser.display_name,
                 avatar: createdUser.avatar,
                 profileCompleted: Boolean(createdUser.profile_completed),
-                authMethod: "email",
+                authMethod: createdUser.auth_method,
                 authProvider: "local"
             }
         }, 201, { "Set-Cookie": buildSessionCookie(session.sessionId) });
@@ -99,10 +121,11 @@ export async function onRequestPost(context) {
             user: {
                 id: createdUser.id,
                 email: createdUser.email,
+                phone: createdUser.phone,
                 displayName: createdUser.display_name,
                 avatar: createdUser.avatar,
                 profileCompleted: false,
-                authMethod: "email",
+                authMethod: createdUser.auth_method,
                 authProvider: "local"
             },
             message: "Cuenta creada correctamente. Inicia sesión para continuar."

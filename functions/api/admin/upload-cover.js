@@ -141,7 +141,9 @@ async function obtenerArchivoExistente(
                     "Authorization":
                         `Bearer ${token}`,
                     "X-GitHub-Api-Version":
-                        "2022-11-28"
+                        "2022-11-28",
+                    "User-Agent":
+                        "MICRO-DRAMAS-ESP"
                 }
             }
         );
@@ -426,7 +428,10 @@ export async function onRequestPost(context) {
                             "2022-11-28",
 
                         "Content-Type":
-                            "application/json"
+                            "application/json",
+
+                        "User-Agent":
+                            "MICRO-DRAMAS-ESP"
                     },
 
                     body:

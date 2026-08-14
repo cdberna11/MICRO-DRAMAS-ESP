@@ -29,25 +29,6 @@ const PORTADA_GENERICA =
     "/portadas/generica/portada-generica.png";
 
 
-/*
- * =========================================================
- * CATEGORÍAS OFICIALES
- * =========================================================
- *
- * Estas son las únicas categorías permitidas
- * por el sistema.
- */
-
-const CATEGORIAS_PERMITIDAS = [
-    "SUPERACION",
-    "ARTES MARCIALES",
-    "PODERES ESPECIALES",
-    "KARMA",
-    "ARREPENTIMIENTO",
-    "VENGANZA"
-];
-
-
 /* =========================================================
    UTILIDADES
 ========================================================= */
@@ -102,23 +83,16 @@ function normalizarCategorias(
     valor
 ) {
 
-    /*
-     * Si no se envían categorías,
-     * utilizamos un arreglo vacío.
-     */
-
     if (
-        !Array.isArray(valor)
+        !Array.isArray(
+            valor
+        )
     ) {
+
         return [];
+
     }
 
-
-    /*
-     * Convertimos cada valor a texto,
-     * eliminamos espacios y normalizamos
-     * a mayúsculas.
-     */
 
     const categorias =
         valor
@@ -133,10 +107,6 @@ function normalizarCategorias(
             );
 
 
-    /*
-     * Eliminamos duplicados.
-     */
-
     const categoriasUnicas =
         [
             ...new Set(
@@ -150,15 +120,23 @@ function normalizarCategorias(
 
 
 /* =========================================================
-   VALIDAR CATEGORÍAS
+   VALIDAR CATEGORÍAS CONTRA D1
+   ---------------------------------------------------------
+   Las categorías válidas ya NO están escritas en el código.
+
+   Se consultan directamente desde:
+
+       categories
+
+   solamente se aceptan categorías:
+
+       active = 1
 ========================================================= */
 
-function validarCategorias(
+async function validarCategorias(
+    database,
     categorias
 ) {
-
-    const errores = [];
-
 
     if (
         !Array.isArray(
@@ -166,40 +144,97 @@ function validarCategorias(
         )
     ) {
 
-        errores.push(
+        return [
             "Las categorías deben enviarse como una lista."
-        );
+        ];
 
-        return errores;
     }
 
 
-    /*
-     * Verificar que todas las categorías
-     * pertenezcan a la lista oficial.
-     */
+    if (
+        categorias.length === 0
+    ) {
 
-    const categoriasInvalidas =
-        categorias.filter(
+        return [];
+
+    }
+
+
+    const categoriasNormalizadas =
+        normalizarCategorias(
+            categorias
+        );
+
+
+    if (
+        categoriasNormalizadas.length === 0
+    ) {
+
+        return [];
+
+    }
+
+
+    const placeholders =
+        categoriasNormalizadas
+            .map(
+                () => "?"
+            )
+            .join(", ");
+
+
+    const resultado =
+        await database
+            .prepare(`
+                SELECT
+                    name
+                FROM categories
+                WHERE active = 1
+                AND UPPER(name) IN (${placeholders})
+            `)
+            .bind(
+                ...categoriasNormalizadas
+            )
+            .all();
+
+
+    const categoriasEncontradas =
+        Array.isArray(
+            resultado.results
+        )
+            ? resultado.results.map(
+                categoria =>
+                    String(
+                        categoria.name
+                    )
+                        .trim()
+                        .toUpperCase()
+            )
+            : [];
+
+
+    const invalidas =
+        categoriasNormalizadas.filter(
             categoria =>
-                !CATEGORIAS_PERMITIDAS.includes(
+                !categoriasEncontradas.includes(
                     categoria
                 )
         );
 
 
     if (
-        categoriasInvalidas.length > 0
+        invalidas.length > 0
     ) {
 
-        errores.push(
-            `Categoría(s) no permitida(s): ${categoriasInvalidas.join(", ")}.`
-        );
+        return [
+            `Categoría(s) no permitida(s) o inactivas: ${invalidas.join(", ")}.`
+        ];
 
     }
 
 
-    return errores;
+    return [];
+
 }
 
 
@@ -216,6 +251,7 @@ function convertirCategoriasParaD1(
             categorias
         )
     );
+
 }
 
 
@@ -233,6 +269,7 @@ function leerCategoriasDesdeD1(
     ) {
 
         return [];
+
     }
 
 
@@ -251,14 +288,9 @@ function leerCategoriasDesdeD1(
         ) {
 
             return [];
+
         }
 
-
-        /*
-         * También normalizamos al leer,
-         * para proteger el portal frente a
-         * datos antiguos o modificados manualmente.
-         */
 
         return normalizarCategorias(
             categorias
@@ -267,7 +299,9 @@ function leerCategoriasDesdeD1(
     } catch {
 
         return [];
+
     }
+
 }
 
 
@@ -282,7 +316,9 @@ function esUrlHttpValida(
     if (
         !valor
     ) {
+
         return true;
+
     }
 
 
@@ -304,6 +340,7 @@ function esUrlHttpValida(
         return false;
 
     }
+
 }
 
 
@@ -318,7 +355,9 @@ function esUrlMegaFileValida(
     if (
         !valor
     ) {
+
         return true;
+
     }
 
 
@@ -334,7 +373,9 @@ function esUrlMegaFileValida(
             url.protocol !== "https:" &&
             url.protocol !== "http:"
         ) {
+
             return false;
+
         }
 
 
@@ -345,7 +386,9 @@ function esUrlMegaFileValida(
         if (
             host !== "mega.nz"
         ) {
+
             return false;
+
         }
 
 
@@ -354,7 +397,9 @@ function esUrlMegaFileValida(
                 "/file/"
             )
         ) {
+
             return false;
+
         }
 
 
@@ -374,7 +419,9 @@ function esUrlMegaFileValida(
             !identificador ||
             !llave
         ) {
+
             return false;
+
         }
 
 
@@ -385,6 +432,7 @@ function esUrlMegaFileValida(
         return false;
 
     }
+
 }
 
 
@@ -399,6 +447,7 @@ function esSlugValido(
     return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(
         slug
     );
+
 }
 
 
@@ -472,6 +521,7 @@ function normalizarDrama(
             )
 
     };
+
 }
 
 
@@ -595,17 +645,6 @@ function validarDrama(
 
 
     /* -----------------------------------------------------
-       CATEGORÍAS
-    ----------------------------------------------------- */
-
-    errores.push(
-        ...validarCategorias(
-            drama.categories
-        )
-    );
-
-
-    /* -----------------------------------------------------
        URL PORTADA
     ----------------------------------------------------- */
 
@@ -646,6 +685,7 @@ function validarDrama(
 
 
     return errores;
+
 }
 
 
@@ -681,6 +721,7 @@ async function obtenerSiguienteOrden(
         1,
         maximo + 1
     );
+
 }
 
 
@@ -798,6 +839,7 @@ export async function onRequestGet(
         );
 
     }
+
 }
 
 
@@ -925,7 +967,7 @@ export async function onRequestPost(
 
 
         /* -----------------------------------------------------
-           Validar
+           Validar datos básicos
         ----------------------------------------------------- */
 
         const errores =
@@ -947,6 +989,37 @@ export async function onRequestPost(
 
                     errors:
                         errores
+                },
+                400
+            );
+
+        }
+
+
+        /* -----------------------------------------------------
+           Validar categorías contra D1
+        ----------------------------------------------------- */
+
+        const erroresCategorias =
+            await validarCategorias(
+                database,
+                drama.categories
+            );
+
+
+        if (
+            erroresCategorias.length > 0
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        erroresCategorias[0],
+
+                    errors:
+                        erroresCategorias
                 },
                 400
             );
@@ -1145,6 +1218,7 @@ export async function onRequestPost(
         );
 
     }
+
 }
 
 
@@ -1277,7 +1351,7 @@ export async function onRequestPut(
 
 
         /* -----------------------------------------------------
-           Validar
+           Validar datos básicos
         ----------------------------------------------------- */
 
         const errores =
@@ -1299,6 +1373,37 @@ export async function onRequestPut(
 
                     errors:
                         errores
+                },
+                400
+            );
+
+        }
+
+
+        /* -----------------------------------------------------
+           Validar categorías contra D1
+        ----------------------------------------------------- */
+
+        const erroresCategorias =
+            await validarCategorias(
+                database,
+                drama.categories
+            );
+
+
+        if (
+            erroresCategorias.length > 0
+        ) {
+
+            return crearRespuestaJson(
+                {
+                    success: false,
+
+                    error:
+                        erroresCategorias[0],
+
+                    errors:
+                        erroresCategorias
                 },
                 400
             );
@@ -1428,6 +1533,7 @@ export async function onRequestPut(
 
             publishedAtSql =
                 "published_at";
+
         }
 
 
@@ -1548,6 +1654,7 @@ export async function onRequestPut(
         );
 
     }
+
 }
 
 
@@ -1758,4 +1865,5 @@ export async function onRequestDelete(
         );
 
     }
+
 }

@@ -23,23 +23,8 @@ export function validPhone(value) { return /^\+[1-9]\d{7,14}$/.test(value); }
 
 export async function hashPassword(password) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
-    const key = await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(password),
-        "PBKDF2",
-        false,
-        ["deriveBits"]
-    );
-    const bits = await crypto.subtle.deriveBits(
-        {
-            name: "PBKDF2",
-            salt,
-            iterations: PASSWORD_HASH_ITERATIONS,
-            hash: "SHA-256"
-        },
-        key,
-        256
-    );
+    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+    const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: PASSWORD_HASH_ITERATIONS, hash: "SHA-256" }, key, 256);
     return `pbkdf2$${PASSWORD_HASH_ITERATIONS}$${bytesToHex(salt)}$${bytesToHex(new Uint8Array(bits))}`;
 }
 
@@ -48,24 +33,8 @@ export async function verifyPassword(password, storedHash) {
         const [scheme, iterationsText, saltHex, hashHex] = String(storedHash || "").split("$");
         const iterations = Number(iterationsText);
         if (scheme !== "pbkdf2" || !Number.isInteger(iterations) || iterations < 1 || !saltHex || !hashHex) return false;
-
-        const key = await crypto.subtle.importKey(
-            "raw",
-            new TextEncoder().encode(password),
-            "PBKDF2",
-            false,
-            ["deriveBits"]
-        );
-        const bits = await crypto.subtle.deriveBits(
-            {
-                name: "PBKDF2",
-                salt: hexToBytes(saltHex),
-                iterations,
-                hash: "SHA-256"
-            },
-            key,
-            256
-        );
+        const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+        const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: hexToBytes(saltHex), iterations, hash: "SHA-256" }, key, 256);
         return constantTimeEqual(bytesToHex(new Uint8Array(bits)), hashHex);
     } catch {
         return false;
@@ -92,11 +61,14 @@ export async function ensureUserSchema(db) {
         auth_method TEXT NOT NULL CHECK (auth_method IN ('email','phone')),
         display_name TEXT NOT NULL DEFAULT 'Usuario',
         avatar TEXT NOT NULL DEFAULT 'avatar-1.png',
+        profile_completed INTEGER NOT NULL DEFAULT 1,
         phone_verified INTEGER NOT NULL DEFAULT 0,
         email_verified INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        last_login_at TEXT
+        last_login_at TEXT,
+        auth_provider TEXT NOT NULL DEFAULT 'local',
+        google_sub TEXT
     )`).run();
 
     await db.prepare(`CREATE TABLE IF NOT EXISTS user_sessions (
@@ -115,6 +87,7 @@ export async function ensureUserSchema(db) {
     await addColumnIfMissing(db, userColumns, "users", "auth_method", "TEXT NOT NULL DEFAULT 'email'");
     await addColumnIfMissing(db, userColumns, "users", "display_name", "TEXT NOT NULL DEFAULT 'Usuario'");
     await addColumnIfMissing(db, userColumns, "users", "avatar", "TEXT NOT NULL DEFAULT 'avatar-1.png'");
+    await addColumnIfMissing(db, userColumns, "users", "profile_completed", "INTEGER NOT NULL DEFAULT 1");
     await addColumnIfMissing(db, userColumns, "users", "phone_verified", "INTEGER NOT NULL DEFAULT 0");
     await addColumnIfMissing(db, userColumns, "users", "email_verified", "INTEGER NOT NULL DEFAULT 0");
     await addColumnIfMissing(db, userColumns, "users", "created_at", "TEXT NOT NULL DEFAULT ''");
@@ -163,7 +136,7 @@ export async function getUserFromSession(db, request, touch = true) {
     if (!sessionId) return null;
     const row = await db.prepare(`
         SELECT u.id, u.email, u.phone, u.auth_method, u.auth_provider, u.google_sub,
-               u.display_name, u.avatar, u.phone_verified, u.email_verified,
+               u.display_name, u.avatar, u.profile_completed, u.phone_verified, u.email_verified,
                s.id AS session_id, s.expires_at, s.last_activity_at
         FROM user_sessions s JOIN users u ON u.id = s.user_id
         WHERE s.id = ? LIMIT 1

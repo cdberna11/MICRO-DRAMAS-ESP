@@ -5,13 +5,17 @@ const AVATARS = [
 
 const $ = selector => document.querySelector(selector);
 const loginPanel = $("#login-panel");
+const pinPanel = $("#pin-panel");
 const registerPanel = $("#register-panel");
 const forgotPanel = $("#forgot-panel");
 const onboardingPanel = $("#onboarding-panel");
 const profilePanel = $("#profile-panel");
 const authMessage = $("#auth-message");
 const editModal = $("#edit-profile-modal");
+const pinInputs = Array.from(document.querySelectorAll(".pin-input"));
 let manageProfileMode = false;
+let pendingIdentifier = "";
+let registerAuthMethod = "email";
 
 function showMessage(message, type = "error") {
     authMessage.textContent = message;
@@ -25,33 +29,94 @@ function clearMessage() {
 }
 
 function showPanel(panel) {
-    [loginPanel, registerPanel, forgotPanel, onboardingPanel, profilePanel].forEach(item => {
+    [loginPanel, pinPanel, registerPanel, forgotPanel, onboardingPanel, profilePanel].forEach(item => {
         item.hidden = item !== panel;
     });
     clearMessage();
+    if (panel !== pinPanel) clearPinInputs();
 }
 
 function avatarUrl(name) {
-    return `/assets/${encodeURIComponent(name)}`;
+    return `/assets/${encodeURIComponent(name || "avatar-1.png")}`;
 }
 
-function validPassword(password) {
-    return password.length >= 8;
+function validPin(pin) {
+    return /^\d{4}$/.test(pin);
 }
 
-async function api(url, options = {}) {
-    const response = await fetch(url, {
-        ...options,
-        headers: {
-            "Content-Type": "application/json",
-            ...(options.headers || {})
-        },
-        credentials: "same-origin"
+function getPinValue() {
+    return pinInputs.map(input => input.value).join("");
+}
+
+function clearPinInputs() {
+    pinInputs.forEach(input => {
+        input.value = "";
+        input.classList.remove("filled", "active");
     });
-    let data = {};
-    try { data = await response.json(); } catch {}
-    return { response, data };
 }
+
+function focusFirstPin() {
+    const firstEmpty = pinInputs.find(input => !input.value) || pinInputs[0];
+    firstEmpty?.focus();
+    updatePinVisualState();
+}
+
+function updatePinVisualState() {
+    pinInputs.forEach(input => {
+        input.classList.toggle("filled", Boolean(input.value));
+        input.classList.toggle("active", document.activeElement === input);
+    });
+}
+
+function setPinDigit(input, value) {
+    input.value = String(value || "").replace(/\D/g, "").slice(-1);
+    updatePinVisualState();
+}
+
+function preparePinInputs() {
+    pinInputs.forEach((input, index) => {
+        input.addEventListener("focus", updatePinVisualState);
+        input.addEventListener("blur", updatePinVisualState);
+
+        input.addEventListener("input", () => {
+            const digits = input.value.replace(/\D/g, "");
+            input.value = digits.slice(-1);
+            updatePinVisualState();
+
+            if (input.value && index < pinInputs.length - 1) {
+                pinInputs[index + 1].focus();
+            }
+
+            if (getPinValue().length === 4) {
+                setTimeout(() => {
+                    if (getPinValue().length === 4) $("#pin-form").requestSubmit();
+                }, 80);
+            }
+        });
+
+        input.addEventListener("keydown", event => {
+            if (event.key === "Backspace" && !input.value && index > 0) {
+                pinInputs[index - 1].value = "";
+                pinInputs[index - 1].focus();
+                updatePinVisualState();
+            }
+            if (event.key === "ArrowLeft" && index > 0) pinInputs[index - 1].focus();
+            if (event.key === "ArrowRight" && index < pinInputs.length - 1) pinInputs[index + 1].focus();
+        });
+
+        input.addEventListener("paste", event => {
+            event.preventDefault();
+            const pasted = (event.clipboardData?.getData("text") || "").replace(/\D/g, "").slice(0, 4);
+            pasted.split("").forEach((digit, digitIndex) => {
+                if (pinInputs[digitIndex]) pinInputs[digitIndex].value = digit;
+            });
+            updatePinVisualState();
+            const next = pinInputs[Math.min(pasted.length, 3)];
+            next?.focus();
+            if (pasted.length === 4) setTimeout(() => $("#pin-form").requestSubmit(), 80);
+        });
+    });
+});
 
 function renderAvatarOptions(containerSelector, selected) {
     const container = $(containerSelector);
@@ -80,7 +145,7 @@ function selectedAvatar(containerSelector) {
 function openEditProfile() {
     $("#edit-display-name").value = $("#profile-name").textContent;
     const currentAvatar = $("#profile-avatar-img").src.split("/").pop();
-    renderAvatarOptions("#edit-avatars", currentAvatar);
+    renderAvatarOptions("#edit-avatars", decodeURIComponent(currentAvatar));
     editModal.hidden = false;
     document.body.style.overflow = "hidden";
 }
@@ -110,49 +175,154 @@ async function loadSession() {
 
     manageProfileMode = false;
     $("#profile-name").textContent = user.displayName;
-    $("#profile-account").textContent = user.email || "";
+    $("#profile-account").textContent = user.email || user.phone || "";
     $("#profile-avatar-img").src = avatarUrl(user.avatar);
     $("#profile-avatar-img").alt = `Avatar de ${user.displayName}`;
     $("#profile-avatar-button").classList.remove("manage-mode");
     showPanel(profilePanel);
 }
 
-$("#go-register").addEventListener("click", () => showPanel(registerPanel));
+async function api(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {})
+        },
+        credentials: "same-origin"
+    });
+    let data = {};
+    try { data = await response.json(); } catch {}
+    return { response, data };
+}
+
+function updateRegisterMethodUI() {
+    document.querySelectorAll(".auth-method-option").forEach(button => {
+        button.classList.toggle("selected", button.dataset.method === registerAuthMethod);
+    });
+
+    const identifier = $("#register-identifier");
+    const label = $("#register-identifier-label");
+    if (registerAuthMethod === "phone") {
+        label.textContent = "Teléfono de acceso";
+        identifier.type = "tel";
+        identifier.inputMode = "tel";
+        identifier.autocomplete = "tel";
+        identifier.placeholder = "+507 6000-0000";
+    } else {
+        label.textContent = "Correo de acceso";
+        identifier.type = "email";
+        identifier.inputMode = "email";
+        identifier.autocomplete = "username";
+        identifier.placeholder = "correo@ejemplo.com";
+    }
+}
+
+$("#go-register").addEventListener("click", () => {
+    registerAuthMethod = "email";
+    updateRegisterMethodUI();
+    showPanel(registerPanel);
+});
 $("#register-go-login").addEventListener("click", () => showPanel(loginPanel));
 $("#forgot-go-login").addEventListener("click", () => showPanel(loginPanel));
 $("#go-forgot").addEventListener("click", () => showPanel(forgotPanel));
+$("#pin-back-login").addEventListener("click", () => {
+    pendingIdentifier = "";
+    clearPinInputs();
+    showPanel(loginPanel);
+});
 
 $("#login-form").addEventListener("submit", async event => {
     event.preventDefault();
     clearMessage();
+    const identifier = $("#login-identifier").value.trim();
+    if (!identifier) {
+        showMessage("Introduce tu correo o número de teléfono.");
+        return;
+    }
+
     const button = $("#login-submit");
     button.disabled = true;
     const { response, data } = await api("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ identifier: $("#login-identifier").value.trim(), password: $("#login-password").value })
+        body: JSON.stringify({ identifier })
     });
     button.disabled = false;
-    if (!response.ok || !data.success) {
-        showMessage(data.error || "No se pudo iniciar sesión.");
+
+    if (!response.ok || !data.requiresPin) {
+        showMessage(data.error || "No se pudo comprobar la cuenta.");
         return;
     }
+
+    pendingIdentifier = identifier;
+    $("#pin-account-label").textContent = data.user?.email || data.user?.phone || identifier;
+    showPanel(pinPanel);
+    setTimeout(focusFirstPin, 40);
+});
+
+$("#pin-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    clearMessage();
+    const pin = getPinValue();
+    if (!validPin(pin)) {
+        showMessage("Introduce los 4 dígitos de tu PIN.");
+        focusFirstPin();
+        return;
+    }
+
+    const button = $("#pin-submit");
+    button.disabled = true;
+    const { response, data } = await api("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ identifier: pendingIdentifier, pin })
+    });
+    button.disabled = false;
+
+    if (!response.ok || !data.success) {
+        showMessage(data.error || "PIN incorrecto.");
+        clearPinInputs();
+        focusFirstPin();
+        return;
+    }
+
+    pendingIdentifier = "";
     await loadSession();
+});
+
+document.querySelectorAll(".auth-method-option").forEach(button => {
+    button.addEventListener("click", () => {
+        registerAuthMethod = button.dataset.method;
+        updateRegisterMethodUI();
+    });
 });
 
 $("#register-form").addEventListener("submit", async event => {
     event.preventDefault();
     clearMessage();
     const displayName = $("#register-name").value.trim();
+    const email = $("#register-email").value.trim();
     const identifier = $("#register-identifier").value.trim();
-    const password = $("#register-password").value;
-    const confirm = $("#register-confirm").value;
+    const pin = $("#register-pin").value;
+    const confirmPin = $("#register-pin-confirm").value;
 
-    if (!validPassword(password)) {
-        showMessage("La contraseña debe tener al menos 8 caracteres.");
+    if (displayName.length < 2) {
+        showMessage("Escribe un nombre válido.");
         return;
     }
-    if (password !== confirm) {
-        showMessage("Las contraseñas no son iguales.");
+    if (!email || !email.includes("@")) {
+        showMessage("Introduce un correo electrónico válido.");
+        return;
+    }
+    if (!identifier) {
+        showMessage(registerAuthMethod === "phone" ? "Introduce tu número de teléfono." : "Introduce tu correo de acceso.");
+        return;
+    }
+    if (!validPin(pin)) {
+        showMessage("El PIN debe tener exactamente 4 números.");
+        return;
+    }
+    if (pin !== confirmPin) {
+        showMessage("Los PIN no son iguales.");
         return;
     }
 
@@ -160,43 +330,20 @@ $("#register-form").addEventListener("submit", async event => {
     button.disabled = true;
     const { response, data } = await api("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ displayName, identifier, password, confirmPassword: confirm })
+        body: JSON.stringify({ displayName, email, identifier, pin, confirmPin, authMethod: registerAuthMethod })
     });
     button.disabled = false;
+
     if (!response.ok || !data.success) {
         showMessage(data.error || "No se pudo crear la cuenta.");
         return;
     }
+
     await loadSession();
 });
 
-$("#forgot-form").addEventListener("submit", async event => {
-    event.preventDefault();
-    clearMessage();
-    const identifier = $("#forgot-identifier").value.trim();
-    const newPassword = $("#forgot-password").value;
-    const confirm = $("#forgot-confirm").value;
-    if (newPassword.length < 8) {
-        showMessage("La nueva contraseña debe tener al menos 8 caracteres.");
-        return;
-    }
-    if (newPassword !== confirm) {
-        showMessage("Las contraseñas no son iguales.");
-        return;
-    }
-    const button = $("#forgot-submit");
-    button.disabled = true;
-    const { response, data } = await api("/api/auth/forgot", {
-        method: "POST",
-        body: JSON.stringify({ identifier, newPassword })
-    });
-    button.disabled = false;
-    if (!response.ok || !data.success) {
-        showMessage(data.error || "No se pudo restablecer la contraseña.");
-        return;
-    }
-    showMessage("Contraseña restablecida correctamente.", "success");
-    setTimeout(() => showPanel(loginPanel), 700);
+$("#forgot-disabled").addEventListener("click", () => {
+    showMessage("La recuperación del PIN se habilitará cuando configuremos el envío de códigos por correo o teléfono.");
 });
 
 $("#onboarding-form").addEventListener("submit", async event => {
@@ -284,4 +431,6 @@ $("#logout-button").addEventListener("click", () => {
     window.location.href = "/api/session/logout";
 });
 
+preparePinInputs();
+updateRegisterMethodUI();
 loadSession();

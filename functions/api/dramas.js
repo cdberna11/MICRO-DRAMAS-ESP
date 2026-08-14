@@ -28,57 +28,17 @@ export async function onRequestGet(context) {
         video_description,
         cover_url,
         views,
-
-        /* -----------------------------------------------
-           DATOS DEL BLOQUE SEMANAL
-           ----------------------------------------------- */
-
-        top_period_start,
-        top_period_views,
-
-        /*
-         * Reproducciones NUEVAS del bloque semanal.
-         *
-         * views:
-         *     total histórico.
-         *
-         * top_period_views:
-         *     total acumulado al comenzar
-         *     el bloque semanal actual.
-         *
-         * Por lo tanto:
-         *
-         * period_views =
-         *     views - top_period_views
-         *
-         * Ejemplo:
-         *
-         * views = 8
-         * top_period_views = 3
-         *
-         * period_views = 5
-         *
-         * => TOP
-         */
-
-        CASE
-          WHEN top_period_views IS NULL THEN 0
-          WHEN views - top_period_views < 0 THEN 0
-          ELSE views - top_period_views
-        END AS period_views,
-
         video_url,
         status,
         featured,
         sort_order,
         created_at,
         updated_at,
-        published_at
-
+        published_at,
+        top_period_start,
+        top_period_views
       FROM dramas
-
       WHERE status IN ('published', 'draft')
-
       ORDER BY
         featured DESC,
         sort_order ASC,
@@ -90,18 +50,135 @@ export async function onRequestGet(context) {
         .prepare(query)
         .all();
 
+    const dramas =
+      Array.isArray(result.results)
+        ? result.results.map(
+            drama => {
+
+              const views =
+                Number(
+                  drama.views
+                ) || 0;
+
+              const topPeriodViews =
+                Number(
+                  drama.top_period_views
+                ) || 0;
+
+              let periodViews = 0;
+
+
+              /* =================================================
+                 CALCULAR BLOQUE SEMANAL
+                 =================================================
+
+                 El bloque tiene una duración máxima de 7 días.
+
+                 Mientras esté vigente:
+
+                     period_views =
+                         views - top_period_views
+
+                 Cuando hayan pasado 7 días:
+
+                     period_views = 0
+
+                 De esta forma el TOP desaparece automáticamente
+                 al comenzar una nueva semana, aunque todavía no
+                 haya ocurrido una nueva reproducción.
+              ================================================= */
+
+              if (
+                typeof drama.top_period_start ===
+                  "string" &&
+                drama.top_period_start.trim() !==
+                  ""
+              ) {
+
+                const valor =
+                  drama.top_period_start
+                    .trim()
+                    .replace(
+                      " ",
+                      "T"
+                    );
+
+
+                const fecha =
+                  new Date(
+                    valor.endsWith("Z")
+                      ? valor
+                      : `${valor}Z`
+                  );
+
+
+                if (
+                  !Number.isNaN(
+                    fecha.getTime()
+                  )
+                ) {
+
+                  const diferencia =
+                    Date.now() -
+                    fecha.getTime();
+
+
+                  const UNA_SEMANA =
+                    7 *
+                    24 *
+                    60 *
+                    60 *
+                    1000;
+
+
+                  /* ---------------------------------------------
+                     BLOQUE SEMANAL VIGENTE
+                  --------------------------------------------- */
+
+                  if (
+                    diferencia >= 0 &&
+                    diferencia <
+                      UNA_SEMANA
+                  ) {
+
+                    periodViews =
+                      Math.max(
+                        0,
+                        views -
+                          topPeriodViews
+                      );
+
+                  }
+
+                }
+
+              }
+
+
+              return {
+                ...drama,
+
+                views,
+
+                top_period_views:
+                  topPeriodViews,
+
+                period_views:
+                  periodViews
+              };
+
+            }
+          )
+        : [];
+
+
     return Response.json(
       {
         success: true,
-
-        dramas:
-          Array.isArray(result.results)
-            ? result.results
-            : []
+        dramas
       },
       {
         status: 200,
-
         headers: {
           "Cache-Control": "no-store",
           "Content-Type":
@@ -125,7 +202,6 @@ export async function onRequestGet(context) {
       },
       {
         status: 500,
-
         headers: {
           "Cache-Control": "no-store",
           "Content-Type":

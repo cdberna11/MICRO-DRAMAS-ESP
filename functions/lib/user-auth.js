@@ -49,8 +49,8 @@ async function addColumnIfMissing(db, columns, tableName, columnName, definition
 }
 
 export async function ensureUserSchema(db) {
-    // Migración segura: las operaciones de esquema se ejecutan por separado
-    // para que una diferencia de una versión anterior no aborte el registro.
+    // Migración aditiva y compatible con SQLite/D1.
+    // Las columnas añadidas mediante ALTER TABLE usan valores por defecto constantes.
     await db.prepare(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE,
@@ -84,21 +84,30 @@ export async function ensureUserSchema(db) {
     await addColumnIfMissing(db, userColumns, "users", "avatar", "TEXT NOT NULL DEFAULT 'avatar-1.png'");
     await addColumnIfMissing(db, userColumns, "users", "phone_verified", "INTEGER NOT NULL DEFAULT 0");
     await addColumnIfMissing(db, userColumns, "users", "email_verified", "INTEGER NOT NULL DEFAULT 0");
-    await addColumnIfMissing(db, userColumns, "users", "created_at", "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
-    await addColumnIfMissing(db, userColumns, "users", "updated_at", "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
+    await addColumnIfMissing(db, userColumns, "users", "created_at", "TEXT NOT NULL DEFAULT ''");
+    await addColumnIfMissing(db, userColumns, "users", "updated_at", "TEXT NOT NULL DEFAULT ''");
     await addColumnIfMissing(db, userColumns, "users", "last_login_at", "TEXT");
     await addColumnIfMissing(db, userColumns, "users", "auth_provider", "TEXT NOT NULL DEFAULT 'local'");
     await addColumnIfMissing(db, userColumns, "users", "google_sub", "TEXT");
 
     const sessionColumns = await getTableColumns(db, "user_sessions");
     await addColumnIfMissing(db, sessionColumns, "user_sessions", "user_id", "INTEGER NOT NULL DEFAULT 0");
-    await addColumnIfMissing(db, sessionColumns, "user_sessions", "created_at", "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
-    await addColumnIfMissing(db, sessionColumns, "user_sessions", "last_activity_at", "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
+    await addColumnIfMissing(db, sessionColumns, "user_sessions", "created_at", "TEXT NOT NULL DEFAULT ''");
+    await addColumnIfMissing(db, sessionColumns, "user_sessions", "last_activity_at", "TEXT NOT NULL DEFAULT ''");
     await addColumnIfMissing(db, sessionColumns, "user_sessions", "expires_at", "TEXT NOT NULL DEFAULT ''");
 
-    // Los índices son auxiliares; nunca deben impedir que una cuenta se registre.
+    // Completa valores de fecha de columnas recién agregadas.
+    await db.prepare(`UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at = ''`).run();
+    await db.prepare(`UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE updated_at = ''`).run();
+    await db.prepare(`UPDATE user_sessions SET created_at = CURRENT_TIMESTAMP WHERE created_at = ''`).run();
+    await db.prepare(`UPDATE user_sessions SET last_activity_at = CURRENT_TIMESTAMP WHERE last_activity_at = ''`).run();
+
+    // Índices auxiliares: si una estructura antigua ya tiene uno incompatible,
+    // no debe impedir el funcionamiento de la autenticación.
     try { await db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id)`).run(); } catch {}
     try { await db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at)`).run(); } catch {}
+    try { await db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL`).run(); } catch {}
+    try { await db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone) WHERE phone IS NOT NULL`).run(); } catch {}
     try { await db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub) WHERE google_sub IS NOT NULL`).run(); } catch {}
 }
 

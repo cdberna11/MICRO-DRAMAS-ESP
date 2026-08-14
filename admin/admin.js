@@ -149,14 +149,14 @@ function inicializarFormulario() {
 
 async function cargarCategoriasAdministrativas() {
 
-    const contenedor =
+    const selector =
         document.getElementById(
             "categorias-selector"
         );
 
 
     if (
-        !contenedor
+        !selector
     ) {
 
         return;
@@ -222,7 +222,16 @@ async function cargarCategoriasAdministrativas() {
             );
 
 
-        renderizarSelectorCategorias();
+        /*
+         * Cargar el selector con las categorías
+         * disponibles.
+         *
+         * Al inicio no hay ninguna seleccionada.
+         */
+
+        renderizarSelectorCategorias(
+            []
+        );
 
 
     } catch (error) {
@@ -237,11 +246,11 @@ async function cargarCategoriasAdministrativas() {
             [];
 
 
-        contenedor.innerHTML =
+        selector.innerHTML =
             `
-            <div class="categories-error">
-                No se pudieron cargar las categorías.
-            </div>
+            <option value="">
+                No se pudieron cargar las categorías
+            </option>
             `;
 
     }
@@ -250,60 +259,65 @@ async function cargarCategoriasAdministrativas() {
 
 
 /* =========================================================
-   RENDERIZAR SELECTOR DE CATEGORÍAS
+   RENDERIZAR SELECTOR DE CATEGORÍA
 ========================================================= */
 
 function renderizarSelectorCategorias(
-    seleccionadas = []
+    seleccionada = []
 ) {
 
-    const contenedor =
+    const selector =
         document.getElementById(
             "categorias-selector"
         );
 
 
     if (
-        !contenedor
+        !selector
     ) {
 
         return;
     }
 
 
-    if (
-        categoriasDisponibles.length === 0
-    ) {
+    /*
+     * Limpiar selector actual.
+     */
 
-        contenedor.innerHTML =
-            `
-            <div class="categories-empty">
-                No hay categorías activas disponibles.
-            </div>
-            `;
-
-        return;
-    }
-
-
-    const seleccion =
-        Array.isArray(
-            seleccionadas
-        )
-            ? seleccionadas.map(
-                categoria =>
-                    String(
-                        categoria
-                    )
-                        .trim()
-                        .toUpperCase()
-            )
-            : [];
-
-
-    contenedor.innerHTML =
+    selector.innerHTML =
         "";
 
+
+    /*
+     * Opción inicial.
+     */
+
+    const opcionInicial =
+        document.createElement(
+            "option"
+        );
+
+
+    opcionInicial.value =
+        "";
+
+
+    opcionInicial.textContent =
+        "Seleccione una categoría";
+
+
+    opcionInicial.selected =
+        true;
+
+
+    selector.appendChild(
+        opcionInicial
+    );
+
+
+    /*
+     * Crear las categorías activas.
+     */
 
     categoriasDisponibles.forEach(
         categoria => {
@@ -316,92 +330,145 @@ function renderizarSelectorCategorias(
                     .toUpperCase();
 
 
-            const wrapper =
+            const opcion =
                 document.createElement(
-                    "label"
+                    "option"
                 );
 
 
-            wrapper.className =
-                "category-option";
-
-
-            const checkbox =
-                document.createElement(
-                    "input"
-                );
-
-
-            checkbox.type =
-                "checkbox";
-
-
-            checkbox.className =
-                "drama-category-checkbox";
-
-
-            checkbox.value =
+            opcion.value =
                 nombre;
 
 
-            checkbox.checked =
-                seleccion.includes(
-                    nombre
-                );
-
-
-            const texto =
-                document.createElement(
-                    "span"
-                );
-
-
-            texto.textContent =
+            opcion.textContent =
                 nombre;
 
 
-            wrapper.appendChild(
-                checkbox
-            );
-
-
-            wrapper.appendChild(
-                texto
-            );
-
-
-            contenedor.appendChild(
-                wrapper
+            selector.appendChild(
+                opcion
             );
 
         }
     );
 
+
+    /*
+     * Cuando estamos editando un microdrama,
+     * D1 devuelve categories como un arreglo.
+     *
+     * Ejemplo:
+     *
+     * ["SUPERACION"]
+     *
+     * Como ahora solamente permitimos una
+     * categoría, utilizamos únicamente
+     * la primera posición.
+     */
+
+    if (
+        Array.isArray(
+            seleccionada
+        ) &&
+        seleccionada.length > 0
+    ) {
+
+        const categoriaActual =
+            String(
+                seleccionada[0]
+            )
+                .trim()
+                .toUpperCase();
+
+
+        /*
+         * Comprobar que la categoría todavía
+         * esté activa.
+         */
+
+        const existe =
+            categoriasDisponibles.some(
+                categoria =>
+                    String(
+                        categoria.name
+                    )
+                        .trim()
+                        .toUpperCase() ===
+                    categoriaActual
+            );
+
+
+        if (
+            existe
+        ) {
+
+            selector.value =
+                categoriaActual;
+
+        }
+
+    }
+
 }
 
 
 /* =========================================================
-   OBTENER CATEGORÍAS SELECCIONADAS
+   OBTENER CATEGORÍA SELECCIONADA
 ========================================================= */
 
 function obtenerCategoriasSeleccionadas() {
 
-    const casillas =
-        document.querySelectorAll(
-            ".drama-category-checkbox:checked"
+    const selector =
+        document.getElementById(
+            "categorias-selector"
         );
 
 
-    return Array.from(
-        casillas
-    ).map(
-        casilla =>
-            String(
-                casilla.value
-            )
-                .trim()
-                .toUpperCase()
-    );
+    if (
+        !selector
+    ) {
+
+        return [];
+    }
+
+
+    const valor =
+        String(
+            selector.value || ""
+        )
+            .trim()
+            .toUpperCase();
+
+
+    /*
+     * No hay categoría seleccionada.
+     */
+
+    if (
+        valor === ""
+    ) {
+
+        return [];
+    }
+
+
+    /*
+     * IMPORTANTE:
+     *
+     * El administrador permite solamente
+     * UNA categoría.
+     *
+     * Conservamos el formato de arreglo
+     * porque así está almacenado actualmente
+     * en la columna categories de D1.
+     *
+     * Ejemplo:
+     *
+     * ["SUPERACION"]
+     */
+
+    return [
+        valor
+    ];
 
 }
 
@@ -420,8 +487,8 @@ function abrirFormularioNuevo() {
 
 
     /*
-     * Un nuevo microdrama siempre comienza
-     * sin categorías seleccionadas.
+     * Un nuevo microdrama comienza
+     * sin categoría seleccionada.
      */
 
     renderizarSelectorCategorias(
@@ -487,8 +554,8 @@ function abrirFormularioEdicion(
 
 
     /*
-     * Cargar las categorías que ya tiene
-     * asignadas el microdrama.
+     * Cargar la categoría que ya tiene
+     * asignada el microdrama.
      *
      * El backend devuelve categories
      * como arreglo JSON.
@@ -1017,6 +1084,30 @@ async function guardarFormulario(
     }
 
 
+    /*
+     * NUEVA REGLA:
+     *
+     * Cada microdrama debe tener
+     * exactamente una categoría.
+     */
+
+    const categorias =
+        obtenerCategoriasSeleccionadas();
+
+
+    if (
+        categorias.length === 0
+    ) {
+
+        mostrarMensajeAdmin(
+            "Debes seleccionar una categoría para el microdrama.",
+            "error"
+        );
+
+        return;
+    }
+
+
     const slug =
         generarSlug(
             titulo
@@ -1105,14 +1196,15 @@ async function guardarFormulario(
 
 
         /*
-         * CATEGORÍAS
+         * UNA SOLA CATEGORÍA
          *
-         * Se envían únicamente las categorías
-         * seleccionadas en el formulario.
+         * D1 seguirá recibiendo un arreglo JSON:
+         *
+         * ["SUPERACION"]
          */
 
         categories:
-            obtenerCategoriasSeleccionadas()
+            categorias
 
     };
 
@@ -1343,10 +1435,7 @@ function limpiarFormulario() {
 
 
     /*
-     * Limpiar selección de categorías.
-     *
-     * Si las categorías ya fueron cargadas,
-     * se muestran todas desmarcadas.
+     * Limpiar categoría.
      */
 
     renderizarSelectorCategorias(
@@ -1356,8 +1445,19 @@ function limpiarFormulario() {
 
 
 /* =========================================================
-   SELECCIÓN MÚLTIPLE
+   SELECCIÓN MÚLTIPLE DE REGISTROS
 ========================================================= */
+
+/*
+ * IMPORTANTE:
+ *
+ * Esta selección múltiple NO corresponde
+ * a las categorías.
+ *
+ * Se utiliza exclusivamente para poder
+ * seleccionar varios microdramas de la tabla
+ * y eliminarlos.
+ */
 
 function inicializarSeleccionMultiple() {
 

@@ -633,17 +633,26 @@ function esDramaBorrador(
 
 
 /* =========================================================
-   DRAMA NUEVO
+   DRAMA RECIÉN PUBLICADO
+   ---------------------------------------------------------
+   El período de "RECIÉN AGREGADO" comienza únicamente
+   cuando el microdrama pasa a estado published.
+
+   NO utiliza created_at.
+
+   Duración:
+   - Desde published_at
+   - Hasta antes de cumplir 7 días
 ========================================================= */
 
-function esDramaNuevo(
-    createdAt
+function esDramaRecienPublicado(
+    publishedAt
 ) {
 
     if (
-        typeof createdAt !==
+        typeof publishedAt !==
         "string" ||
-        createdAt.trim() ===
+        publishedAt.trim() ===
         ""
     ) {
 
@@ -653,13 +662,21 @@ function esDramaNuevo(
 
 
     const valor =
-        createdAt
+        publishedAt
             .trim()
             .replace(
                 " ",
                 "T"
             );
 
+
+    /*
+     * Las fechas de D1 se almacenan actualmente
+     * sin zona horaria.
+     *
+     * Las interpretamos como UTC para mantener
+     * el cálculo consistente con Cloudflare.
+     */
 
     const fecha =
         new Date(
@@ -680,19 +697,48 @@ function esDramaNuevo(
     }
 
 
+    const ahora =
+        Date.now();
+
+
     const diferencia =
-        Date.now() -
+        ahora -
         fecha.getTime();
 
 
-    return (
-        diferencia >=
-        0 &&
+    /*
+     * Si published_at está en el futuro,
+     * no mostramos RECIÉN AGREGADO.
+     */
+
+    if (
         diferencia <
-        72 *
+        0
+    ) {
+
+        return false;
+
+    }
+
+
+    const UNA_SEMANA =
+        7 *
+        24 *
         60 *
         60 *
-        1000
+        1000;
+
+
+    /*
+     * RECIÉN AGREGADO:
+     *
+     * desde el momento de publicación
+     * hasta antes de cumplir 7 días.
+     */
+
+    return (
+        diferencia <
+        UNA_SEMANA
     );
 
 }
@@ -857,10 +903,10 @@ function crearTarjetaDrama(
 
 
     } else if (
-        esDramaNuevo(
-            drama.created_at
-        )
-    ) {
+    esDramaRecienPublicado(
+        drama.published_at
+    )
+) {
 
         const etiqueta =
             document.createElement(

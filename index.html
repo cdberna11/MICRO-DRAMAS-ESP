@@ -19,43 +19,63 @@
         href="style.css"
     >
 
+    <link
+        rel="stylesheet"
+        href="catalog-user.css"
+    >
+
 </head>
 
 
 <body>
 
     <!-- =====================================================
-         BOTÓN CERRAR SESIÓN
+         USUARIO LOGUEADO
     ====================================================== -->
 
-    <a
-        href="/api/session/logout"
-        aria-label="Cerrar sesión"
-        style="
-            position: fixed;
-            top: 18px;
-            right: 22px;
-            z-index: 9999;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 9px 16px;
-            background: #e50914;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 6px;
-            font-family: Arial, sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
-            transition: transform 0.2s ease, background 0.2s ease;
-        "
-        onmouseover="this.style.background='#b20710'; this.style.transform='scale(1.04)';"
-        onmouseout="this.style.background='#e50914'; this.style.transform='scale(1)';"
+    <div
+        id="catalog-user-menu"
+        class="catalog-user-menu"
+        hidden
     >
-        CERRAR SESIÓN
-    </a>
+
+        <button
+            id="catalog-user-button"
+            class="catalog-user-button"
+            type="button"
+            aria-label="Abrir menú de usuario"
+            aria-expanded="false"
+        >
+            <img
+                id="catalog-user-avatar"
+                class="catalog-user-avatar"
+                src="assets/avatar-1.png"
+                alt="Avatar del usuario"
+            >
+
+            <span
+                class="catalog-user-chevron"
+                aria-hidden="true"
+            >
+                ▾
+            </span>
+        </button>
+
+        <div
+            id="catalog-user-dropdown"
+            class="catalog-user-dropdown"
+            hidden
+        >
+            <button
+                id="catalog-user-logout"
+                class="catalog-user-logout"
+                type="button"
+            >
+                Cerrar sesión
+            </button>
+        </div>
+
+    </div>
 
 
     <!-- =====================================================
@@ -103,6 +123,57 @@
     <script
         src="app.js"
     ></script>
+
+    <script>
+        (async function cargarUsuarioCatalogo() {
+            const menu = document.getElementById("catalog-user-menu");
+            const button = document.getElementById("catalog-user-button");
+            const dropdown = document.getElementById("catalog-user-dropdown");
+            const avatar = document.getElementById("catalog-user-avatar");
+            const logout = document.getElementById("catalog-user-logout");
+
+            if (!menu || !button || !dropdown || !avatar || !logout) return;
+
+            try {
+                const response = await fetch("/api/auth/me", {
+                    method: "GET",
+                    credentials: "same-origin",
+                    cache: "no-store",
+                    headers: { "Accept": "application/json" }
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok || !data.authenticated || !data.user) return;
+
+                avatar.src = `/assets/${encodeURIComponent(data.user.avatar || "avatar-1.png")}`;
+                avatar.alt = `Avatar de ${data.user.displayName || "usuario"}`;
+                menu.hidden = false;
+
+                button.addEventListener("click", event => {
+                    event.stopPropagation();
+                    const abierto = menu.classList.toggle("is-open");
+                    dropdown.hidden = !abierto;
+                    button.setAttribute("aria-expanded", String(abierto));
+                });
+
+                document.addEventListener("click", event => {
+                    if (!menu.contains(event.target)) {
+                        menu.classList.remove("is-open");
+                        dropdown.hidden = true;
+                        button.setAttribute("aria-expanded", "false");
+                    }
+                });
+
+                logout.addEventListener("click", () => {
+                    window.location.href = "/api/session/logout";
+                });
+
+            } catch (error) {
+                console.error("No se pudo cargar el usuario de la cartelera:", error);
+            }
+        })();
+    </script>
 
 </body>
 

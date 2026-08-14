@@ -163,7 +163,9 @@
                     novalidate
                 >
 
-                    <!-- ID interno -->
+                    <!-- =================================================
+                         ID INTERNO
+                    ================================================== -->
 
                     <input
                         type="hidden"
@@ -436,34 +438,37 @@
                     </div>
 
 
-<!-- =================================================
-     CATEGORÍAS
-================================================== -->
+                    <!-- =================================================
+                         CATEGORÍA
+                    ================================================== -->
 
-<div class="form-group form-group--categories">
+                    <div class="form-group">
 
-    <label>
-        Categorías
-    </label>
+                        <label for="categorias-selector">
+                            Categoría
+                        </label>
 
-    <small>
-        Selecciona una o varias categorías para este microdrama.
-    </small>
+                        <select
+                            id="categorias-selector"
+                            name="category"
+                        >
 
-    <div
-        id="categorias-selector"
-        class="categories-selector"
-    >
+                            <option
+                                value=""
+                                selected
+                            >
+                                Seleccione una categoría
+                            </option>
 
-        <div class="categories-loading">
-            Cargando categorías...
-        </div>
+                        </select>
 
-    </div>
+                        <small>
+                            Selecciona una categoría para este microdrama.
+                        </small>
 
-</div>
+                    </div>
 
-                    
+
                     <!-- =================================================
                          DESTACADO
                     ================================================== -->

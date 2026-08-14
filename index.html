@@ -11,8 +11,8 @@
     >
 
     <title>
-    MICRO DRAMAS EN ESPAÑOL
-</title>
+        MICRO DRAMAS EN ESPAÑOL
+    </title>
 
     <link
         rel="stylesheet"
@@ -25,20 +25,54 @@
 <body>
 
     <!-- =====================================================
+         BOTÓN CERRAR SESIÓN
+    ====================================================== -->
+
+    <a
+        href="/api/session/logout"
+        aria-label="Cerrar sesión"
+        style="
+            position: fixed;
+            top: 18px;
+            right: 22px;
+            z-index: 9999;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 9px 16px;
+            background: #e50914;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+            transition: transform 0.2s ease, background 0.2s ease;
+        "
+        onmouseover="this.style.background='#b20710'; this.style.transform='scale(1.04)';"
+        onmouseout="this.style.background='#e50914'; this.style.transform='scale(1)';"
+    >
+        CERRAR SESIÓN
+    </a>
+
+
+    <!-- =====================================================
          CABECERA
     ====================================================== -->
 
     <header class="site-header">
 
-       <div class="site-header__content">
+        <div class="site-header__content">
 
-    <img
-        src="assets/micro_drama_en_español_1.jpg"
-        alt="Micro Dramas en Español"
-        class="site-logo"
-    >
+            <img
+                src="assets/micro_drama_en_español_1.jpg"
+                alt="Micro Dramas en Español"
+                class="site-logo"
+            >
 
-</div>
+        </div>
 
     </header>
 
@@ -61,6 +95,10 @@
 
     </main>
 
+
+    <!-- =====================================================
+         JAVASCRIPT DE LA CARTELERA
+    ====================================================== -->
 
     <script
         src="app.js"

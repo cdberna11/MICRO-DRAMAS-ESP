@@ -1,46 +1,21 @@
-const AVATARS = [
-    "avatar-1.png", "avatar-2.png", "avatar-3.png", "avatar-4.png",
-    "avatar-5.png", "avatar-6.png", "avatar-7.png", "avatar-8.png"
-];
-
+const AVATARS = ["avatar-1.png", "avatar-2.png", "avatar-3.png", "avatar-4.png", "avatar-5.png", "avatar-6.png", "avatar-7.png", "avatar-8.png"];
 const $ = selector => document.querySelector(selector);
 const loginPanel = $("#login-panel");
 const registerPanel = $("#register-panel");
 const profilePanel = $("#profile-panel");
 const forgotPanel = $("#forgot-panel");
 const authMessage = $("#auth-message");
-const registerIdentifierLabel = $("label[for='register-identifier']");
+let googleCsrfToken = null;
 
-function showMessage(message, type = "error") {
-    authMessage.textContent = message;
-    authMessage.className = `auth-message ${type}`;
-    authMessage.hidden = false;
-}
-
-function clearMessage() {
-    authMessage.hidden = true;
-    authMessage.textContent = "";
-}
-
-function showPanel(panel) {
-    [loginPanel, registerPanel, profilePanel, forgotPanel].forEach(item => {
-        item.hidden = item !== panel;
-    });
-    clearMessage();
-}
-
-function avatarUrl(name) {
-    return `/assets/${encodeURIComponent(name)}`;
-}
+function showMessage(message, type = "error") { authMessage.textContent = message; authMessage.className = `auth-message ${type}`; authMessage.hidden = false; }
+function clearMessage() { authMessage.hidden = true; authMessage.textContent = ""; }
+function showPanel(panel) { [loginPanel, registerPanel, profilePanel, forgotPanel].forEach(item => { item.hidden = item !== panel; }); clearMessage(); }
+function avatarUrl(name) { return `/assets/${encodeURIComponent(name)}`; }
 
 async function api(url, options = {}) {
-    const response = await fetch(url, {
-        ...options,
-        headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-        credentials: "same-origin"
-    });
+    const response = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) }, credentials: "same-origin" });
     let data = {};
-    try { data = await response.json(); } catch { /* sin JSON */ }
+    try { data = await response.json(); } catch {}
     return { response, data };
 }
 
@@ -54,27 +29,72 @@ function renderAvatarOptions(selected) {
         button.dataset.avatar = name;
         button.setAttribute("aria-label", `Seleccionar ${name}`);
         button.innerHTML = `<img src="${avatarUrl(name)}" alt="">`;
-        button.addEventListener("click", () => {
-            container.querySelectorAll(".avatar-option").forEach(item => item.classList.remove("selected"));
-            button.classList.add("selected");
-        });
+        button.addEventListener("click", () => container.querySelectorAll(".avatar-option").forEach(item => item.classList.toggle("selected", item === button)));
         container.appendChild(button);
     });
 }
 
 async function loadSession() {
     const { response, data } = await api("/api/auth/me", { method: "GET" });
-    if (!response.ok || !data.authenticated) {
-        showPanel(loginPanel);
-        return;
-    }
-
+    if (!response.ok || !data.authenticated) { showPanel(loginPanel); return; }
     $("#profile-name").textContent = data.user.displayName;
     $("#profile-avatar-img").src = avatarUrl(data.user.avatar);
-    $("#profile-account").textContent = data.user.authMethod === "phone" ? data.user.phone : data.user.email;
+    $("#profile-account").textContent = data.user.authProvider === "google" ? `${data.user.email} · Google` : data.user.email;
     $("#profile-display-name").value = data.user.displayName;
     renderAvatarOptions(data.user.avatar);
     showPanel(profilePanel);
+}
+
+async function initGoogleSignIn() {
+    const loginBox = $("#google-login-button");
+    const registerBox = $("#google-register-button");
+    try {
+        const response = await fetch("/api/auth/google-config", { credentials: "same-origin", cache: "no-store" });
+        const config = await response.json();
+        googleCsrfToken = config.csrfToken || null;
+        if (!config.configured || !config.clientId || !googleCsrfToken) {
+            loginBox.innerHTML = `<div class="google-unavailable">Google estará disponible cuando terminemos su configuración.</div>`;
+            registerBox.innerHTML = `<div class="google-unavailable">Google estará disponible cuando terminemos su configuración.</div>`;
+            return;
+        }
+
+        window.handleGoogleCredential = async credentialResponse => {
+            if (!credentialResponse?.credential || !googleCsrfToken) { showMessage("No se recibió una credencial válida de Google."); return; }
+            const form = new URLSearchParams({ credential: credentialResponse.credential, g_csrf_token: googleCsrfToken });
+            const response = await fetch("/api/auth/google", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+                body: form.toString(),
+                credentials: "same-origin"
+            });
+            if (response.redirected) { window.location.href = response.url; return; }
+            if (!response.ok) showMessage("No se pudo validar la cuenta de Google.");
+        };
+
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+            google.accounts.id.initialize({ client_id: config.clientId, callback: window.handleGoogleCredential, ux_mode: "popup" });
+            [loginBox, registerBox].forEach(container => {
+                const button = document.createElement("div");
+                button.className = "g_id_signin";
+                button.dataset.type = "standard";
+                button.dataset.theme = "outline";
+                button.dataset.text = "continue_with";
+                button.dataset.shape = "rectangular";
+                button.dataset.size = "large";
+                button.dataset.width = "100%";
+                container.appendChild(button);
+                google.accounts.id.renderButton(container, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 360 });
+            });
+        };
+        document.head.appendChild(script);
+    } catch {
+        loginBox.innerHTML = `<div class="google-unavailable">No se pudo cargar Google.</div>`;
+        registerBox.innerHTML = `<div class="google-unavailable">No se pudo cargar Google.</div>`;
+    }
 }
 
 $("#go-register").addEventListener("click", () => showPanel(registerPanel));
@@ -83,105 +103,60 @@ $("#forgot-go-login").addEventListener("click", () => showPanel(loginPanel));
 $("#go-forgot").addEventListener("click", () => showPanel(forgotPanel));
 $("#profile-avatar-img").addEventListener("click", () => { window.location.href = "/"; });
 
-$("#register-method-email").addEventListener("change", () => {
-    $("#register-identifier").type = "email";
-    $("#register-identifier").placeholder = "correo@ejemplo.com";
-    registerIdentifierLabel.textContent = "Correo";
-});
-
-$("#register-method-phone").addEventListener("change", () => {
-    $("#register-identifier").type = "tel";
-    $("#register-identifier").placeholder = "+507 6000 0000";
-    registerIdentifierLabel.textContent = "Número de WhatsApp";
-});
-
 $("#login-form").addEventListener("submit", async event => {
-    event.preventDefault();
-    clearMessage();
-    const button = $("#login-submit");
-    button.disabled = true;
-    const { response, data } = await api("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ identifier: $("#login-identifier").value.trim(), password: $("#login-password").value })
-    });
+    event.preventDefault(); clearMessage();
+    const button = $("#login-submit"); button.disabled = true;
+    const { response, data } = await api("/api/auth/login", { method: "POST", body: JSON.stringify({ identifier: $("#login-identifier").value.trim(), password: $("#login-password").value }) });
     button.disabled = false;
-    if (!response.ok || !data.success) {
-        showMessage(data.error || "No se pudo iniciar sesión.");
-        return;
-    }
+    if (!response.ok || !data.success) { showMessage(data.error || "No se pudo iniciar sesión."); return; }
     await loadSession();
 });
 
 $("#register-form").addEventListener("submit", async event => {
-    event.preventDefault();
-    clearMessage();
-    const method = $("input[name='register-method']:checked").value;
+    event.preventDefault(); clearMessage();
     const displayName = $("#register-name").value.trim();
     const identifier = $("#register-identifier").value.trim();
     const password = $("#register-password").value;
     const confirm = $("#register-confirm").value;
-    if (password !== confirm) {
-        showMessage("Las contraseñas no coinciden.");
-        return;
-    }
-    const button = $("#register-submit");
-    button.disabled = true;
-    const { response, data } = await api("/api/auth/register", {
-        method: "POST",
-        body: JSON.stringify({ method, displayName, identifier, password })
-    });
+    if (password !== confirm) { showMessage("Las contraseñas no coinciden."); return; }
+    const button = $("#register-submit"); button.disabled = true;
+    const { response, data } = await api("/api/auth/register", { method: "POST", body: JSON.stringify({ displayName, identifier, password }) });
     button.disabled = false;
-    if (!response.ok || !data.success) {
-        showMessage(data.error || "No se pudo crear la cuenta.");
-        return;
-    }
+    if (!response.ok || !data.success) { showMessage(data.error || "No se pudo crear la cuenta."); return; }
     await loadSession();
 });
 
 $("#forgot-form").addEventListener("submit", async event => {
-    event.preventDefault();
-    clearMessage();
+    event.preventDefault(); clearMessage();
     const identifier = $("#forgot-identifier").value.trim();
     const newPassword = $("#forgot-password").value;
     const confirm = $("#forgot-confirm").value;
-    if (newPassword !== confirm) {
-        showMessage("Las contraseñas no coinciden.");
-        return;
-    }
-    const button = $("#forgot-submit");
-    button.disabled = true;
-    const { response, data } = await api("/api/auth/forgot", {
-        method: "POST",
-        body: JSON.stringify({ identifier, newPassword })
-    });
+    if (newPassword !== confirm) { showMessage("Las contraseñas no coinciden."); return; }
+    const button = $("#forgot-submit"); button.disabled = true;
+    const { response, data } = await api("/api/auth/forgot", { method: "POST", body: JSON.stringify({ identifier, newPassword }) });
     button.disabled = false;
-    if (!response.ok || !data.success) {
-        showMessage(data.error || "No se pudo restablecer la contraseña.");
-        return;
-    }
+    if (!response.ok || !data.success) { showMessage(data.error || "No se pudo restablecer la contraseña."); return; }
     showMessage("Contraseña restablecida correctamente.", "success");
     setTimeout(loadSession, 700);
 });
 
 $("#profile-form").addEventListener("submit", async event => {
-    event.preventDefault();
-    clearMessage();
+    event.preventDefault(); clearMessage();
     const selected = document.querySelector(".avatar-option.selected");
-    const { response, data } = await api("/api/auth/me", {
-        method: "PATCH",
-        body: JSON.stringify({
-            displayName: $("#profile-display-name").value.trim(),
-            avatar: selected?.dataset.avatar
-        })
-    });
-    if (!response.ok || !data.success) {
-        showMessage(data.error || "No se pudo actualizar el perfil.");
-        return;
-    }
+    const { response, data } = await api("/api/auth/me", { method: "PATCH", body: JSON.stringify({ displayName: $("#profile-display-name").value.trim(), avatar: selected?.dataset.avatar }) });
+    if (!response.ok || !data.success) { showMessage(data.error || "No se pudo actualizar el perfil."); return; }
     await loadSession();
 });
 
 $("#enter-catalog").addEventListener("click", () => { window.location.href = "/"; });
 $("#logout-button").addEventListener("click", () => { window.location.href = "/api/session/logout"; });
 
+const authError = new URLSearchParams(window.location.search).get("auth_error");
+if (authError) {
+    const decoded = decodeURIComponent(authError);
+    history.replaceState({}, document.title, "/portal");
+    showMessage(decoded);
+}
+
 loadSession();
+initGoogleSignIn();

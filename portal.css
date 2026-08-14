@@ -25,9 +25,6 @@ input:focus { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.14); }
 .danger-button { color: #ff7a80; margin-top: 8px; }
 .panel-divider { display: flex; align-items: center; gap: 12px; margin: 17px 0 4px; color: #777782; font-size: 12px; }
 .panel-divider::before, .panel-divider::after { content: ""; flex: 1; height: 1px; background: #30303a; }
-.google-button-wrap { width: 100%; min-height: 44px; display: flex; justify-content: center; align-items: center; margin-top: 10px; }
-.google-button-wrap > div { max-width: 100%; }
-.google-unavailable { width: 100%; padding: 10px 12px; border: 1px dashed #3b3b47; border-radius: 8px; color: #858591; font-size: 12px; text-align: center; line-height: 1.4; }
 .auth-message { margin-bottom: 17px; padding: 11px 12px; border-radius: 8px; font-size: 13px; line-height: 1.45; }
 .auth-message.error { color: #ffd7da; background: #3a171b; border: 1px solid #9d2832; }
 .auth-message.success { color: #d7ffe2; background: #14341f; border: 1px solid #287644; }

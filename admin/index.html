@@ -681,7 +681,7 @@
                         type="search"
                         id="buscador-dramas"
                         class="admin-search__input"
-                        placeholder="Buscar por nombre, ID o plataforma..."
+                        placeholder="Buscar por nombre, ID, plataforma o categoría..."
                         autocomplete="off"
                         aria-label="Buscar microdramas"
                     >
@@ -709,75 +709,88 @@
 
             </div>
 
+<!-- =================================================
+     TABLA
+================================================== -->
 
-            <!-- =================================================
-                 TABLA
-            ================================================== -->
+<div
+    id="contenedor-tabla"
+    class="table-container"
+    hidden
+>
 
-            <div
-                id="contenedor-tabla"
-                class="table-container"
-                hidden
-            >
+    <table class="admin-table">
 
-                <table class="admin-table">
+        <thead>
 
-                    <thead>
+            <tr>
 
-                        <tr>
+                <th scope="col">
 
-                            <th scope="col">
+                    <input
+                        type="checkbox"
+                        id="seleccionar-todos"
+                        title="Seleccionar todos"
+                    >
 
-                                <input
-                                    type="checkbox"
-                                    id="seleccionar-todos"
-                                    title="Seleccionar todos"
-                                >
-
-                            </th>
-
-                            <th scope="col">
-                                ID
-                            </th>
-
-                            <th scope="col">
-                                Microdrama
-                            </th>
-
-                            <th scope="col">
-                                Plataforma
-                            </th>
-
-                            <th scope="col">
-                                Estado
-                            </th>
-
-                            <th scope="col">
-                                Destacado
-                            </th>
-
-                            <th scope="col">
-                                Orden
-                            </th>
-
-                            <th scope="col">
-                                Actualización
-                            </th>
-
-                            <th scope="col">
-                                Acciones
-                            </th>
-
-                        </tr>
-
-                    </thead>
+                </th>
 
 
-                    <tbody id="lista-dramas"></tbody>
+                <th scope="col">
+                    ID
+                </th>
 
-                </table>
 
-            </div>
+                <th scope="col">
+                    Microdrama
+                </th>
+
+
+                <th scope="col">
+                    Plataforma
+                </th>
+
+
+                <th scope="col">
+                    Categoría
+                </th>
+
+
+                <th scope="col">
+                    Estado
+                </th>
+
+
+                <th scope="col">
+                    Destacado
+                </th>
+
+
+                <th scope="col">
+                    Orden
+                </th>
+
+
+                <th scope="col">
+                    Actualización
+                </th>
+
+
+                <th scope="col">
+                    Acciones
+                </th>
+
+            </tr>
+
+        </thead>
+
+
+        <tbody id="lista-dramas"></tbody>
+
+    </table>
+
+</div>
+           
 
 
             <!-- =================================================

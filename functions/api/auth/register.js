@@ -87,9 +87,8 @@ export async function onRequestPost(context) {
         createdUser = await db.prepare(`
             SELECT id, email, phone, display_name, avatar, profile_completed, auth_method
             FROM users
-            WHERE id = (SELECT MAX(id) FROM users)
-            LIMIT 1
-        `).first();
+            WHERE lower(email) = ? LIMIT 1
+        `).bind(email).first();
     } catch (error) {
         console.error("REGISTER_USER_LOOKUP_ERROR:", error);
         return json({ success: false, code: "USER_LOOKUP_FAILED", error: "La cuenta se guardó, pero no pudo confirmarse." }, 500);

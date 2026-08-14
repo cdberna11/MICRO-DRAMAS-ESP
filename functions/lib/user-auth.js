@@ -37,36 +37,68 @@ export async function verifyPassword(password, storedHash) {
     } catch { return false; }
 }
 
+async function getTableColumns(db, tableName) {
+    const result = await db.prepare(`PRAGMA table_info(${tableName})`).all();
+    return new Set((result.results || []).map(column => column.name));
+}
+
+async function addColumnIfMissing(db, columns, tableName, columnName, definition) {
+    if (columns.has(columnName)) return;
+    await db.prepare(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`).run();
+    columns.add(columnName);
+}
+
 export async function ensureUserSchema(db) {
-    await db.batch([
-        db.prepare(`CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE,
-            phone TEXT UNIQUE,
-            password_hash TEXT NOT NULL,
-            auth_method TEXT NOT NULL CHECK (auth_method IN ('email','phone')),
-            display_name TEXT NOT NULL DEFAULT 'Usuario',
-            avatar TEXT NOT NULL DEFAULT 'avatar-1.png',
-            phone_verified INTEGER NOT NULL DEFAULT 0,
-            email_verified INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            last_login_at TEXT
-        )`),
-        db.prepare(`CREATE TABLE IF NOT EXISTS user_sessions (
-            id TEXT PRIMARY KEY,
-            user_id INTEGER NOT NULL,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            last_activity_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            expires_at TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        )`),
-        db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id)`),
-        db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at)`)
-    ]);
-    // Migración aditiva: conserva intactas las cuentas existentes.
-    try { await db.prepare(`ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'local'`).run(); } catch {}
-    try { await db.prepare(`ALTER TABLE users ADD COLUMN google_sub TEXT`).run(); } catch {}
+    // Migración segura: las operaciones de esquema se ejecutan por separado
+    // para que una diferencia de una versión anterior no aborte el registro.
+    await db.prepare(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE,
+        phone TEXT UNIQUE,
+        password_hash TEXT NOT NULL,
+        auth_method TEXT NOT NULL CHECK (auth_method IN ('email','phone')),
+        display_name TEXT NOT NULL DEFAULT 'Usuario',
+        avatar TEXT NOT NULL DEFAULT 'avatar-1.png',
+        phone_verified INTEGER NOT NULL DEFAULT 0,
+        email_verified INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_login_at TEXT
+    )`).run();
+
+    await db.prepare(`CREATE TABLE IF NOT EXISTS user_sessions (
+        id TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_activity_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        expires_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`).run();
+
+    const userColumns = await getTableColumns(db, "users");
+    await addColumnIfMissing(db, userColumns, "users", "email", "TEXT");
+    await addColumnIfMissing(db, userColumns, "users", "phone", "TEXT");
+    await addColumnIfMissing(db, userColumns, "users", "password_hash", "TEXT NOT NULL DEFAULT ''");
+    await addColumnIfMissing(db, userColumns, "users", "auth_method", "TEXT NOT NULL DEFAULT 'email'");
+    await addColumnIfMissing(db, userColumns, "users", "display_name", "TEXT NOT NULL DEFAULT 'Usuario'");
+    await addColumnIfMissing(db, userColumns, "users", "avatar", "TEXT NOT NULL DEFAULT 'avatar-1.png'");
+    await addColumnIfMissing(db, userColumns, "users", "phone_verified", "INTEGER NOT NULL DEFAULT 0");
+    await addColumnIfMissing(db, userColumns, "users", "email_verified", "INTEGER NOT NULL DEFAULT 0");
+    await addColumnIfMissing(db, userColumns, "users", "created_at", "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
+    await addColumnIfMissing(db, userColumns, "users", "updated_at", "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
+    await addColumnIfMissing(db, userColumns, "users", "last_login_at", "TEXT");
+    await addColumnIfMissing(db, userColumns, "users", "auth_provider", "TEXT NOT NULL DEFAULT 'local'");
+    await addColumnIfMissing(db, userColumns, "users", "google_sub", "TEXT");
+
+    const sessionColumns = await getTableColumns(db, "user_sessions");
+    await addColumnIfMissing(db, sessionColumns, "user_sessions", "user_id", "INTEGER NOT NULL DEFAULT 0");
+    await addColumnIfMissing(db, sessionColumns, "user_sessions", "created_at", "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
+    await addColumnIfMissing(db, sessionColumns, "user_sessions", "last_activity_at", "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP");
+    await addColumnIfMissing(db, sessionColumns, "user_sessions", "expires_at", "TEXT NOT NULL DEFAULT ''");
+
+    // Los índices son auxiliares; nunca deben impedir que una cuenta se registre.
+    try { await db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id)`).run(); } catch {}
+    try { await db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at)`).run(); } catch {}
     try { await db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub) WHERE google_sub IS NOT NULL`).run(); } catch {}
 }
 

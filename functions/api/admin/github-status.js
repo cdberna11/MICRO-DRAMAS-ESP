@@ -2,9 +2,9 @@
    ESTADO DE GITHUB
    MICRO-DRAMAS-ESP
 
-   Comprueba que el token de GitHub exista, sea válido y tenga
-   acceso al repositorio del proyecto. También obtiene la fecha
-   de expiración desde el encabezado que devuelve GitHub.
+   Comprueba que el token de GitHub exista y tenga acceso al
+   repositorio. La fecha de expiración se obtiene de la variable
+   GITHUB_TOKEN_EXPIRES_AT de Cloudflare.
 ========================================================= */
 
 function respuestaJson(datos, estado = 200) {
@@ -20,7 +20,6 @@ function respuestaJson(datos, estado = 200) {
     );
 }
 
-
 function tieneSesion(request) {
     const cookies =
         request.headers.get("Cookie") || "";
@@ -32,9 +31,14 @@ function tieneSesion(request) {
         );
 }
 
+function fechaValida(valor) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(
+        String(valor || "")
+    );
+}
 
 function obtenerDiasRestantes(fechaISO) {
-    if (!fechaISO) {
+    if (!fechaValida(fechaISO)) {
         return null;
     }
 
@@ -45,17 +49,13 @@ function obtenerDiasRestantes(fechaISO) {
         return null;
     }
 
-    const diferencia =
-        fecha.getTime() - Date.now();
-
     return Math.max(
         0,
         Math.ceil(
-            diferencia / 86400000
+            (fecha.getTime() - Date.now()) / 86400000
         )
     );
 }
-
 
 export async function onRequestGet(context) {
 
@@ -68,7 +68,6 @@ export async function onRequestGet(context) {
             401
         );
     }
-
 
     const token =
         context.env.GITHUB_TOKEN;
@@ -85,25 +84,23 @@ export async function onRequestGet(context) {
         );
     }
 
-
     const repository =
         String(
             context.env.GITHUB_REPOSITORY ||
             "cdberna11/MICRO-DRAMAS-ESP"
         ).trim();
 
-
     if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) {
         return respuestaJson(
             {
                 success: false,
                 connected: false,
-                error: "La configuración del repositorio de GitHub no es válida."
+                error:
+                    "La configuración del repositorio de GitHub no es válida."
             },
             500
         );
     }
-
 
     try {
 
@@ -124,18 +121,6 @@ export async function onRequestGet(context) {
                     }
                 }
             );
-
-
-        const fechaHeader =
-            respuesta.headers.get(
-                "github-authentication-token-expiration"
-            );
-
-        const fechaISO =
-            fechaHeader
-                ? fechaHeader.slice(0, 10)
-                : null;
-
 
         if (!respuesta.ok) {
 
@@ -164,19 +149,28 @@ export async function onRequestGet(context) {
             );
         }
 
+        const fechaISO =
+            String(
+                context.env.GITHUB_TOKEN_EXPIRES_AT ||
+                ""
+            ).trim();
+
+        const fechaConfigurada =
+            fechaValida(fechaISO)
+                ? fechaISO
+                : null;
 
         return respuestaJson(
             {
                 success: true,
                 connected: true,
                 repository,
-                expiresAt: fechaISO,
+                expiresAt: fechaConfigurada,
                 daysRemaining:
-                    obtenerDiasRestantes(fechaISO)
+                    obtenerDiasRestantes(fechaConfigurada)
             },
             200
         );
-
 
     } catch (error) {
 

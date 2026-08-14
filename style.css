@@ -478,6 +478,56 @@ body.video-player-open {
         #ffffff;
 }
 
+/* =========================================================
+   CATEGORÍA DEL MICRODRAMA
+========================================================= */
+
+.drama-card__category {
+    margin:
+        4px 0 12px;
+
+    color:
+        #d4d4d8;
+
+    font-size:
+        12px;
+
+    line-height:
+        1.35;
+}
+
+
+.drama-card__category strong {
+    color:
+        #ffffff;
+}
+
+
+/* =========================================================
+   CATEGORÍA DETALLE MÓVIL
+========================================================= */
+
+.mobile-detail__category {
+    margin:
+        4px 0 20px;
+
+    color:
+        #a9a9af;
+
+    font-size:
+        14px;
+
+    line-height:
+        1.4;
+}
+
+
+.mobile-detail__category strong {
+    color:
+        #ffffff;
+}
+
+
 
 /* =========================================================
    CONTROLES

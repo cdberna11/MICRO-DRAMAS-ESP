@@ -57,13 +57,10 @@
 
         <section class="profiles">
 
-            <div
+            <a
+                href="/"
                 class="profile-card"
-                role="button"
-                tabindex="0"
                 aria-label="Entrar como Invitado"
-                onclick="entrarComoInvitado()"
-                onkeydown="if (event.key === 'Enter' || event.key === ' ') entrarComoInvitado()"
             >
 
                 <div class="profile-avatar">
@@ -80,27 +77,12 @@
                     Invitado
                 </div>
 
-            </div>
+            </a>
 
         </section>
 
 
     </main>
-
-
-    <!-- =====================================================
-         NAVEGACIÓN
-    ====================================================== -->
-
-    <script>
-
-        function entrarComoInvitado() {
-
-            window.location.href = "https://micro-dramas-esp.pages.dev/index.html";
-
-        }
-
-    </script>
 
 
 </body>

@@ -29,6 +29,25 @@ const PORTADA_GENERICA =
     "/portadas/generica/portada-generica.png";
 
 
+/*
+ * =========================================================
+ * CATEGORÍAS OFICIALES
+ * =========================================================
+ *
+ * Estas son las únicas categorías permitidas
+ * por el sistema.
+ */
+
+const CATEGORIAS_PERMITIDAS = [
+    "SUPERACION",
+    "ARTES MARCIALES",
+    "PODERES ESPECIALES",
+    "KARMA",
+    "ARREPENTIMIENTO",
+    "VENGANZA"
+];
+
+
 /* =========================================================
    UTILIDADES
 ========================================================= */
@@ -76,21 +95,204 @@ function convertirDestacado(
 
 
 /* =========================================================
+   NORMALIZAR CATEGORÍAS
+========================================================= */
+
+function normalizarCategorias(
+    valor
+) {
+
+    /*
+     * Si no se envían categorías,
+     * utilizamos un arreglo vacío.
+     */
+
+    if (
+        !Array.isArray(valor)
+    ) {
+        return [];
+    }
+
+
+    /*
+     * Convertimos cada valor a texto,
+     * eliminamos espacios y normalizamos
+     * a mayúsculas.
+     */
+
+    const categorias =
+        valor
+            .map(
+                categoria =>
+                    typeof categoria === "string"
+                        ? categoria.trim().toUpperCase()
+                        : ""
+            )
+            .filter(
+                Boolean
+            );
+
+
+    /*
+     * Eliminamos duplicados.
+     */
+
+    const categoriasUnicas =
+        [
+            ...new Set(
+                categorias
+            )
+        ];
+
+
+    return categoriasUnicas;
+}
+
+
+/* =========================================================
+   VALIDAR CATEGORÍAS
+========================================================= */
+
+function validarCategorias(
+    categorias
+) {
+
+    const errores = [];
+
+
+    if (
+        !Array.isArray(
+            categorias
+        )
+    ) {
+
+        errores.push(
+            "Las categorías deben enviarse como una lista."
+        );
+
+        return errores;
+    }
+
+
+    /*
+     * Verificar que todas las categorías
+     * pertenezcan a la lista oficial.
+     */
+
+    const categoriasInvalidas =
+        categorias.filter(
+            categoria =>
+                !CATEGORIAS_PERMITIDAS.includes(
+                    categoria
+                )
+        );
+
+
+    if (
+        categoriasInvalidas.length > 0
+    ) {
+
+        errores.push(
+            `Categoría(s) no permitida(s): ${categoriasInvalidas.join(", ")}.`
+        );
+
+    }
+
+
+    return errores;
+}
+
+
+/* =========================================================
+   CONVERTIR CATEGORÍAS PARA D1
+========================================================= */
+
+function convertirCategoriasParaD1(
+    categorias
+) {
+
+    return JSON.stringify(
+        normalizarCategorias(
+            categorias
+        )
+    );
+}
+
+
+/* =========================================================
+   LEER CATEGORÍAS DESDE D1
+========================================================= */
+
+function leerCategoriasDesdeD1(
+    valor
+) {
+
+    if (
+        typeof valor !== "string" ||
+        valor.trim() === ""
+    ) {
+
+        return [];
+    }
+
+
+    try {
+
+        const categorias =
+            JSON.parse(
+                valor
+            );
+
+
+        if (
+            !Array.isArray(
+                categorias
+            )
+        ) {
+
+            return [];
+        }
+
+
+        /*
+         * También normalizamos al leer,
+         * para proteger el portal frente a
+         * datos antiguos o modificados manualmente.
+         */
+
+        return normalizarCategorias(
+            categorias
+        );
+
+    } catch {
+
+        return [];
+    }
+}
+
+
+/* =========================================================
    VALIDAR URL HTTP / HTTPS
 ========================================================= */
 
 function esUrlHttpValida(
     valor
 ) {
-    if (!valor) {
+
+    if (
+        !valor
+    ) {
         return true;
     }
 
+
     try {
+
         const url =
             new URL(
                 valor
             );
+
 
         return (
             url.protocol === "http:" ||
@@ -98,30 +300,35 @@ function esUrlHttpValida(
         );
 
     } catch {
+
         return false;
+
     }
 }
 
 
 /* =========================================================
    VALIDAR URL MEGA
-   Formato esperado:
-
-   https://mega.nz/file/ID#KEY
 ========================================================= */
 
 function esUrlMegaFileValida(
     valor
 ) {
-    if (!valor) {
+
+    if (
+        !valor
+    ) {
         return true;
     }
 
+
     try {
+
         const url =
             new URL(
                 valor
             );
+
 
         if (
             url.protocol !== "https:" &&
@@ -130,14 +337,17 @@ function esUrlMegaFileValida(
             return false;
         }
 
+
         const host =
             url.hostname.toLowerCase();
+
 
         if (
             host !== "mega.nz"
         ) {
             return false;
         }
+
 
         if (
             !url.pathname.startsWith(
@@ -147,15 +357,18 @@ function esUrlMegaFileValida(
             return false;
         }
 
+
         const identificador =
             url.pathname.slice(
                 "/file/".length
             ).trim();
 
+
         const llave =
             url.hash.startsWith("#")
                 ? url.hash.slice(1).trim()
                 : "";
+
 
         if (
             !identificador ||
@@ -164,10 +377,13 @@ function esUrlMegaFileValida(
             return false;
         }
 
+
         return true;
 
     } catch {
+
         return false;
+
     }
 }
 
@@ -179,6 +395,7 @@ function esUrlMegaFileValida(
 function esSlugValido(
     slug
 ) {
+
     return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(
         slug
     );
@@ -192,39 +409,49 @@ function esSlugValido(
 function normalizarDrama(
     datos
 ) {
+
     return {
+
         slug:
             limpiarTexto(
                 datos.slug
             ).toLowerCase(),
+
 
         title:
             limpiarTexto(
                 datos.title
             ),
 
+
         platform:
             limpiarTexto(
                 datos.platform
             ),
 
+
         description:
             DESCRIPCION_AUTOMATICA,
+
 
         video_description:
             limpiarTexto(
                 datos.video_description
             ),
 
+
         cover_url:
             limpiarTexto(
                 datos.cover_url
-            ) || PORTADA_GENERICA,
+            ) ||
+            PORTADA_GENERICA,
+
 
         video_url:
             limpiarTexto(
                 datos.video_url
             ),
+
 
         status:
             limpiarTexto(
@@ -232,10 +459,18 @@ function normalizarDrama(
             ).toLowerCase() ||
             "published",
 
+
         featured:
             convertirDestacado(
                 datos.featured
+            ),
+
+
+        categories:
+            normalizarCategorias(
+                datos.categories
             )
+
     };
 }
 
@@ -247,6 +482,7 @@ function normalizarDrama(
 function validarDrama(
     drama
 ) {
+
     const errores = [];
 
 
@@ -257,18 +493,22 @@ function validarDrama(
     if (
         !drama.title
     ) {
+
         errores.push(
             "El título es obligatorio."
         );
+
     }
 
 
     if (
         drama.title.length > 200
     ) {
+
         errores.push(
             "El título no puede superar 200 caracteres."
         );
+
     }
 
 
@@ -279,6 +519,7 @@ function validarDrama(
     if (
         !drama.slug
     ) {
+
         errores.push(
             "El slug es obligatorio."
         );
@@ -288,18 +529,22 @@ function validarDrama(
             drama.slug
         )
     ) {
+
         errores.push(
             "El slug generado no es válido."
         );
+
     }
 
 
     if (
         drama.slug.length > 200
     ) {
+
         errores.push(
             "El slug no puede superar 200 caracteres."
         );
+
     }
 
 
@@ -310,18 +555,22 @@ function validarDrama(
     if (
         !drama.platform
     ) {
+
         errores.push(
             "La plataforma es obligatoria."
         );
+
     }
 
 
     if (
         drama.platform.length > 100
     ) {
+
         errores.push(
             "El nombre de la plataforma no puede superar 100 caracteres."
         );
+
     }
 
 
@@ -337,10 +586,23 @@ function validarDrama(
             drama.status
         )
     ) {
+
         errores.push(
             "El estado debe ser draft o published."
         );
+
     }
+
+
+    /* -----------------------------------------------------
+       CATEGORÍAS
+    ----------------------------------------------------- */
+
+    errores.push(
+        ...validarCategorias(
+            drama.categories
+        )
+    );
 
 
     /* -----------------------------------------------------
@@ -353,12 +615,15 @@ function validarDrama(
             drama.cover_url
         );
 
+
     if (
         !portadaEsValida
     ) {
+
         errores.push(
             "La URL de portada debe comenzar con http://, https:// o utilizar una ruta local válida."
         );
+
     }
 
 
@@ -372,9 +637,11 @@ function validarDrama(
             drama.video_url
         )
     ) {
+
         errores.push(
             "El enlace del video debe ser una URL de MEGA con formato https://mega.nz/file/ID#KEY."
         );
+
     }
 
 
@@ -389,6 +656,7 @@ function validarDrama(
 async function obtenerSiguienteOrden(
     database
 ) {
+
     const resultado =
         await database
             .prepare(`
@@ -424,6 +692,7 @@ async function obtenerSiguienteOrden(
 export async function onRequestGet(
     context
 ) {
+
     try {
 
         const database =
@@ -433,6 +702,7 @@ export async function onRequestGet(
         if (
             !database
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -442,6 +712,7 @@ export async function onRequestGet(
                 },
                 500
             );
+
         }
 
 
@@ -463,8 +734,13 @@ export async function onRequestGet(
                         sort_order,
                         created_at,
                         updated_at,
-                        published_at
+                        published_at,
+                        categories
                     FROM dramas
+                    WHERE status IN (
+                        'published',
+                        'draft'
+                    )
                     ORDER BY
                         featured DESC,
                         sort_order ASC,
@@ -473,16 +749,32 @@ export async function onRequestGet(
                 .all();
 
 
+        const dramas =
+            Array.isArray(
+                resultado.results
+            )
+                ? resultado.results.map(
+                    drama => {
+
+                        return {
+                            ...drama,
+
+                            categories:
+                                leerCategoriasDesdeD1(
+                                    drama.categories
+                                )
+                        };
+
+                    }
+                )
+                : [];
+
+
         return crearRespuestaJson(
             {
                 success: true,
 
-                dramas:
-                    Array.isArray(
-                        resultado.results
-                    )
-                        ? resultado.results
-                        : []
+                dramas
             }
         );
 
@@ -504,6 +796,7 @@ export async function onRequestGet(
             },
             500
         );
+
     }
 }
 
@@ -516,6 +809,7 @@ export async function onRequestGet(
 export async function onRequestPost(
     context
 ) {
+
     try {
 
         const database =
@@ -525,6 +819,7 @@ export async function onRequestPost(
         if (
             !database
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -534,11 +829,12 @@ export async function onRequestPost(
                 },
                 500
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Verificar Content-Type
+           Content-Type
         ----------------------------------------------------- */
 
         const contentType =
@@ -554,6 +850,7 @@ export async function onRequestPost(
                     "application/json"
                 )
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -563,11 +860,12 @@ export async function onRequestPost(
                 },
                 415
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Leer JSON
+           JSON
         ----------------------------------------------------- */
 
         let datos;
@@ -589,11 +887,12 @@ export async function onRequestPost(
                 },
                 400
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Validar estructura
+           Estructura
         ----------------------------------------------------- */
 
         if (
@@ -601,6 +900,7 @@ export async function onRequestPost(
             typeof datos !== "object" ||
             Array.isArray(datos)
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -610,6 +910,7 @@ export async function onRequestPost(
                 },
                 400
             );
+
         }
 
 
@@ -636,6 +937,7 @@ export async function onRequestPost(
         if (
             errores.length > 0
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -648,11 +950,12 @@ export async function onRequestPost(
                 },
                 400
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Comprobar slug duplicado
+           Slug duplicado
         ----------------------------------------------------- */
 
         const existente =
@@ -673,6 +976,7 @@ export async function onRequestPost(
         if (
             existente
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -682,6 +986,7 @@ export async function onRequestPost(
                 },
                 409
             );
+
         }
 
 
@@ -696,16 +1001,17 @@ export async function onRequestPost(
 
 
         /* -----------------------------------------------------
-           Insertar
+           Categorías para D1
+        ----------------------------------------------------- */
 
-           Si se crea como published:
-           published_at = CURRENT_TIMESTAMP
+        const categoriasD1 =
+            convertirCategoriasParaD1(
+                drama.categories
+            );
 
-           Si se crea como draft:
-           published_at = NULL
 
-           video_url_2:
-           se deja vacío para los nuevos registros.
+        /* -----------------------------------------------------
+           INSERTAR
         ----------------------------------------------------- */
 
         const insercion =
@@ -725,7 +1031,8 @@ export async function onRequestPost(
                         created_at,
                         updated_at,
                         video_url_2,
-                        published_at
+                        published_at,
+                        categories
                     )
                     VALUES (
                         ?,
@@ -745,7 +1052,8 @@ export async function onRequestPost(
                             WHEN ? = 'published'
                                 THEN CURRENT_TIMESTAMP
                             ELSE NULL
-                        END
+                        END,
+                        ?
                     )
                 `)
                 .bind(
@@ -759,7 +1067,8 @@ export async function onRequestPost(
                     drama.status,
                     drama.featured,
                     siguienteOrden,
-                    drama.status
+                    drama.status,
+                    categoriasD1
                 )
                 .run();
 
@@ -767,9 +1076,11 @@ export async function onRequestPost(
         if (
             !insercion.success
         ) {
+
             throw new Error(
                 "Cloudflare D1 no confirmó la inserción."
             );
+
         }
 
 
@@ -809,6 +1120,7 @@ export async function onRequestPost(
                 "dramas.slug"
             )
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -818,6 +1130,7 @@ export async function onRequestPost(
                 },
                 409
             );
+
         }
 
 
@@ -830,6 +1143,7 @@ export async function onRequestPost(
             },
             500
         );
+
     }
 }
 
@@ -842,6 +1156,7 @@ export async function onRequestPost(
 export async function onRequestPut(
     context
 ) {
+
     try {
 
         const database =
@@ -851,6 +1166,7 @@ export async function onRequestPut(
         if (
             !database
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -860,11 +1176,12 @@ export async function onRequestPut(
                 },
                 500
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Verificar Content-Type
+           Content-Type
         ----------------------------------------------------- */
 
         const contentType =
@@ -880,6 +1197,7 @@ export async function onRequestPut(
                     "application/json"
                 )
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -889,11 +1207,12 @@ export async function onRequestPut(
                 },
                 415
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Leer JSON
+           JSON
         ----------------------------------------------------- */
 
         let datos;
@@ -915,6 +1234,7 @@ export async function onRequestPut(
                 },
                 400
             );
+
         }
 
 
@@ -932,6 +1252,7 @@ export async function onRequestPut(
         if (
             id <= 0
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -941,6 +1262,7 @@ export async function onRequestPut(
                 },
                 400
             );
+
         }
 
 
@@ -967,6 +1289,7 @@ export async function onRequestPut(
         if (
             errores.length > 0
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -979,20 +1302,12 @@ export async function onRequestPut(
                 },
                 400
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Verificar que existe
-
-           Necesitamos conocer el estado anterior
-           para detectar específicamente:
-
-           draft → published
-
-           published → published
-
-           published → draft
+           Verificar existencia
         ----------------------------------------------------- */
 
         const registro =
@@ -1015,6 +1330,7 @@ export async function onRequestPut(
         if (
             !registro
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -1024,11 +1340,12 @@ export async function onRequestPut(
                 },
                 404
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Verificar slug duplicado
+           Slug duplicado
         ----------------------------------------------------- */
 
         const slugDuplicado =
@@ -1051,6 +1368,7 @@ export async function onRequestPut(
         if (
             slugDuplicado
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -1060,34 +1378,28 @@ export async function onRequestPut(
                 },
                 409
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Determinar published_at
-
-           draft → published:
-           nueva fecha.
-
-           published → published:
-           conservar fecha original.
-
-           published → draft:
-           eliminar fecha.
-
-           draft → draft:
-           mantener NULL.
+           published_at
         ----------------------------------------------------- */
 
         let publishedAtSql;
-
-        let publishedAtBindings = [];
 
 
         if (
             registro.status !== "published" &&
             drama.status === "published"
         ) {
+
+            /*
+             * draft → published
+             *
+             * Aquí comienza oficialmente
+             * el período de "RECIÉN AGREGADO".
+             */
 
             publishedAtSql =
                 "CURRENT_TIMESTAMP";
@@ -1096,10 +1408,23 @@ export async function onRequestPut(
             drama.status === "draft"
         ) {
 
+            /*
+             * published → draft
+             *
+             * Se elimina la fecha porque ya
+             * no está publicado.
+             */
+
             publishedAtSql =
                 "NULL";
 
         } else {
+
+            /*
+             * published → published
+             *
+             * Conservamos la fecha original.
+             */
 
             publishedAtSql =
                 "published_at";
@@ -1107,17 +1432,17 @@ export async function onRequestPut(
 
 
         /* -----------------------------------------------------
-           Actualizar
+           Categorías para D1
+        ----------------------------------------------------- */
 
-           video_url:
-           se actualiza con el nuevo enlace.
+        const categoriasD1 =
+            convertirCategoriasParaD1(
+                drama.categories
+            );
 
-           video_url_2:
-           NO SE TOCA.
 
-           published_at:
-           solamente cambia cuando corresponde
-           al cambio de estado.
+        /* -----------------------------------------------------
+           ACTUALIZAR
         ----------------------------------------------------- */
 
         const actualizacion =
@@ -1135,6 +1460,7 @@ export async function onRequestPut(
                         status = ?,
                         featured = ?,
                         published_at = ${publishedAtSql},
+                        categories = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 `)
@@ -1148,6 +1474,7 @@ export async function onRequestPut(
                     drama.video_url,
                     drama.status,
                     drama.featured,
+                    categoriasD1,
                     id
                 )
                 .run();
@@ -1156,9 +1483,11 @@ export async function onRequestPut(
         if (
             !actualizacion.success
         ) {
+
             throw new Error(
                 "Cloudflare D1 no confirmó la actualización."
             );
+
         }
 
 
@@ -1194,6 +1523,7 @@ export async function onRequestPut(
                 "dramas.slug"
             )
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -1203,6 +1533,7 @@ export async function onRequestPut(
                 },
                 409
             );
+
         }
 
 
@@ -1215,6 +1546,7 @@ export async function onRequestPut(
             },
             500
         );
+
     }
 }
 
@@ -1227,6 +1559,7 @@ export async function onRequestPut(
 export async function onRequestDelete(
     context
 ) {
+
     try {
 
         const database =
@@ -1236,6 +1569,7 @@ export async function onRequestDelete(
         if (
             !database
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -1245,11 +1579,12 @@ export async function onRequestDelete(
                 },
                 500
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Verificar Content-Type
+           Content-Type
         ----------------------------------------------------- */
 
         const contentType =
@@ -1265,6 +1600,7 @@ export async function onRequestDelete(
                     "application/json"
                 )
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -1274,11 +1610,12 @@ export async function onRequestDelete(
                 },
                 415
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Leer JSON
+           JSON
         ----------------------------------------------------- */
 
         let datos;
@@ -1300,11 +1637,12 @@ export async function onRequestDelete(
                 },
                 400
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Obtener IDs
+           IDs
         ----------------------------------------------------- */
 
         const ids =
@@ -1315,14 +1653,14 @@ export async function onRequestDelete(
                     ...new Set(
                         datos.ids
                             .map(
-                                (id) =>
+                                id =>
                                     convertirEntero(
                                         id,
                                         0
                                     )
                             )
                             .filter(
-                                (id) =>
+                                id =>
                                     id > 0
                             )
                     )
@@ -1333,6 +1671,7 @@ export async function onRequestDelete(
         if (
             ids.length === 0
         ) {
+
             return crearRespuestaJson(
                 {
                     success: false,
@@ -1342,11 +1681,12 @@ export async function onRequestDelete(
                 },
                 400
             );
+
         }
 
 
         /* -----------------------------------------------------
-           Crear placeholders seguros
+           Placeholders
         ----------------------------------------------------- */
 
         const placeholders =
@@ -1376,9 +1716,11 @@ export async function onRequestDelete(
         if (
             !eliminacion.success
         ) {
+
             throw new Error(
                 "Cloudflare D1 no confirmó la eliminación."
             );
+
         }
 
 
@@ -1414,5 +1756,6 @@ export async function onRequestDelete(
             },
             500
         );
+
     }
 }

@@ -108,9 +108,6 @@ function esUrlHttpValida(
    Formato esperado:
 
    https://mega.nz/file/ID#KEY
-
-   El enlace debe ser /file/
-   y debe contener la llave después de #.
 ========================================================= */
 
 function esUrlMegaFileValida(
@@ -211,11 +208,6 @@ function normalizarDrama(
                 datos.platform
             ),
 
-        /*
-         * La descripción NO se toma del cliente.
-         * El servidor la establece siempre.
-         */
-
         description:
             DESCRIPCION_AUTOMATICA,
 
@@ -224,24 +216,10 @@ function normalizarDrama(
                 datos.video_description
             ),
 
-        /*
-         * Si no se proporciona una portada,
-         * se utiliza automáticamente la portada genérica.
-         */
-
         cover_url:
             limpiarTexto(
                 datos.cover_url
             ) || PORTADA_GENERICA,
-
-        /*
-         * video_url es ahora la columna oficial
-         * para los enlaces de vídeo.
-         *
-         * El enlace esperado es:
-         *
-         * https://mega.nz/file/ID#KEY
-         */
 
         video_url:
             limpiarTexto(
@@ -484,7 +462,8 @@ export async function onRequestGet(
                         featured,
                         sort_order,
                         created_at,
-                        updated_at
+                        updated_at,
+                        published_at
                     FROM dramas
                     ORDER BY
                         featured DESC,
@@ -719,12 +698,14 @@ export async function onRequestPost(
         /* -----------------------------------------------------
            Insertar
 
-           video_url:
-           enlace nuevo de MEGA
+           Si se crea como published:
+           published_at = CURRENT_TIMESTAMP
+
+           Si se crea como draft:
+           published_at = NULL
 
            video_url_2:
            se deja vacío para los nuevos registros.
-           No se toca ningún dato histórico existente.
         ----------------------------------------------------- */
 
         const insercion =
@@ -743,7 +724,8 @@ export async function onRequestPost(
                         sort_order,
                         created_at,
                         updated_at,
-                        video_url_2
+                        video_url_2,
+                        published_at
                     )
                     VALUES (
                         ?,
@@ -758,7 +740,12 @@ export async function onRequestPost(
                         ?,
                         CURRENT_TIMESTAMP,
                         CURRENT_TIMESTAMP,
-                        ''
+                        '',
+                        CASE
+                            WHEN ? = 'published'
+                                THEN CURRENT_TIMESTAMP
+                            ELSE NULL
+                        END
                     )
                 `)
                 .bind(
@@ -771,7 +758,8 @@ export async function onRequestPost(
                     drama.video_url,
                     drama.status,
                     drama.featured,
-                    siguienteOrden
+                    siguienteOrden,
+                    drama.status
                 )
                 .run();
 
@@ -996,13 +984,24 @@ export async function onRequestPut(
 
         /* -----------------------------------------------------
            Verificar que existe
+
+           Necesitamos conocer el estado anterior
+           para detectar específicamente:
+
+           draft → published
+
+           published → published
+
+           published → draft
         ----------------------------------------------------- */
 
         const registro =
             await database
                 .prepare(`
                     SELECT
-                        id
+                        id,
+                        status,
+                        published_at
                     FROM dramas
                     WHERE id = ?
                     LIMIT 1
@@ -1065,9 +1064,50 @@ export async function onRequestPut(
 
 
         /* -----------------------------------------------------
-           Actualizar
+           Determinar published_at
 
-           IMPORTANTE:
+           draft → published:
+           nueva fecha.
+
+           published → published:
+           conservar fecha original.
+
+           published → draft:
+           eliminar fecha.
+
+           draft → draft:
+           mantener NULL.
+        ----------------------------------------------------- */
+
+        let publishedAtSql;
+
+        let publishedAtBindings = [];
+
+
+        if (
+            registro.status !== "published" &&
+            drama.status === "published"
+        ) {
+
+            publishedAtSql =
+                "CURRENT_TIMESTAMP";
+
+        } else if (
+            drama.status === "draft"
+        ) {
+
+            publishedAtSql =
+                "NULL";
+
+        } else {
+
+            publishedAtSql =
+                "published_at";
+        }
+
+
+        /* -----------------------------------------------------
+           Actualizar
 
            video_url:
            se actualiza con el nuevo enlace.
@@ -1075,8 +1115,9 @@ export async function onRequestPut(
            video_url_2:
            NO SE TOCA.
 
-           Esto conserva cualquier dato histórico
-           que exista en esa columna.
+           published_at:
+           solamente cambia cuando corresponde
+           al cambio de estado.
         ----------------------------------------------------- */
 
         const actualizacion =
@@ -1093,6 +1134,7 @@ export async function onRequestPut(
                         video_url = ?,
                         status = ?,
                         featured = ?,
+                        published_at = ${publishedAtSql},
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 `)
@@ -1371,6 +1413,6 @@ export async function onRequestDelete(
                     "No se pudieron eliminar los microdramas."
             },
             500
-            );
+        );
     }
 }

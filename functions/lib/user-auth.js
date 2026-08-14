@@ -1,5 +1,6 @@
 const SESSION_COOKIE = "md_user_session";
 const SESSION_MAX_AGE = 60 * 60 * 3;
+const PASSWORD_HASH_ITERATIONS = 10000;
 
 function bytesToHex(bytes) {
     return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
@@ -22,19 +23,53 @@ export function validPhone(value) { return /^\+[1-9]\d{7,14}$/.test(value); }
 
 export async function hashPassword(password) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
-    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-    const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 120000, hash: "SHA-256" }, key, 256);
-    return `pbkdf2$120000$${bytesToHex(salt)}$${bytesToHex(new Uint8Array(bits))}`;
+    const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(password),
+        "PBKDF2",
+        false,
+        ["deriveBits"]
+    );
+    const bits = await crypto.subtle.deriveBits(
+        {
+            name: "PBKDF2",
+            salt,
+            iterations: PASSWORD_HASH_ITERATIONS,
+            hash: "SHA-256"
+        },
+        key,
+        256
+    );
+    return `pbkdf2$${PASSWORD_HASH_ITERATIONS}$${bytesToHex(salt)}$${bytesToHex(new Uint8Array(bits))}`;
 }
+
 export async function verifyPassword(password, storedHash) {
     try {
         const [scheme, iterationsText, saltHex, hashHex] = String(storedHash || "").split("$");
         const iterations = Number(iterationsText);
-        if (scheme !== "pbkdf2" || !Number.isInteger(iterations) || !saltHex || !hashHex) return false;
-        const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-        const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: hexToBytes(saltHex), iterations, hash: "SHA-256" }, key, 256);
+        if (scheme !== "pbkdf2" || !Number.isInteger(iterations) || iterations < 1 || !saltHex || !hashHex) return false;
+
+        const key = await crypto.subtle.importKey(
+            "raw",
+            new TextEncoder().encode(password),
+            "PBKDF2",
+            false,
+            ["deriveBits"]
+        );
+        const bits = await crypto.subtle.deriveBits(
+            {
+                name: "PBKDF2",
+                salt: hexToBytes(saltHex),
+                iterations,
+                hash: "SHA-256"
+            },
+            key,
+            256
+        );
         return constantTimeEqual(bytesToHex(new Uint8Array(bits)), hashHex);
-    } catch { return false; }
+    } catch {
+        return false;
+    }
 }
 
 async function getTableColumns(db, tableName) {
@@ -49,8 +84,6 @@ async function addColumnIfMissing(db, columns, tableName, columnName, definition
 }
 
 export async function ensureUserSchema(db) {
-    // Migración aditiva y compatible con SQLite/D1.
-    // Las columnas añadidas mediante ALTER TABLE usan valores por defecto constantes.
     await db.prepare(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE,
@@ -96,14 +129,11 @@ export async function ensureUserSchema(db) {
     await addColumnIfMissing(db, sessionColumns, "user_sessions", "last_activity_at", "TEXT NOT NULL DEFAULT ''");
     await addColumnIfMissing(db, sessionColumns, "user_sessions", "expires_at", "TEXT NOT NULL DEFAULT ''");
 
-    // Completa valores de fecha de columnas recién agregadas.
     await db.prepare(`UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at = ''`).run();
     await db.prepare(`UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE updated_at = ''`).run();
     await db.prepare(`UPDATE user_sessions SET created_at = CURRENT_TIMESTAMP WHERE created_at = ''`).run();
     await db.prepare(`UPDATE user_sessions SET last_activity_at = CURRENT_TIMESTAMP WHERE last_activity_at = ''`).run();
 
-    // Índices auxiliares: si una estructura antigua ya tiene uno incompatible,
-    // no debe impedir el funcionamiento de la autenticación.
     try { await db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id)`).run(); } catch {}
     try { await db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at)`).run(); } catch {}
     try { await db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL`).run(); } catch {}

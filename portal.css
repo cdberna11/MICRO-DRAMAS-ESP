@@ -40,9 +40,12 @@ input:focus { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.14); }
 /* Perfil de usuario ya configurado */
 .welcome-block { margin-bottom: 18px; }
 .welcome-block h1 { font-size: 27px; }
-.profile-avatar-button { display: block; width: 150px; height: 150px; margin: 4px auto 8px; padding: 0; border: 3px solid #30303a; border-radius: 14px; background: #0f0f14; overflow: hidden; transition: transform .18s ease, border-color .18s ease; }
+.profile-avatar-button { position: relative; display: block; width: 150px; height: 150px; margin: 4px auto 8px; padding: 0; border: 3px solid #30303a; border-radius: 14px; background: #0f0f14; overflow: hidden; transition: transform .18s ease, border-color .18s ease; }
 .profile-avatar-button:hover { transform: scale(1.03); border-color: #fff; }
 .profile-avatar-button img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-edit-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.58); color: #fff; font-size: 48px; opacity: 0; pointer-events: none; transition: opacity .18s ease; }
+.profile-avatar-button.manage-mode { border-color: #fff; }
+.profile-avatar-button.manage-mode .avatar-edit-overlay { opacity: 1; }
 .profile-avatar-label { color: #9999a5; text-align: center; font-size: 12px; margin-bottom: 14px; }
 .manage-profile-button { margin-top: 4px; }
 

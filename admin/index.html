@@ -235,9 +235,11 @@
                             Plataforma
                         </label>
 
+
                         <select
                             id="platform"
                             name="platform"
+                            required
                         >
 
                             <option
@@ -247,65 +249,65 @@
                                 Seleccione una plataforma
                             </option>
 
+
                             <option value="DramaBox">
                                 DramaBox
                             </option>
+
 
                             <option value="DramaWave">
                                 DramaWave
                             </option>
 
+
                             <option value="GoodShort">
                                 GoodShort
                             </option>
+
 
                             <option value="FlickReel">
                                 FlickReel
                             </option>
 
+
                             <option value="Melolo">
                                 Melolo
                             </option>
+
 
                             <option value="NetShort">
                                 NetShort
                             </option>
 
+
                             <option value="ReelShort">
                                 ReelShort
                             </option>
 
-                        </select>
 
+                            <!-- =========================================
+                                 SEPARADOR
+                            ========================================== -->
 
-                        <!-- =============================================
-                             PLATAFORMA PERSONALIZADA
-                        ============================================== -->
-
-                        <div
-                            id="nueva-plataforma-container"
-                            class="new-platform-container"
-                        >
-
-                            <label for="nueva-plataforma">
-                                Nombre de la nueva plataforma
-                            </label>
-
-                            <input
-                                type="text"
-                                id="nueva-plataforma"
-                                name="nueva_plataforma"
-                                maxlength="100"
-                                autocomplete="off"
-                                placeholder="Escribe el nombre de la plataforma"
+                            <option
+                                disabled
+                                value="__SEPARADOR_PLATAFORMA__"
                             >
+                                ────────────────────────
+                            </option>
 
-                            <small>
-                                Utiliza este campo solamente cuando
-                                la plataforma no aparezca en la lista.
-                            </small>
 
-                        </div>
+                            <!-- =========================================
+                                 NUEVA PLATAFORMA
+                            ========================================== -->
+
+                            <option
+                                value="__NUEVA_PLATAFORMA__"
+                            >
+                                + NUEVA PLATAFORMA
+                            </option>
+
+                        </select>
 
                     </div>
 
@@ -423,6 +425,7 @@
                                 Publicado
                             </option>
 
+
                             <option value="draft">
                                 Borrador
                             </option>
@@ -448,6 +451,7 @@
                             Categoría
                         </label>
 
+
                         <select
                             id="categorias-selector"
                             name="category"
@@ -462,6 +466,7 @@
                             </option>
 
                         </select>
+
 
                         <small>
                             Selecciona una categoría para este microdrama.
@@ -491,32 +496,6 @@
                             </span>
 
                         </label>
-
-                    </div>
-
-
-                    <!-- =================================================
-                         ORDEN
-                    ================================================== -->
-
-                    <div class="form-group">
-
-                        <label for="sort_order">
-                            Orden
-                        </label>
-
-                        <input
-                            type="number"
-                            id="sort_order"
-                            name="sort_order"
-                            min="1"
-                            step="1"
-                            readonly
-                        >
-
-                        <small>
-                            El sistema asigna el orden automáticamente.
-                        </small>
 
                     </div>
 
@@ -646,6 +625,100 @@
 
 
             <!-- =================================================
+                 POPUP NUEVA PLATAFORMA
+            ================================================== -->
+
+            <div
+                id="modal-nueva-plataforma"
+                class="category-modal"
+                hidden
+            >
+
+                <div
+                    id="platform-modal-backdrop"
+                    class="category-modal__backdrop"
+                ></div>
+
+
+                <div
+                    class="category-modal__dialog"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="titulo-modal-nueva-plataforma"
+                >
+
+                    <div class="category-modal__header">
+
+                        <h3 id="titulo-modal-nueva-plataforma">
+                            Nueva plataforma
+                        </h3>
+
+
+                        <button
+                            type="button"
+                            id="boton-cerrar-modal-plataforma"
+                            class="category-modal__close"
+                            aria-label="Cerrar"
+                            title="Cerrar"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+
+                    <div class="category-modal__body">
+
+                        <label for="nueva-plataforma-modal">
+                            Nombre de la plataforma
+                        </label>
+
+
+                        <input
+                            type="text"
+                            id="nueva-plataforma-modal"
+                            maxlength="100"
+                            autocomplete="off"
+                            placeholder="Ejemplo: MiPlataforma"
+                        >
+
+
+                        <div
+                            id="mensaje-nueva-plataforma"
+                            class="category-modal__message"
+                            hidden
+                        ></div>
+
+                    </div>
+
+
+                    <div class="category-modal__actions">
+
+                        <button
+                            type="button"
+                            id="boton-cancelar-categoria-plataforma"
+                            class="button button--secondary"
+                        >
+                            Cancelar
+                        </button>
+
+
+                        <button
+                            type="button"
+                            id="boton-crear-plataforma"
+                            class="button button--primary"
+                        >
+                            Usar plataforma
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
                  ESTADO DE CARGA
             ================================================== -->
 
@@ -709,88 +782,88 @@
 
             </div>
 
-<!-- =================================================
-     TABLA
-================================================== -->
 
-<div
-    id="contenedor-tabla"
-    class="table-container"
-    hidden
->
+            <!-- =================================================
+                 TABLA
+            ================================================== -->
 
-    <table class="admin-table">
+            <div
+                id="contenedor-tabla"
+                class="table-container"
+                hidden
+            >
 
-        <thead>
+                <table class="admin-table">
 
-            <tr>
+                    <thead>
 
-                <th scope="col">
+                        <tr>
 
-                    <input
-                        type="checkbox"
-                        id="seleccionar-todos"
-                        title="Seleccionar todos"
-                    >
+                            <th scope="col">
 
-                </th>
+                                <input
+                                    type="checkbox"
+                                    id="seleccionar-todos"
+                                    title="Seleccionar todos"
+                                >
 
-
-                <th scope="col">
-                    ID
-                </th>
+                            </th>
 
 
-                <th scope="col">
-                    Microdrama
-                </th>
+                            <th scope="col">
+                                ID
+                            </th>
 
 
-                <th scope="col">
-                    Plataforma
-                </th>
+                            <th scope="col">
+                                Microdrama
+                            </th>
 
 
-                <th scope="col">
-                    Categoría
-                </th>
+                            <th scope="col">
+                                Plataforma
+                            </th>
 
 
-                <th scope="col">
-                    Estado
-                </th>
+                            <th scope="col">
+                                Categoría
+                            </th>
 
 
-                <th scope="col">
-                    Destacado
-                </th>
+                            <th scope="col">
+                                Estado
+                            </th>
 
 
-                <th scope="col">
-                    Orden
-                </th>
+                            <th scope="col">
+                                Destacado
+                            </th>
 
 
-                <th scope="col">
-                    Actualización
-                </th>
+                            <th scope="col">
+                                Orden
+                            </th>
 
 
-                <th scope="col">
-                    Acciones
-                </th>
-
-            </tr>
-
-        </thead>
+                            <th scope="col">
+                                Actualización
+                            </th>
 
 
-        <tbody id="lista-dramas"></tbody>
+                            <th scope="col">
+                                Acciones
+                            </th>
 
-    </table>
+                        </tr>
 
-</div>
-           
+                    </thead>
+
+
+                    <tbody id="lista-dramas"></tbody>
+
+                </table>
+
+            </div>
 
 
             <!-- =================================================
@@ -809,6 +882,10 @@
 
     </main>
 
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
 
     <script
         src="/admin/admin.js"

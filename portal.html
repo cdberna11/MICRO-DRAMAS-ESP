@@ -57,30 +57,27 @@
 
         <section class="profiles">
 
-            <div
-                class="profile-card"
-                role="button"
-                tabindex="0"
-                aria-label="Entrar como Invitado"
-                onclick="entrarComoInvitado()"
-                onkeydown="if (event.key === 'Enter' || event.key === ' ') entrarComoInvitado()"
-            >
+           <a
+    href="/index.html"
+    class="profile-card"
+    aria-label="Entrar como Invitado"
+>
 
-                <div class="profile-avatar">
+    <div class="profile-avatar">
 
-                    <img
-                        src="/assets/avatar-1.png"
-                        alt="Invitado"
-                    >
+        <img
+            src="/assets/avatar-1.png"
+            alt="Invitado"
+        >
 
-                </div>
+    </div>
 
 
-                <div class="profile-name">
-                    Invitado
-                </div>
+    <div class="profile-name">
+        Invitado
+    </div>
 
-            </div>
+</a>
 
         </section>
 
@@ -92,15 +89,7 @@
          NAVEGACIÓN
     ====================================================== -->
 
-    <script>
-
-        function entrarComoInvitado() {
-
-            window.location.href = "/index.html";
-
-        }
-
-    </script>
+   
 
 
 </body>

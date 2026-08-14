@@ -2266,7 +2266,7 @@ function limpiarFormulario() {
     ) {
 
         status.value =
-            "published";
+            "draft";
 
     }
 

@@ -76,6 +76,19 @@ input:focus { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.14); }
 .modal-close:hover { color: #e50914; }
 .modal-avatar-options { margin-top: 6px; }
 
+/* Pantalla PIN a pantalla completa, inspirada en la experiencia Netflix */
+body.pin-mode { background: #000; overflow: hidden; }
+body.pin-mode .portal-screen { justify-content: center; padding: 30px 20px; }
+body.pin-mode .portal-logo { display: none; }
+body.pin-mode .portal-card { width: min(900px, 96vw); padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+body.pin-mode .pin-panel { min-height: 0; }
+body.pin-mode .pin-panel h1 { font-size: clamp(30px, 4vw, 54px); margin-bottom: 28px; }
+body.pin-mode .pin-panel .panel-subtitle { display: none; }
+body.pin-mode .pin-inputs { margin-top: 0; }
+body.pin-mode .pin-account-label { color: #888; font-size: 13px; margin-top: 18px; }
+body.pin-mode #pin-submit { width: min(360px, 100%); margin: 28px auto 0; }
+body.pin-mode #pin-back-login { width: min(360px, 100%); margin: 10px auto 0; }
+
 [hidden] { display: none !important; }
 @media (max-width: 600px) {
     .portal-screen { padding: 26px 14px 40px; justify-content: flex-start; }
@@ -87,6 +100,8 @@ input:focus { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.14); }
     .pin-inputs { gap: 9px; margin-top: 22px; }
     .pin-input { width: 56px !important; height: 66px; min-height: 66px !important; font-size: 27px !important; }
     .pin-input.filled { width: 63px !important; height: 72px; }
+    body.pin-mode .portal-screen { padding: 24px 12px; }
+    body.pin-mode .pin-panel h1 { font-size: clamp(28px, 8vw, 42px); }
     .edit-modal { padding-left: 10px; padding-right: 10px; }
     .edit-modal-card { width: 100%; max-height: 92dvh; padding: 24px 18px; border-radius: 12px; }
     .edit-modal-card h2 { font-size: 26px; margin-bottom: 18px; }

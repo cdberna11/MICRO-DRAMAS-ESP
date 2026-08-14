@@ -3,7 +3,7 @@
 /* =========================================================
    MICRO-DRAMAS-ESP
    REPRODUCTOR PROPIO
-   MEGAJS + MP4Box.js + MediaSource
+   MEGAJS + MP4Box.js F+ MediaSource
 
    FUNCIONES:
    - Catálogo
@@ -984,6 +984,77 @@ function crearBotonCategoria(
 
 
     return boton;
+
+}
+
+/* =========================================================
+   OBTENER CATEGORÍA DEL DRAMA
+========================================================= */
+
+function obtenerCategoriaDrama(drama) {
+
+    if (
+        !drama ||
+        !Array.isArray(categoriasPortal)
+    ) {
+
+        return "Sin categoría";
+
+    }
+
+
+    const dramaId =
+        Number(
+            drama.id
+        );
+
+
+    if (
+        !Number.isFinite(
+            dramaId
+        )
+    ) {
+
+        return "Sin categoría";
+
+    }
+
+
+    /*
+     * Buscar la categoría cuyo drama_ids
+     * contenga el ID del microdrama.
+     */
+
+    const categoria =
+        categoriasPortal.find(
+            elemento =>
+                Array.isArray(
+                    elemento.drama_ids
+                ) &&
+                elemento.drama_ids.includes(
+                    dramaId
+                )
+        );
+
+
+    if (
+        !categoria
+    ) {
+
+        return "Sin categoría";
+
+    }
+
+
+    return (
+        String(
+            categoria.name ||
+            ""
+        )
+            .trim()
+            .toUpperCase() ||
+        "Sin categoría"
+    );
 
 }
 
@@ -2296,6 +2367,43 @@ function crearTarjetaDrama(
         )
     );
 
+/* =====================================================
+   CATEGORÍA
+===================================================== */
+
+const categoria =
+    document.createElement(
+        "p"
+    );
+
+
+categoria.className =
+    "drama-card__category";
+
+
+const etiquetaCategoria =
+    document.createElement(
+        "strong"
+    );
+
+
+etiquetaCategoria.textContent =
+    "Categoría: ";
+
+
+categoria.appendChild(
+    etiquetaCategoria
+);
+
+
+categoria.appendChild(
+    document.createTextNode(
+        obtenerCategoriaDrama(
+            drama
+        )
+    )
+);
+   
 
     /* =====================================================
        CONTROLES
@@ -2530,11 +2638,15 @@ function crearTarjetaDrama(
         tipo
     );
 
+   
 
     overlay.appendChild(
         plataforma
     );
 
+   overlay.appendChild(
+    categoria
+);
 
     overlay.appendChild(
         controles
@@ -2908,7 +3020,15 @@ function crearDetalleMovil() {
         document.createElement(
             "p"
         );
+const categoria =
+    document.createElement(
+        "p"
+    );
 
+
+categoria.className =
+    "mobile-detail__category";
+   
 
     plataforma.className =
         "mobile-detail__platform";
@@ -3022,7 +3142,10 @@ function crearDetalleMovil() {
     contenido.appendChild(
         plataforma
     );
-
+contenido.appendChild(
+    categoria
+);
+   
 
     contenido.appendChild(
         vistas
@@ -3128,6 +3251,11 @@ function abrirDetalleMovil(
         );
 
 
+const categoria =
+    detalle.querySelector(
+        ".mobile-detail__category"
+    );
+   
     const vistas =
         detalle.querySelector(
             ".mobile-detail__views"
@@ -3172,7 +3300,15 @@ function abrirDetalleMovil(
                 ? drama.platform.trim()
                 : "No especificada"
         }`;
+   
+categoria.textContent =
+    `Categoría: ${
+        obtenerCategoriaDrama(
+            drama
+        )
+    }`;
 
+   
 
     actualizarTextoVistas(
         vistas,

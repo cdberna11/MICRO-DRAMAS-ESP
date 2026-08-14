@@ -53,11 +53,17 @@ body.video-player-open {
 
 
 .site-header__content {
-    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 18px 20px;
+}
 
-    max-width: 1500px;
-
-    margin: 0 auto;
+.site-logo {
+    display: block;
+    width: 360px;
+    max-width: 75vw;
+    height: auto;
 }
 
 
@@ -1163,7 +1169,6 @@ body.video-player-open {
     }
 }
 
-
 /* =========================================================
    MÓVIL
 ========================================================= */
@@ -1173,13 +1178,30 @@ body.video-player-open {
     .site-header {
 
         padding:
-            18px 16px;
+            14px 16px;
     }
 
 
-    .site-header h1 {
+    .site-header__content {
 
-        font-size: 21px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+
+    .site-logo {
+
+        display: block;
+
+        width:
+            280px;
+
+        max-width:
+            85vw;
+
+        height:
+            auto;
     }
 
 
@@ -1188,6 +1210,7 @@ body.video-player-open {
         padding:
             14px 12px 30px;
     }
+}
 
 
     /* -----------------------------------------------------

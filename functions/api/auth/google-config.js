@@ -4,7 +4,7 @@ export async function onRequestGet(context) {
     const clientId = String(context.env.GOOGLE_CLIENT_ID || "").trim();
     const csrfToken = newGoogleCsrfToken();
     return Response.json(
-        { configured: Boolean(clientId), clientId: clientId || null },
+        { configured: Boolean(clientId), clientId: clientId || null, csrfToken },
         {
             headers: {
                 "Cache-Control": "no-store",

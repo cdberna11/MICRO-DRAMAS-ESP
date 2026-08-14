@@ -53,42 +53,27 @@ async function initGoogleSignIn() {
         const config = await response.json();
         googleCsrfToken = config.csrfToken || null;
         if (!config.configured || !config.clientId || !googleCsrfToken) {
-            loginBox.innerHTML = `<div class="google-unavailable">Google estará disponible cuando terminemos su configuración.</div>`;
-            registerBox.innerHTML = `<div class="google-unavailable">Google estará disponible cuando terminemos su configuración.</div>`;
+            const unavailable = "Google estará disponible cuando terminemos su configuración.";
+            loginBox.innerHTML = `<div class="google-unavailable">${unavailable}</div>`;
+            registerBox.innerHTML = `<div class="google-unavailable">${unavailable}</div>`;
             return;
         }
-
         window.handleGoogleCredential = async credentialResponse => {
             if (!credentialResponse?.credential || !googleCsrfToken) { showMessage("No se recibió una credencial válida de Google."); return; }
             const form = new URLSearchParams({ credential: credentialResponse.credential, g_csrf_token: googleCsrfToken });
-            const response = await fetch("/api/auth/google", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-                body: form.toString(),
-                credentials: "same-origin"
-            });
-            if (response.redirected) { window.location.href = response.url; return; }
-            if (!response.ok) showMessage("No se pudo validar la cuenta de Google.");
+            const response = await fetch("/api/auth/google", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: form.toString(), credentials: "same-origin", redirect: "manual" });
+            if (response.type === "opaqueredirect") { window.location.reload(); return; }
+            if (!response.ok) { showMessage("No se pudo validar la cuenta de Google."); return; }
+            window.location.reload();
         };
-
         const script = document.createElement("script");
         script.src = "https://accounts.google.com/gsi/client";
         script.async = true;
         script.defer = true;
         script.onload = () => {
             google.accounts.id.initialize({ client_id: config.clientId, callback: window.handleGoogleCredential, ux_mode: "popup" });
-            [loginBox, registerBox].forEach(container => {
-                const button = document.createElement("div");
-                button.className = "g_id_signin";
-                button.dataset.type = "standard";
-                button.dataset.theme = "outline";
-                button.dataset.text = "continue_with";
-                button.dataset.shape = "rectangular";
-                button.dataset.size = "large";
-                button.dataset.width = "100%";
-                container.appendChild(button);
-                google.accounts.id.renderButton(container, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 360 });
-            });
+            google.accounts.id.renderButton(loginBox, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 360 });
+            google.accounts.id.renderButton(registerBox, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: 360 });
         };
         document.head.appendChild(script);
     } catch {
@@ -152,11 +137,7 @@ $("#enter-catalog").addEventListener("click", () => { window.location.href = "/"
 $("#logout-button").addEventListener("click", () => { window.location.href = "/api/session/logout"; });
 
 const authError = new URLSearchParams(window.location.search).get("auth_error");
-if (authError) {
-    const decoded = decodeURIComponent(authError);
-    history.replaceState({}, document.title, "/portal");
-    showMessage(decoded);
-}
+if (authError) { history.replaceState({}, document.title, "/portal"); showMessage(authError); }
 
 loadSession();
 initGoogleSignIn();

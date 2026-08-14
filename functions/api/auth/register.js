@@ -63,8 +63,8 @@ export async function onRequestPost(context) {
         await db.prepare(`
             INSERT INTO users (
                 email, phone, password_hash, auth_method, display_name, avatar,
-                profile_completed, phone_verified, email_verified, auth_provider
-            ) VALUES (?, ?, ?, ?, ?, 'avatar-1.png', 0, 0, 0, 'local')
+                profile_completed, phone_verified, email_verified, auth_provider, pin_enabled
+            ) VALUES (?, ?, ?, ?, ?, 'avatar-1.png', 0, 0, 0, 'local', 1)
         `).bind(
             email,
             authMethod === "phone" ? identifier : null,

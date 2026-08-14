@@ -29,19 +29,38 @@ export async function onRequestPost(context) {
         }
 
         const duplicate = await db.prepare(`SELECT id FROM users WHERE email = ? LIMIT 1`).bind(email).first();
-        if (duplicate) return json({ success: false, code: "EMAIL_ALREADY_REGISTERED", error: "Este correo ya está registrado." }, 409);
+        if (duplicate) {
+            return json({ success: false, code: "EMAIL_ALREADY_REGISTERED", error: "Este correo ya está registrado." }, 409);
+        }
 
         const passwordHash = await hashPassword(password);
+
+        // Registro exclusivamente local por correo.
+        // No depende de columnas de Google que ya no forman parte del flujo de usuarios.
         try {
             const result = await db.prepare(`
-                INSERT INTO users (email, phone, password_hash, auth_method, auth_provider, display_name, avatar, phone_verified, email_verified)
-                VALUES (?, NULL, ?, 'email', 'local', ?, 'avatar-1.png', 0, 0)
+                INSERT INTO users (email, phone, password_hash, auth_method, display_name, avatar, phone_verified, email_verified)
+                VALUES (?, NULL, ?, 'email', ?, 'avatar-1.png', 0, 0)
             `).bind(email, passwordHash, displayName).run();
+
             const userId = result.meta?.last_row_id;
             if (!userId) return json({ success: false, error: "No se pudo crear la cuenta." }, 500);
 
             const session = await createUserSession(db, userId);
-            return json({ success: true, user: { id: userId, displayName, avatar: "avatar-1.png", authMethod: "email", authProvider: "local" } }, 201, { "Set-Cookie": buildSessionCookie(session.sessionId) });
+            return json(
+                {
+                    success: true,
+                    user: {
+                        id: userId,
+                        displayName,
+                        avatar: "avatar-1.png",
+                        authMethod: "email",
+                        authProvider: "local"
+                    }
+                },
+                201,
+                { "Set-Cookie": buildSessionCookie(session.sessionId) }
+            );
         } catch (insertError) {
             const message = String(insertError?.message || insertError || "");
             if (/unique|constraint/i.test(message)) {

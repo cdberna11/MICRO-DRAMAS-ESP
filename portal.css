@@ -30,6 +30,21 @@ input:focus { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.14); }
 .auth-message.error { color: #ffd7da; background: #3a171b; border: 1px solid #9d2832; }
 .auth-message.success { color: #d7ffe2; background: #14341f; border: 1px solid #287644; }
 
+/* Método de acceso en el registro */
+.auth-method-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 2px; }
+.auth-method-option { min-height: 44px; border: 1px solid #3b3b47; border-radius: 8px; background: #0f0f14; color: #c9c9d3; font-weight: 700; transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+.auth-method-option:hover { border-color: #777783; }
+.auth-method-option.selected { border-color: #e50914; background: #351217; color: #fff; box-shadow: 0 0 0 1px rgba(229,9,20,.22); }
+
+/* PIN de 4 dígitos — estilo Netflix */
+.pin-panel { min-height: 240px; }
+.pin-inputs { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 28px auto 14px; }
+.pin-input { width: 68px !important; height: 78px; min-height: 78px !important; padding: 0 !important; border: 1px solid #666673 !important; border-radius: 2px !important; background: #050507 !important; color: #fff !important; text-align: center; font-size: 30px !important; font-weight: 700; caret-color: #fff; outline: none !important; transition: width .15s ease, height .15s ease, border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+.pin-input:focus, .pin-input.active { border-color: #fff !important; box-shadow: 0 0 0 1px rgba(255,255,255,.28); }
+.pin-input.filled { width: 76px !important; height: 86px; border-color: #aaa !important; transform: translateY(-2px); }
+.pin-input::selection { background: transparent; }
+.pin-account-label { min-height: 18px; color: #8f8f9b; text-align: center; font-size: 12px; margin-top: 8px; overflow-wrap: anywhere; }
+
 /* Primer acceso */
 .avatar-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-top: 4px; }
 .avatar-option { aspect-ratio: 1; border: 2px solid #34343e; border-radius: 9px; padding: 0; overflow: hidden; background: #101016; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
@@ -69,6 +84,9 @@ input:focus { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.14); }
     .panel h1 { font-size: 24px; }
     .panel-subtitle { margin-bottom: 18px; }
     .primary-button, .secondary-button, .catalog-button { min-height: 48px; }
+    .pin-inputs { gap: 9px; margin-top: 22px; }
+    .pin-input { width: 56px !important; height: 66px; min-height: 66px !important; font-size: 27px !important; }
+    .pin-input.filled { width: 63px !important; height: 72px; }
     .edit-modal { padding-left: 10px; padding-right: 10px; }
     .edit-modal-card { width: 100%; max-height: 92dvh; padding: 24px 18px; border-radius: 12px; }
     .edit-modal-card h2 { font-size: 26px; margin-bottom: 18px; }
@@ -81,4 +99,7 @@ input:focus { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.14); }
     .profile-avatar-button { width: 130px; height: 130px; }
     .welcome-block h1 { font-size: 24px; }
     .panel-subtitle { font-size: 13px; }
+    .pin-inputs { gap: 6px; }
+    .pin-input { width: 49px !important; height: 60px; min-height: 60px !important; font-size: 25px !important; }
+    .pin-input.filled { width: 55px !important; height: 66px; }
 }

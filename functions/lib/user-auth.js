@@ -68,7 +68,8 @@ export async function ensureUserSchema(db) {
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         last_login_at TEXT,
         auth_provider TEXT NOT NULL DEFAULT 'local',
-        google_sub TEXT
+        google_sub TEXT,
+        pin_enabled INTEGER NOT NULL DEFAULT 0
     )`).run();
 
     await db.prepare(`CREATE TABLE IF NOT EXISTS user_sessions (
@@ -95,6 +96,7 @@ export async function ensureUserSchema(db) {
     await addColumnIfMissing(db, userColumns, "users", "last_login_at", "TEXT");
     await addColumnIfMissing(db, userColumns, "users", "auth_provider", "TEXT NOT NULL DEFAULT 'local'");
     await addColumnIfMissing(db, userColumns, "users", "google_sub", "TEXT");
+    await addColumnIfMissing(db, userColumns, "users", "pin_enabled", "INTEGER NOT NULL DEFAULT 0");
 
     const sessionColumns = await getTableColumns(db, "user_sessions");
     await addColumnIfMissing(db, sessionColumns, "user_sessions", "user_id", "INTEGER NOT NULL DEFAULT 0");

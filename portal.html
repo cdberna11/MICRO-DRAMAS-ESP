@@ -18,8 +18,8 @@
                 <p class="panel-subtitle">Accede a tu cuenta para entrar a la cartelera.</p>
 
                 <form id="login-form" novalidate>
-                    <label for="login-identifier">Correo o teléfono</label>
-                    <input id="login-identifier" type="text" autocomplete="username" placeholder="correo@ejemplo.com o +507..." required>
+                    <label for="login-identifier">Correo</label>
+                    <input id="login-identifier" type="email" autocomplete="username" placeholder="correo@ejemplo.com" required>
 
                     <label for="login-password">Contraseña</label>
                     <input id="login-password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required>
@@ -29,19 +29,16 @@
 
                 <button id="go-forgot" class="text-button" type="button">¿Olvidaste tu contraseña?</button>
                 <div class="panel-divider"><span>o</span></div>
+                <div id="google-login-button" class="google-button-wrap"></div>
+                <div class="panel-divider"><span>o</span></div>
                 <button id="go-register" class="secondary-button" type="button">Crear una cuenta</button>
             </section>
 
             <section id="register-panel" class="panel" hidden>
                 <h1>Crear cuenta</h1>
-                <p class="panel-subtitle">Regístrate para tener tu propio perfil.</p>
+                <p class="panel-subtitle">Regístrate con tu correo o con tu cuenta de Google.</p>
 
                 <form id="register-form" novalidate>
-                    <div class="method-switch">
-                        <label><input id="register-method-email" type="radio" name="register-method" value="email" checked> Correo</label>
-                        <label><input id="register-method-phone" type="radio" name="register-method" value="phone"> WhatsApp</label>
-                    </div>
-
                     <label for="register-name">Nombre</label>
                     <input id="register-name" type="text" autocomplete="name" placeholder="Tu nombre" maxlength="60" required>
 
@@ -57,16 +54,18 @@
                     <button id="register-submit" class="primary-button" type="submit">Crear cuenta</button>
                 </form>
 
+                <div class="panel-divider"><span>o</span></div>
+                <div id="google-register-button" class="google-button-wrap"></div>
                 <button id="register-go-login" class="text-button" type="button">Ya tengo una cuenta</button>
             </section>
 
             <section id="forgot-panel" class="panel" hidden>
                 <h1>Restablecer contraseña</h1>
-                <p class="panel-subtitle">Introduce el correo o teléfono asociado a tu cuenta.</p>
+                <p class="panel-subtitle">Introduce el correo asociado a tu cuenta.</p>
 
                 <form id="forgot-form" novalidate>
-                    <label for="forgot-identifier">Correo o teléfono</label>
-                    <input id="forgot-identifier" type="text" autocomplete="username" placeholder="correo@ejemplo.com o +507..." required>
+                    <label for="forgot-identifier">Correo</label>
+                    <input id="forgot-identifier" type="email" autocomplete="username" placeholder="correo@ejemplo.com" required>
 
                     <label for="forgot-password">Nueva contraseña</label>
                     <input id="forgot-password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" minlength="8" required>
@@ -95,7 +94,6 @@
 
                     <label>Elegir avatar</label>
                     <div id="avatar-options" class="avatar-options"></div>
-
                     <button class="primary-button" type="submit">Guardar perfil</button>
                 </form>
 
@@ -104,7 +102,6 @@
             </section>
         </section>
     </main>
-
     <script src="/portal.js"></script>
 </body>
 </html>

@@ -54,18 +54,32 @@ body.video-player-open {
 
 .site-header__content {
     display: flex;
+
     justify-content: center;
+
     align-items: center;
-    padding: 18px 20px;
+
+    padding:
+        0;
 }
+
 
 .site-logo {
     display: block;
+
     width: 360px;
+
     max-width: 75vw;
+
     height: auto;
 }
 
+
+/* =========================================================
+   ANTIGUO H1
+   Se mantiene por compatibilidad, pero el portal utiliza
+   ahora el logo gráfico.
+========================================================= */
 
 .site-header h1 {
     color: #ffffff;
@@ -89,13 +103,14 @@ body.video-player-open {
 
     margin: 0 auto;
 
-    padding: 28px 32px 50px;
+    padding:
+        28px 32px 50px;
 }
 
 
 /* =========================================================
    CATÁLOGO
-   ESCRITORIO: DESPLAZAMIENTO VERTICAL
+   ESCRITORIO
 ========================================================= */
 
 .catalog-carousel {
@@ -110,7 +125,8 @@ body.video-player-open {
 
     width: 100%;
 
-    padding: 20px 8px 40px;
+    padding:
+        20px 8px 40px;
 
     overflow-x: visible;
 
@@ -154,11 +170,13 @@ body.video-player-open {
 
 
 .drama-card:hover {
-    transform: scale(1.08);
+    transform:
+        scale(1.08);
 
     z-index: 20;
 
-    border-color: #3c3c45;
+    border-color:
+        #3c3c45;
 
     box-shadow:
         0 20px 45px
@@ -174,27 +192,37 @@ body.video-player-open {
     position: absolute;
 
     left: -42px;
+
     top: 28px;
 
     width: 190px;
 
-    padding: 8px 0;
+    padding:
+        8px 0;
 
-    background: #e50914;
+    background:
+        #e50914;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    text-align: center;
+    text-align:
+        center;
 
-    font-size: 11px;
+    font-size:
+        11px;
 
-    font-weight: 800;
+    font-weight:
+        800;
 
-    letter-spacing: 0.4px;
+    letter-spacing:
+        0.4px;
 
-    transform: rotate(-45deg);
+    transform:
+        rotate(-45deg);
 
-    z-index: 8;
+    z-index:
+        8;
 
     box-shadow:
         0 3px 8px
@@ -204,15 +232,15 @@ body.video-player-open {
 
 /* =========================================================
    ETIQUETA PRÓXIMO ESTRENO
-   Borradores
-   Banda horizontal azul
 ========================================================= */
 
 .drama-card__upcoming {
     position: absolute;
 
     top: 0;
+
     left: 0;
+
     right: 0;
 
     width: 100%;
@@ -252,40 +280,50 @@ body.video-player-open {
 
 /* =========================================================
    INDICADOR TOP
-   Estilo inspirado en la insignia TOP 10
 ========================================================= */
 
 .drama-card__top {
     position: absolute;
 
     top: 10px;
+
     right: 10px;
 
     display: inline-flex;
 
     align-items: center;
+
     justify-content: center;
 
     gap: 3px;
 
     min-width: 58px;
+
     height: 32px;
 
-    padding: 0 7px;
+    padding:
+        0 7px;
 
-    background: #e50914;
+    background:
+        #e50914;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    border-radius: 6px;
+    border-radius:
+        6px;
 
-    font-size: 12px;
+    font-size:
+        12px;
 
-    font-weight: 800;
+    font-weight:
+        800;
 
-    line-height: 1;
+    line-height:
+        1;
 
-    z-index: 10;
+    z-index:
+        10;
 
     box-shadow:
         0 3px 8px
@@ -301,11 +339,14 @@ body.video-player-open {
     display: inline-flex;
 
     align-items: center;
+
     justify-content: center;
 
-    font-size: 17px;
+    font-size:
+        17px;
 
-    line-height: 1;
+    line-height:
+        1;
 }
 
 
@@ -324,7 +365,8 @@ body.video-player-open {
 
     object-position: center;
 
-    background: #25252c;
+    background:
+        #25252c;
 }
 
 
@@ -372,50 +414,68 @@ body.video-player-open {
 ========================================================= */
 
 .drama-card__title {
-    margin-bottom: 6px;
+    margin-bottom:
+        6px;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    font-size: 17px;
+    font-size:
+        17px;
 
-    line-height: 1.25;
+    line-height:
+        1.25;
 
-    font-weight: 800;
+    font-weight:
+        800;
 
-    display: -webkit-box;
+    display:
+        -webkit-box;
 
-    -webkit-box-orient: vertical;
+    -webkit-box-orient:
+        vertical;
 
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp:
+        2;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 }
 
 
 .drama-card__type {
-    margin-bottom: 6px;
+    margin-bottom:
+        6px;
 
-    color: #d4d4d8;
+    color:
+        #d4d4d8;
 
-    font-size: 12px;
+    font-size:
+        12px;
 
-    line-height: 1.35;
+    line-height:
+        1.35;
 }
 
 
 .drama-card__platform {
-    margin-bottom: 12px;
+    margin-bottom:
+        12px;
 
-    color: #d4d4d8;
+    color:
+        #d4d4d8;
 
-    font-size: 12px;
+    font-size:
+        12px;
 
-    line-height: 1.35;
+    line-height:
+        1.35;
 }
 
 
 .drama-card__platform strong {
-    color: #ffffff;
+    color:
+        #ffffff;
 }
 
 
@@ -424,11 +484,14 @@ body.video-player-open {
 ========================================================= */
 
 .drama-card__controls {
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    gap: 8px;
+    gap:
+        8px;
 }
 
 
@@ -437,32 +500,44 @@ body.video-player-open {
 ========================================================= */
 
 .drama-card__play {
-    display: inline-flex;
+    display:
+        inline-flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    gap: 7px;
+    gap:
+        7px;
 
-    min-height: 36px;
+    min-height:
+        36px;
 
     padding:
         8px 15px;
 
-    border: none;
+    border:
+        none;
 
-    border-radius: 5px;
+    border-radius:
+        5px;
 
-    background: #ffffff;
+    background:
+        #ffffff;
 
-    color: #111111;
+    color:
+        #111111;
 
-    font-size: 14px;
+    font-size:
+        14px;
 
-    font-weight: 800;
+    font-weight:
+        800;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 
     transition:
         transform 0.18s ease,
@@ -471,9 +546,11 @@ body.video-player-open {
 
 
 .drama-card__play:hover {
-    background: #e6e6e6;
+    background:
+        #e6e6e6;
 
-    transform: scale(1.04);
+    transform:
+        scale(1.04);
 }
 
 
@@ -482,37 +559,48 @@ body.video-player-open {
 ========================================================= */
 
 .drama-card__more {
-    display: inline-flex;
+    display:
+        inline-flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    width: 36px;
+    width:
+        36px;
 
-    height: 36px;
+    height:
+        36px;
 
     border:
         1px solid
         rgba(255, 255, 255, 0.70);
 
-    border-radius: 50%;
+    border-radius:
+        50%;
 
     background:
         rgba(20, 20, 20, 0.85);
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    font-size: 24px;
+    font-size:
+        24px;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 }
 
 
 .drama-card__more:hover {
-    background: #ffffff;
+    background:
+        #ffffff;
 
-    color: #111111;
+    color:
+        #111111;
 }
 
 
@@ -521,19 +609,26 @@ body.video-player-open {
 ========================================================= */
 
 .drama-card__description {
-    max-height: 0;
+    max-height:
+        0;
 
-    margin-top: 0;
+    margin-top:
+        0;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
-    color: #dddddf;
+    color:
+        #dddddf;
 
-    font-size: 12px;
+    font-size:
+        12px;
 
-    line-height: 1.45;
+    line-height:
+        1.45;
 
-    opacity: 0;
+    opacity:
+        0;
 
     transition:
         max-height 0.28s ease,
@@ -545,13 +640,17 @@ body.video-player-open {
 .drama-card.is-description-open
 .drama-card__description {
 
-    max-height: 130px;
+    max-height:
+        130px;
 
-    margin-top: 12px;
+    margin-top:
+        12px;
 
-    opacity: 1;
+    opacity:
+        1;
 
-    overflow-y: auto;
+    overflow-y:
+        auto;
 }
 
 
@@ -561,17 +660,20 @@ body.video-player-open {
 
 .mensaje-error,
 .mensaje-vacio {
+    padding:
+        20px;
 
-    padding: 20px;
+    border-radius:
+        8px;
 
-    border-radius: 8px;
-
-    background: #18181e;
+    background:
+        #18181e;
 
     border:
         1px solid #2c2c34;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 }
 
 
@@ -580,27 +682,35 @@ body.video-player-open {
 ========================================================= */
 
 .mobile-detail {
-    display: none;
+    display:
+        none;
 
-    position: fixed;
+    position:
+        fixed;
 
-    inset: 0;
+    inset:
+        0;
 
-    z-index: 9000;
+    z-index:
+        9000;
 
-    background: #000000;
+    background:
+        #000000;
 }
 
 
 .mobile-detail.is-open {
-    display: block;
+    display:
+        block;
 }
 
 
 .mobile-detail__backdrop {
-    position: absolute;
+    position:
+        absolute;
 
-    inset: 0;
+    inset:
+        0;
 
     background:
         rgba(0, 0, 0, 0.96);
@@ -608,19 +718,26 @@ body.video-player-open {
 
 
 .mobile-detail__panel {
-    position: relative;
+    position:
+        relative;
 
-    z-index: 2;
+    z-index:
+        2;
 
-    width: 100%;
+    width:
+        100%;
 
-    height: 100%;
+    height:
+        100%;
 
-    overflow-y: auto;
+    overflow-y:
+        auto;
 
-    overflow-x: hidden;
+    overflow-x:
+        hidden;
 
-    background: #000000;
+    background:
+        #000000;
 }
 
 
@@ -630,36 +747,50 @@ body.video-player-open {
 
 .mobile-detail__close {
 
-    position: fixed;
+    position:
+        fixed;
 
-    top: 12px;
+    top:
+        12px;
 
-    right: 14px;
+    right:
+        14px;
 
-    z-index: 10;
+    z-index:
+        10;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    width: 40px;
+    width:
+        40px;
 
-    height: 40px;
+    height:
+        40px;
 
-    border: none;
+    border:
+        none;
 
-    border-radius: 50%;
+    border-radius:
+        50%;
 
     background:
         rgba(20, 20, 20, 0.85);
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    font-size: 30px;
+    font-size:
+        30px;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 }
 
 
@@ -669,15 +800,20 @@ body.video-player-open {
 
 .mobile-detail__image {
 
-    display: block;
+    display:
+        block;
 
-    width: 100%;
+    width:
+        100%;
 
-    max-height: 58vh;
+    max-height:
+        58vh;
 
-    object-fit: cover;
+    object-fit:
+        cover;
 
-    background: #050505;
+    background:
+        #050505;
 }
 
 
@@ -694,43 +830,56 @@ body.video-player-open {
 
 .mobile-detail__title {
 
-    margin-bottom: 8px;
+    margin-bottom:
+        8px;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    font-size: 28px;
+    font-size:
+        28px;
 
-    line-height: 1.15;
+    line-height:
+        1.15;
 
-    font-weight: 800;
+    font-weight:
+        800;
 }
 
 
 .mobile-detail__type {
 
-    margin-bottom: 7px;
+    margin-bottom:
+        7px;
 
-    color: #d4d4d4;
+    color:
+        #d4d4d4;
 
-    font-size: 15px;
+    font-size:
+        15px;
 }
 
 
 .mobile-detail__platform {
 
-    margin-bottom: 20px;
+    margin-bottom:
+        20px;
 
-    color: #a9a9af;
+    color:
+        #a9a9af;
 
-    font-size: 14px;
+    font-size:
+        14px;
 }
 
 
 .mobile-detail__actions {
 
-    width: 100%;
+    width:
+        100%;
 
-    margin-bottom: 26px;
+    margin-bottom:
+        26px;
 }
 
 
@@ -740,38 +889,53 @@ body.video-player-open {
 
 .mobile-detail__play {
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    gap: 10px;
+    gap:
+        10px;
 
-    width: 100%;
+    width:
+        100%;
 
-    min-height: 52px;
+    min-height:
+        52px;
 
-    padding: 13px 20px;
+    padding:
+        13px 20px;
 
-    border: none;
+    border:
+        none;
 
-    border-radius: 5px;
+    border-radius:
+        5px;
 
-    background: #ffffff;
+    background:
+        #ffffff;
 
-    color: #111111;
+    color:
+        #111111;
 
-    font-size: 18px;
+    font-size:
+        18px;
 
-    font-weight: 800;
+    font-weight:
+        800;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 }
 
 
 .mobile-detail__play[hidden] {
-    display: none;
+    display:
+        none;
 }
 
 
@@ -781,21 +945,27 @@ body.video-player-open {
 
 .mobile-detail__description-title {
 
-    margin-bottom: 10px;
+    margin-bottom:
+        10px;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    font-size: 20px;
+    font-size:
+        20px;
 }
 
 
 .mobile-detail__description {
 
-    color: #dddddd;
+    color:
+        #dddddd;
 
-    font-size: 16px;
+    font-size:
+        16px;
 
-    line-height: 1.6;
+    line-height:
+        1.6;
 }
 
 
@@ -805,29 +975,39 @@ body.video-player-open {
 
 .video-player {
 
-    display: none;
+    display:
+        none;
 
-    position: fixed;
+    position:
+        fixed;
 
-    inset: 0;
+    inset:
+        0;
 
-    width: 100vw;
+    width:
+        100vw;
 
-    height: 100vh;
+    height:
+        100vh;
 
-    z-index: 20000;
+    z-index:
+        20000;
 
-    background: #000000;
+    background:
+        #000000;
 }
 
 
 .video-player.is-open {
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 }
 
 
@@ -837,13 +1017,17 @@ body.video-player-open {
 
 .video-player__backdrop {
 
-    position: absolute;
+    position:
+        absolute;
 
-    inset: 0;
+    inset:
+        0;
 
-    width: 100%;
+    width:
+        100%;
 
-    height: 100%;
+    height:
+        100%;
 
     background:
         rgba(0, 0, 0, 0.96);
@@ -856,26 +1040,35 @@ body.video-player-open {
 
 .video-player__window {
 
-    position: relative;
+    position:
+        relative;
 
-    z-index: 2;
+    z-index:
+        2;
 
-    width: 96vw;
+    width:
+        96vw;
 
-    height: 92vh;
+    height:
+        92vh;
 
-    max-width: 1600px;
+    max-width:
+        1600px;
 
-    max-height: 900px;
+    max-height:
+        900px;
 
-    background: #000000;
+    background:
+        #000000;
 
     border:
         1px solid #29292f;
 
-    border-radius: 8px;
+    border-radius:
+        8px;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
     box-shadow:
         0 25px 90px
@@ -889,17 +1082,23 @@ body.video-player-open {
 
 .video-player__header {
 
-    position: relative;
+    position:
+        relative;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: space-between;
+    justify-content:
+        space-between;
 
-    width: 100%;
+    width:
+        100%;
 
-    height: 52px;
+    height:
+        52px;
 
     padding:
         7px 10px 7px 18px;
@@ -918,19 +1117,26 @@ body.video-player-open {
 
 .video-player__title {
 
-    min-width: 0;
+    min-width:
+        0;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    font-size: 17px;
+    font-size:
+        17px;
 
-    font-weight: 700;
+    font-weight:
+        700;
 
-    white-space: nowrap;
+    white-space:
+        nowrap;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
-    text-overflow: ellipsis;
+    text-overflow:
+        ellipsis;
 }
 
 
@@ -940,32 +1146,44 @@ body.video-player-open {
 
 .video-player__close {
 
-    flex: 0 0 auto;
+    flex:
+        0 0 auto;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    width: 38px;
+    width:
+        38px;
 
-    height: 38px;
+    height:
+        38px;
 
-    border: none;
+    border:
+        none;
 
-    border-radius: 50%;
+    border-radius:
+        50%;
 
     background:
         #29292f;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    font-size: 27px;
+    font-size:
+        27px;
 
-    line-height: 1;
+    line-height:
+        1;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 
     transition:
         background-color 0.18s ease,
@@ -989,16 +1207,20 @@ body.video-player-open {
 
 .video-player__area {
 
-    position: relative;
+    position:
+        relative;
 
-    width: 100%;
+    width:
+        100%;
 
     height:
         calc(100% - 52px);
 
-    background: #000000;
+    background:
+        #000000;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 }
 
 
@@ -1008,33 +1230,47 @@ body.video-player-open {
 
 .video-player__iframe {
 
-    display: block;
+    display:
+        block;
 
-    position: absolute;
+    position:
+        absolute;
 
-    top: 0;
+    top:
+        0;
 
-    left: 0;
+    left:
+        0;
 
-    width: 100% !important;
+    width:
+        100% !important;
 
-    height: 100% !important;
+    height:
+        100% !important;
 
-    min-width: 100%;
+    min-width:
+        100%;
 
-    min-height: 100%;
+    min-height:
+        100%;
 
-    max-width: none;
+    max-width:
+        none;
 
-    max-height: none;
+    max-height:
+        none;
 
-    border: 0;
+    border:
+        0;
 
-    margin: 0;
+    margin:
+        0;
 
-    padding: 0;
+    padding:
+        0;
 
-    background: #000000;
+    background:
+        #000000;
 }
 
 
@@ -1044,19 +1280,26 @@ body.video-player-open {
 
 .video-missing-message {
 
-    position: fixed;
+    position:
+        fixed;
 
-    inset: 0;
+    inset:
+        0;
 
-    z-index: 30000;
+    z-index:
+        30000;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: center;
+    justify-content:
+        center;
 
-    padding: 20px;
+    padding:
+        20px;
 
     background:
         rgba(0, 0, 0, 0.88);
@@ -1068,34 +1311,43 @@ body.video-player-open {
     width:
         min(460px, 100%);
 
-    padding: 28px;
+    padding:
+        28px;
 
     border:
         1px solid #303039;
 
-    border-radius: 12px;
+    border-radius:
+        12px;
 
-    background: #18181e;
+    background:
+        #18181e;
 
-    text-align: center;
+    text-align:
+        center;
 }
 
 
 .video-missing-message__box h2 {
 
-    margin-bottom: 12px;
+    margin-bottom:
+        12px;
 
-    font-size: 22px;
+    font-size:
+        22px;
 }
 
 
 .video-missing-message__box p {
 
-    margin-bottom: 22px;
+    margin-bottom:
+        22px;
 
-    color: #cfcfd4;
+    color:
+        #cfcfd4;
 
-    line-height: 1.5;
+    line-height:
+        1.5;
 }
 
 
@@ -1104,17 +1356,23 @@ body.video-player-open {
     padding:
         10px 20px;
 
-    border: none;
+    border:
+        none;
 
-    border-radius: 5px;
+    border-radius:
+        5px;
 
-    background: #ffffff;
+    background:
+        #ffffff;
 
-    color: #111111;
+    color:
+        #111111;
 
-    font-weight: 700;
+    font-weight:
+        700;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 }
 
 
@@ -1131,9 +1389,20 @@ body.video-player-open {
     }
 
 
+    .site-logo {
+
+        width:
+            330px;
+
+        max-width:
+            80vw;
+    }
+
+
     .site-header h1 {
 
-        font-size: 24px;
+        font-size:
+            24px;
     }
 
 
@@ -1149,25 +1418,31 @@ body.video-player-open {
         grid-template-columns:
             repeat(auto-fill, 220px);
 
-        gap: 20px;
+        gap:
+            20px;
     }
 
 
     .drama-card {
 
-        width: 220px;
+        width:
+            220px;
 
-        height: 330px;
+        height:
+            330px;
     }
 
 
     .video-player__window {
 
-        width: 96vw;
+        width:
+            96vw;
 
-        height: 92vh;
+        height:
+            92vh;
     }
 }
+
 
 /* =========================================================
    MÓVIL
@@ -1184,15 +1459,24 @@ body.video-player-open {
 
     .site-header__content {
 
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        display:
+            flex;
+
+        justify-content:
+            center;
+
+        align-items:
+            center;
+
+        padding:
+            0;
     }
 
 
     .site-logo {
 
-        display: block;
+        display:
+            block;
 
         width:
             280px;
@@ -1210,7 +1494,6 @@ body.video-player-open {
         padding:
             14px 12px 30px;
     }
-}
 
 
     /* -----------------------------------------------------
@@ -1219,52 +1502,64 @@ body.video-player-open {
 
     .catalog-carousel {
 
-        display: grid;
+        display:
+            grid;
 
         grid-template-columns:
             repeat(2, minmax(0, 1fr));
 
-        gap: 12px;
+        gap:
+            12px;
 
-        width: 100%;
+        width:
+            100%;
 
         padding:
             12px 4px 28px;
 
-        overflow: visible;
+        overflow:
+            visible;
     }
 
 
     .drama-card {
 
-        width: 100%;
+        width:
+            100%;
 
-        height: auto;
+        height:
+            auto;
 
-        aspect-ratio: 2 / 3;
+        aspect-ratio:
+            2 / 3;
 
-        border-radius: 9px;
+        border-radius:
+            9px;
     }
 
 
     .drama-card:hover {
 
-        transform: none;
+        transform:
+            none;
 
-        z-index: auto;
+        z-index:
+            auto;
     }
 
 
     .drama-card:hover
     > img {
 
-        transform: none;
+        transform:
+            none;
     }
 
 
     .drama-card__overlay {
 
-        display: none;
+        display:
+            none;
     }
 
 
@@ -1291,11 +1586,14 @@ body.video-player-open {
 
     .mobile-detail__image {
 
-        max-height: 52vh;
+        max-height:
+            52vh;
 
-        object-fit: contain;
+        object-fit:
+            contain;
 
-        background: #050505;
+        background:
+            #050505;
     }
 
 
@@ -1308,33 +1606,39 @@ body.video-player-open {
 
     .mobile-detail__title {
 
-        font-size: 25px;
+        font-size:
+            25px;
     }
 
 
     .mobile-detail__type {
 
-        font-size: 14px;
+        font-size:
+            14px;
     }
 
 
     .mobile-detail__platform {
 
-        font-size: 13px;
+        font-size:
+            13px;
     }
 
 
     .mobile-detail__description-title {
 
-        font-size: 19px;
+        font-size:
+            19px;
     }
 
 
     .mobile-detail__description {
 
-        font-size: 15px;
+        font-size:
+            15px;
 
-        line-height: 1.55;
+        line-height:
+            1.55;
     }
 
 
@@ -1354,23 +1658,30 @@ body.video-player-open {
 
     .video-player__window {
 
-        width: 100vw;
+        width:
+            100vw;
 
-        height: 100vh;
+        height:
+            100vh;
 
-        max-width: none;
+        max-width:
+            none;
 
-        max-height: none;
+        max-height:
+            none;
 
-        border: none;
+        border:
+            none;
 
-        border-radius: 0;
+        border-radius:
+            0;
     }
 
 
     .video-player__header {
 
-        height: 50px;
+        height:
+            50px;
 
         padding:
             6px 8px 6px 14px;
@@ -1379,17 +1690,21 @@ body.video-player-open {
 
     .video-player__title {
 
-        font-size: 15px;
+        font-size:
+            15px;
     }
 
 
     .video-player__close {
 
-        width: 36px;
+        width:
+            36px;
 
-        height: 36px;
+        height:
+            36px;
 
-        font-size: 25px;
+        font-size:
+            25px;
     }
 
 
@@ -1402,9 +1717,11 @@ body.video-player-open {
 
     .video-player__iframe {
 
-        width: 100% !important;
+        width:
+            100% !important;
 
-        height: 100% !important;
+        height:
+            100% !important;
     }
 }
 
@@ -1417,6 +1734,7 @@ body.video-player-open {
 
     .mobile-detail__title {
 
-        font-size: 23px;
+        font-size:
+            23px;
     }
 }

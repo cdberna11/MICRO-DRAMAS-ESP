@@ -36,7 +36,8 @@ export async function onRequestGet(context) {
         updated_at,
         published_at,
         top_period_start,
-        top_period_views
+        top_period_views,
+        categories
       FROM dramas
       WHERE status IN ('published', 'draft')
       ORDER BY
@@ -70,22 +71,6 @@ export async function onRequestGet(context) {
 
               /* =================================================
                  CALCULAR BLOQUE SEMANAL
-                 =================================================
-
-                 El bloque tiene una duración máxima de 7 días.
-
-                 Mientras esté vigente:
-
-                     period_views =
-                         views - top_period_views
-
-                 Cuando hayan pasado 7 días:
-
-                     period_views = 0
-
-                 De esta forma el TOP desaparece automáticamente
-                 al comenzar una nueva semana, aunque todavía no
-                 haya ocurrido una nueva reproducción.
               ================================================= */
 
               if (
@@ -131,10 +116,6 @@ export async function onRequestGet(context) {
                     1000;
 
 
-                  /* ---------------------------------------------
-                     BLOQUE SEMANAL VIGENTE
-                  --------------------------------------------- */
-
                   if (
                     diferencia >= 0 &&
                     diferencia <
@@ -155,6 +136,56 @@ export async function onRequestGet(context) {
               }
 
 
+              /* =================================================
+                 CATEGORÍAS
+                 -------------------------------------------------
+                 D1 guarda las categorías como JSON TEXT:
+
+                 ["SUPERACION","VENGANZA"]
+
+                 Convertimos ese texto en un array real
+                 para que el administrador y el portal puedan
+                 utilizarlo directamente.
+              ================================================= */
+
+              let categories = [];
+
+
+              if (
+                typeof drama.categories ===
+                  "string" &&
+                drama.categories.trim() !==
+                  ""
+              ) {
+
+                try {
+
+                  const categoriasParseadas =
+                    JSON.parse(
+                      drama.categories
+                    );
+
+
+                  if (
+                    Array.isArray(
+                      categoriasParseadas
+                    )
+                  ) {
+
+                    categories =
+                      categoriasParseadas;
+
+                  }
+
+                } catch {
+
+                  categories = [];
+
+                }
+
+              }
+
+
               return {
                 ...drama,
 
@@ -164,7 +195,10 @@ export async function onRequestGet(context) {
                   topPeriodViews,
 
                 period_views:
-                  periodViews
+                  periodViews,
+
+                categories
+
               };
 
             }

@@ -11,6 +11,11 @@ const API_ADMIN_DRAMAS =
 const DESCRIPCION_AUTOMATICA =
     "Drama doblado al español.";
 
+const API_ADMIN_CATEGORIES =
+    "/api/admin/categories";
+
+let categoriasDisponibles = [];
+
 
 /*
  * Mantiene en memoria los registros cargados.
@@ -135,6 +140,268 @@ function inicializarFormulario() {
     });
 }
 
+
+/* =========================================================
+   CARGAR CATEGORÍAS
+========================================================= */
+
+async function cargarCategoriasAdministrativas() {
+
+    const contenedor =
+        document.getElementById(
+            "categorias-selector"
+        );
+
+
+    if (
+        !contenedor
+    ) {
+
+        return;
+    }
+
+
+    try {
+
+        const respuesta =
+            await fetch(
+                API_ADMIN_CATEGORIES,
+                {
+                    method:
+                        "GET",
+
+                    credentials:
+                        "same-origin",
+
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    },
+
+                    cache:
+                        "no-store"
+                }
+            );
+
+
+        if (
+            !respuesta.ok
+        ) {
+
+            throw new Error(
+                `La API de categorías respondió con el estado ${respuesta.status}.`
+            );
+
+        }
+
+
+        const datos =
+            await respuesta.json();
+
+
+        if (
+            !datos.success ||
+            !Array.isArray(
+                datos.categories
+            )
+        ) {
+
+            throw new Error(
+                "La API de categorías devolvió una respuesta no válida."
+            );
+
+        }
+
+
+        categoriasDisponibles =
+            datos.categories.filter(
+                categoria =>
+                    categoria.active === true
+            );
+
+
+        renderizarSelectorCategorias();
+
+
+    } catch (error) {
+
+        console.error(
+            "Error al cargar categorías:",
+            error
+        );
+
+
+        categoriasDisponibles =
+            [];
+
+
+        contenedor.innerHTML =
+            `
+            <div class="categories-error">
+                No se pudieron cargar las categorías.
+            </div>
+            `;
+
+    }
+
+}
+
+
+/* =========================================================
+   RENDERIZAR SELECTOR DE CATEGORÍAS
+========================================================= */
+
+function renderizarSelectorCategorias(
+    seleccionadas = []
+) {
+
+    const contenedor =
+        document.getElementById(
+            "categorias-selector"
+        );
+
+
+    if (
+        !contenedor
+    ) {
+
+        return;
+    }
+
+
+    if (
+        categoriasDisponibles.length === 0
+    ) {
+
+        contenedor.innerHTML =
+            `
+            <div class="categories-empty">
+                No hay categorías activas disponibles.
+            </div>
+            `;
+
+        return;
+    }
+
+
+    const seleccion =
+        Array.isArray(
+            seleccionadas
+        )
+            ? seleccionadas.map(
+                categoria =>
+                    String(
+                        categoria
+                    )
+                        .trim()
+                        .toUpperCase()
+            )
+            : [];
+
+
+    contenedor.innerHTML =
+        "";
+
+
+    categoriasDisponibles.forEach(
+        categoria => {
+
+            const nombre =
+                String(
+                    categoria.name
+                )
+                    .trim()
+                    .toUpperCase();
+
+
+            const wrapper =
+                document.createElement(
+                    "label"
+                );
+
+
+            wrapper.className =
+                "category-option";
+
+
+            const checkbox =
+                document.createElement(
+                    "input"
+                );
+
+
+            checkbox.type =
+                "checkbox";
+
+
+            checkbox.className =
+                "drama-category-checkbox";
+
+
+            checkbox.value =
+                nombre;
+
+
+            checkbox.checked =
+                seleccion.includes(
+                    nombre
+                );
+
+
+            const texto =
+                document.createElement(
+                    "span"
+                );
+
+
+            texto.textContent =
+                nombre;
+
+
+            wrapper.appendChild(
+                checkbox
+            );
+
+
+            wrapper.appendChild(
+                texto
+            );
+
+
+            contenedor.appendChild(
+                wrapper
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   OBTENER CATEGORÍAS SELECCIONADAS
+========================================================= */
+
+function obtenerCategoriasSeleccionadas() {
+
+    const casillas =
+        document.querySelectorAll(
+            ".drama-category-checkbox:checked"
+        );
+
+
+    return Array.from(
+        casillas
+    ).map(
+        casilla =>
+            String(
+                casilla.value
+            )
+                .trim()
+                .toUpperCase()
+    );
+
+}
 
 /* =========================================================
    ABRIR FORMULARIO NUEVO

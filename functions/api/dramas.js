@@ -33,7 +33,8 @@ export async function onRequestGet(context) {
         featured,
         sort_order,
         created_at,
-        updated_at
+        updated_at,
+        published_at
       FROM dramas
       WHERE status IN ('published', 'draft')
       ORDER BY

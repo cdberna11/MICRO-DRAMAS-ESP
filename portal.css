@@ -32,10 +32,10 @@ input:focus { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.14); }
 
 /* Primer acceso */
 .avatar-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-top: 4px; }
-.avatar-option { aspect-ratio: 1; border: 2px solid #34343e; border-radius: 9px; padding: 0; overflow: hidden; background: #101016; }
+.avatar-option { aspect-ratio: 1; border: 2px solid #34343e; border-radius: 9px; padding: 0; overflow: hidden; background: #101016; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
 .avatar-option img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.avatar-option:hover { border-color: #aaa; }
-.avatar-option.selected { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.2); }
+.avatar-option:hover { border-color: #aaa; transform: scale(1.03); }
+.avatar-option.selected { position: relative; z-index: 2; border-color: #e50914; transform: scale(1.07); box-shadow: 0 0 0 2px rgba(229,9,20,.25), 0 10px 24px rgba(0,0,0,.48); }
 
 /* Perfil de usuario ya configurado */
 .welcome-block { margin-bottom: 18px; }

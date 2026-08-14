@@ -61,10 +61,11 @@ async function initGoogleSignIn() {
         window.handleGoogleCredential = async credentialResponse => {
             if (!credentialResponse?.credential || !googleCsrfToken) { showMessage("No se recibió una credencial válida de Google."); return; }
             const form = new URLSearchParams({ credential: credentialResponse.credential, g_csrf_token: googleCsrfToken });
-            const response = await fetch("/api/auth/google", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: form.toString(), credentials: "same-origin", redirect: "manual" });
-            if (response.type === "opaqueredirect") { window.location.reload(); return; }
-            if (!response.ok) { showMessage("No se pudo validar la cuenta de Google."); return; }
-            window.location.reload();
+            const response = await fetch("/api/auth/google", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: form.toString(), credentials: "same-origin" });
+            let data = {};
+            try { data = await response.json(); } catch {}
+            if (!response.ok || !data.success) { showMessage(data.error || "No se pudo validar la cuenta de Google."); return; }
+            await loadSession();
         };
         const script = document.createElement("script");
         script.src = "https://accounts.google.com/gsi/client";
@@ -135,9 +136,6 @@ $("#profile-form").addEventListener("submit", async event => {
 
 $("#enter-catalog").addEventListener("click", () => { window.location.href = "/"; });
 $("#logout-button").addEventListener("click", () => { window.location.href = "/api/session/logout"; });
-
-const authError = new URLSearchParams(window.location.search).get("auth_error");
-if (authError) { history.replaceState({}, document.title, "/portal"); showMessage(authError); }
 
 loadSession();
 initGoogleSignIn();

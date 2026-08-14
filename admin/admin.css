@@ -1517,33 +1517,35 @@ body {
 
 .category-modal {
 
-    position:
-        fixed;
+    position: fixed !important;
 
-    inset:
-        0;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
 
-    z-index:
-        9999;
+    z-index: 99999 !important;
 
-    display:
-        flex;
+    display: flex !important;
 
-    align-items:
-        center;
+    width: 100vw !important;
+    height: 100vh !important;
 
-    justify-content:
-        center;
+    margin: 0 !important;
+    padding: 20px !important;
 
-    padding:
-        20px;
+    align-items: center !important;
+    justify-content: center !important;
+
+    background: transparent !important;
 }
 
 
+/* Cuando está oculto */
+
 .category-modal[hidden] {
 
-    display:
-        none;
+    display: none !important;
 }
 
 
@@ -1553,22 +1555,26 @@ body {
 
 .category-modal__backdrop {
 
-    position:
-        absolute;
+    position: absolute !important;
 
-    inset:
-        0;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
 
-    background:
-        rgba(
-            0,
-            0,
-            0,
-            0.72
-        );
+    width: 100% !important;
+    height: 100% !important;
 
-    backdrop-filter:
-        blur(4px);
+    background: rgba(
+        0,
+        0,
+        0,
+        0.78
+    ) !important;
+
+    backdrop-filter: blur(3px);
+
+    cursor: pointer;
 }
 
 
@@ -1578,37 +1584,44 @@ body {
 
 .category-modal__dialog {
 
-    position:
-        relative;
+    position: relative !important;
 
-    z-index:
-        1;
+    z-index: 2 !important;
 
-    width:
-        100%;
+    display: flex !important;
 
-    max-width:
-        460px;
+    width: 100% !important;
 
-    overflow:
-        hidden;
+    max-width: 460px !important;
+
+    max-height: calc(
+        100vh - 40px
+    ) !important;
+
+    margin: auto !important;
+
+    overflow: hidden !important;
+
+    flex-direction: column !important;
 
     border:
-        1px solid var(--border);
+        1px solid
+        var(--border) !important;
 
     border-radius:
-        14px;
+        14px !important;
 
-    background-color:
-        var(--surface);
+    background:
+        var(--surface) !important;
 
     box-shadow:
-        0 24px 70px rgba(
+        0 25px 80px
+        rgba(
             0,
             0,
             0,
-            0.65
-        );
+            0.75
+        ) !important;
 
     animation:
         categoryModalEntrada
@@ -1618,125 +1631,108 @@ body {
 
 
 /* =========================================================
-   CABECERA DEL POPUP
+   CABECERA
 ========================================================= */
 
 .category-modal__header {
 
-    display:
-        flex;
+    display: flex !important;
 
-    min-height:
-        64px;
+    width: 100% !important;
+
+    min-height: 64px !important;
 
     padding:
-        16px 18px;
+        16px 18px !important;
 
-    align-items:
-        center;
+    align-items: center !important;
 
-    justify-content:
-        space-between;
+    justify-content: space-between !important;
 
-    gap:
-        16px;
+    gap: 15px !important;
 
     border-bottom:
-        1px solid var(--border);
+        1px solid
+        var(--border) !important;
 
-    background-color:
-        var(--surface-secondary);
+    background:
+        var(--surface-secondary) !important;
 }
 
 
 .category-modal__header h3 {
 
-    margin:
-        0;
+    margin: 0 !important;
 
     color:
-        var(--text);
+        var(--text) !important;
 
     font-size:
-        19px;
+        19px !important;
+
+    font-weight:
+        700 !important;
 
     line-height:
-        1.3;
+        1.3 !important;
 }
 
 
 /* =========================================================
-   BOTÓN CERRAR
+   BOTÓN X
 ========================================================= */
 
 .category-modal__close {
 
-    display:
-        inline-flex;
+    display: inline-flex !important;
 
-    width:
-        36px;
+    width: 36px !important;
+    height: 36px !important;
 
-    height:
-        36px;
+    min-width: 36px !important;
 
-    flex-shrink:
-        0;
+    margin: 0 !important;
+
+    padding: 0 !important;
 
     border:
-        1px solid var(--border);
+        1px solid
+        var(--border) !important;
 
-    border-radius:
-        8px;
+    border-radius: 8px !important;
 
-    align-items:
-        center;
-
-    justify-content:
-        center;
+    align-items: center !important;
+    justify-content: center !important;
 
     background:
-        var(--surface);
+        var(--surface) !important;
 
     color:
-        var(--text-secondary);
+        var(--text-secondary) !important;
 
-    font-size:
-        25px;
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif !important;
 
-    line-height:
-        1;
+    font-size: 25px !important;
 
-    cursor:
-        pointer;
+    line-height: 1 !important;
 
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease;
+    cursor: pointer !important;
 }
 
 
 .category-modal__close:hover {
 
     border-color:
-        #4b4b56;
+        #555560 !important;
 
     background:
-        #292932;
+        #292932 !important;
 
     color:
-        var(--text);
-}
-
-
-.category-modal__close:disabled {
-
-    opacity:
-        0.45;
-
-    cursor:
-        not-allowed;
+        var(--text) !important;
 }
 
 
@@ -1746,160 +1742,159 @@ body {
 
 .category-modal__body {
 
-    display:
-        flex;
+    display: flex !important;
 
-    padding:
-        22px;
+    width: 100% !important;
 
-    flex-direction:
-        column;
+    padding: 22px !important;
 
-    gap:
-        9px;
+    flex-direction: column !important;
+
+    gap: 9px !important;
+
+    background:
+        var(--surface) !important;
 }
 
 
 .category-modal__body label {
 
+    display: block !important;
+
+    margin: 0 !important;
+
     color:
-        var(--text);
+        var(--text) !important;
 
     font-size:
-        13px;
+        13px !important;
 
     font-weight:
-        700;
+        700 !important;
 }
 
 
 .category-modal__body input {
 
-    width:
-        100%;
+    display: block !important;
 
-    min-height:
-        46px;
+    width: 100% !important;
+
+    min-height: 46px !important;
+
+    margin: 0 !important;
 
     padding:
-        11px 13px;
+        11px 13px !important;
 
     border:
-        1px solid var(--border);
+        1px solid
+        var(--border) !important;
 
     border-radius:
-        8px;
+        8px !important;
 
-    outline:
-        none;
+    outline: none !important;
 
     background:
-        var(--surface-secondary);
+        var(--surface-secondary) !important;
 
     color:
-        var(--text);
+        var(--text) !important;
 
     font-family:
-        inherit;
+        inherit !important;
 
     font-size:
-        14px;
-
-    transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-
-.category-modal__body input::placeholder {
-
-    color:
-        #777782;
+        14px !important;
 }
 
 
 .category-modal__body input:focus {
 
     border-color:
-        var(--primary);
+        var(--primary) !important;
 
     box-shadow:
-        0 0 0 3px rgba(
+        0 0 0 3px
+        rgba(
             229,
             9,
             20,
             0.15
-        );
+        ) !important;
 }
 
 
 /* =========================================================
-   MENSAJE DEL POPUP
+   MENSAJE DE ERROR
 ========================================================= */
 
 .category-modal__message {
 
-    margin-top:
-        3px;
+    width: 100% !important;
+
+    margin-top: 4px !important;
 
     padding:
-        10px 12px;
+        10px 12px !important;
 
     border:
-        1px solid var(--danger);
+        1px solid
+        var(--danger) !important;
 
-    border-radius:
-        7px;
+    border-radius: 7px !important;
 
     background:
         rgba(
             255,
             83,
             100,
-            0.1
-        );
+            0.10
+        ) !important;
 
     color:
-        #ffd8dc;
+        #ffd8dc !important;
 
     font-size:
-        12px;
+        12px !important;
 
     line-height:
-        1.4;
+        1.4 !important;
 }
 
 
 .category-modal__message[hidden] {
 
-    display:
-        none;
+    display: none !important;
 }
 
 
 /* =========================================================
-   BOTONES DEL POPUP
+   BOTONES
 ========================================================= */
 
 .category-modal__actions {
 
-    display:
-        flex;
+    display: flex !important;
+
+    width: 100% !important;
 
     padding:
-        16px 22px 22px;
+        16px 22px 22px !important;
 
-    align-items:
-        center;
+    align-items: center !important;
 
-    justify-content:
-        flex-end;
+    justify-content: flex-end !important;
 
-    gap:
-        10px;
+    gap: 10px !important;
 
     border-top:
-        1px solid var(--border);
+        1px solid
+        var(--border) !important;
+
+    background:
+        var(--surface) !important;
 }
 
 
@@ -1911,31 +1906,21 @@ body {
 
     from {
 
-        opacity:
-            0;
+        opacity: 0;
 
         transform:
-            translateY(
-                8px
-            )
-            scale(
-                0.98
-            );
+            translateY(10px)
+            scale(0.97);
 
     }
 
     to {
 
-        opacity:
-            1;
+        opacity: 1;
 
         transform:
-            translateY(
-                0
-            )
-            scale(
-                1
-            );
+            translateY(0)
+            scale(1);
 
     }
 
@@ -1943,18 +1928,17 @@ body {
 
 
 /* =========================================================
-   BLOQUEAR SCROLL CUANDO EL POPUP ESTÁ ABIERTO
+   BLOQUEAR SCROLL
 ========================================================= */
 
 body.category-modal-open {
 
-    overflow:
-        hidden;
+    overflow: hidden !important;
 }
 
 
 /* =========================================================
-   POPUP EN MÓVIL
+   MÓVIL
 ========================================================= */
 
 @media (max-width: 480px) {
@@ -1962,18 +1946,26 @@ body.category-modal-open {
     .category-modal {
 
         padding:
-            12px;
+            12px !important;
 
     }
 
 
     .category-modal__dialog {
 
+        width:
+            100% !important;
+
         max-width:
-            100%;
+            none !important;
+
+        max-height:
+            calc(
+                100vh - 24px
+            ) !important;
 
         border-radius:
-            12px;
+            12px !important;
 
     }
 
@@ -1981,7 +1973,7 @@ body.category-modal-open {
     .category-modal__body {
 
         padding:
-            18px;
+            18px !important;
 
     }
 
@@ -1989,10 +1981,10 @@ body.category-modal-open {
     .category-modal__actions {
 
         padding:
-            14px 18px 18px;
+            14px 18px 18px !important;
 
         flex-direction:
-            column-reverse;
+            column-reverse !important;
 
     }
 
@@ -2000,8 +1992,10 @@ body.category-modal-open {
     .category-modal__actions .button {
 
         width:
-            100%;
+            100% !important;
 
     }
 
 }
+
+

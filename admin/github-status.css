@@ -2,38 +2,39 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
-    margin: 0 0 24px;
-    padding: 14px 16px;
+    gap: 14px;
+    margin: 0 0 14px;
+    padding: 8px 12px;
     border: 1px solid #d9dee7;
-    border-radius: 12px;
+    border-radius: 9px;
     background: #f8fafc;
+    min-height: 46px;
 }
 
 .github-status__main {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 9px;
     min-width: 0;
 }
 
 .github-status__indicator {
-    width: 11px;
-    height: 11px;
-    flex: 0 0 11px;
+    width: 9px;
+    height: 9px;
+    flex: 0 0 9px;
     border-radius: 50%;
     background: #94a3b8;
-    box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.12);
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
 }
 
 .github-status--connected .github-status__indicator {
     background: #16a34a;
-    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .github-status--error .github-status__indicator {
     background: #dc2626;
-    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
 }
 
 .github-status__main strong,
@@ -42,31 +43,34 @@
 }
 
 .github-status__main strong {
-    font-size: 14px;
-    line-height: 1.3;
+    font-size: 12px;
+    line-height: 1.25;
 }
 
 .github-status__main span {
-    margin-top: 2px;
+    margin-top: 1px;
     color: #64748b;
-    font-size: 12px;
-    line-height: 1.4;
+    font-size: 11px;
+    line-height: 1.3;
 }
 
 .github-status__expiration {
     flex: 0 0 auto;
     color: #475569;
-    font-size: 12px;
+    font-size: 11px;
     text-align: right;
+    white-space: nowrap;
 }
 
 @media (max-width: 700px) {
     .github-status {
         align-items: flex-start;
         flex-direction: column;
+        gap: 5px;
     }
 
     .github-status__expiration {
         text-align: left;
+        white-space: normal;
     }
 }

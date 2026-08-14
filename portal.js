@@ -4,7 +4,6 @@ const AVATARS = [
 ];
 
 const $ = selector => document.querySelector(selector);
-
 const loginPanel = $("#login-panel");
 const registerPanel = $("#register-panel");
 const profilePanel = $("#profile-panel");
@@ -36,22 +35,17 @@ function avatarUrl(name) {
 async function api(url, options = {}) {
     const response = await fetch(url, {
         ...options,
-        headers: {
-            "Content-Type": "application/json",
-            ...(options.headers || {})
-        },
+        headers: { "Content-Type": "application/json", ...(options.headers || {}) },
         credentials: "same-origin"
     });
-
     let data = {};
-    try { data = await response.json(); } catch { /* respuesta sin JSON */ }
+    try { data = await response.json(); } catch { /* sin JSON */ }
     return { response, data };
 }
 
 function renderAvatarOptions(selected) {
     const container = $("#avatar-options");
     container.innerHTML = "";
-
     AVATARS.forEach(name => {
         const button = document.createElement("button");
         button.type = "button";
@@ -69,7 +63,6 @@ function renderAvatarOptions(selected) {
 
 async function loadSession() {
     const { response, data } = await api("/api/auth/me", { method: "GET" });
-
     if (!response.ok || !data.authenticated) {
         showPanel(loginPanel);
         return;
@@ -77,17 +70,15 @@ async function loadSession() {
 
     $("#profile-name").textContent = data.user.displayName;
     $("#profile-avatar-img").src = avatarUrl(data.user.avatar);
-    $("#profile-account").textContent = data.user.authMethod === "phone"
-        ? data.user.phone
-        : data.user.email;
-
-    renderAvatarOptions(data.user.avatar);
+    $("#profile-account").textContent = data.user.authMethod === "phone" ? data.user.phone : data.user.email;
     $("#profile-display-name").value = data.user.displayName;
+    renderAvatarOptions(data.user.avatar);
     showPanel(profilePanel);
 }
 
 $("#go-register").addEventListener("click", () => showPanel(registerPanel));
-$("#go-login").addEventListener("click", () => showPanel(loginPanel));
+$("#register-go-login").addEventListener("click", () => showPanel(loginPanel));
+$("#forgot-go-login").addEventListener("click", () => showPanel(loginPanel));
 $("#go-forgot").addEventListener("click", () => showPanel(forgotPanel));
 
 $("#register-method-email").addEventListener("change", () => {
@@ -103,88 +94,67 @@ $("#register-method-phone").addEventListener("change", () => {
 $("#login-form").addEventListener("submit", async event => {
     event.preventDefault();
     clearMessage();
-
-    const identifier = $("#login-identifier").value.trim();
-    const password = $("#login-password").value;
     const button = $("#login-submit");
     button.disabled = true;
-
     const { response, data } = await api("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ identifier, password })
+        body: JSON.stringify({ identifier: $("#login-identifier").value.trim(), password: $("#login-password").value })
     });
-
     button.disabled = false;
-
     if (!response.ok || !data.success) {
         showMessage(data.error || "No se pudo iniciar sesión.");
         return;
     }
-
     await loadSession();
 });
 
 $("#register-form").addEventListener("submit", async event => {
     event.preventDefault();
     clearMessage();
-
     const method = $("input[name='register-method']:checked").value;
     const displayName = $("#register-name").value.trim();
     const identifier = $("#register-identifier").value.trim();
     const password = $("#register-password").value;
     const confirm = $("#register-confirm").value;
-
     if (password !== confirm) {
         showMessage("Las contraseñas no coinciden.");
         return;
     }
-
     const button = $("#register-submit");
     button.disabled = true;
-
     const { response, data } = await api("/api/auth/register", {
         method: "POST",
         body: JSON.stringify({ method, displayName, identifier, password })
     });
-
     button.disabled = false;
-
     if (!response.ok || !data.success) {
         showMessage(data.error || "No se pudo crear la cuenta.");
         return;
     }
-
     await loadSession();
 });
 
 $("#forgot-form").addEventListener("submit", async event => {
     event.preventDefault();
     clearMessage();
-
     const identifier = $("#forgot-identifier").value.trim();
     const newPassword = $("#forgot-password").value;
     const confirm = $("#forgot-confirm").value;
-
     if (newPassword !== confirm) {
         showMessage("Las contraseñas no coinciden.");
         return;
     }
-
     const button = $("#forgot-submit");
     button.disabled = true;
-
     const { response, data } = await api("/api/auth/forgot", {
         method: "POST",
         body: JSON.stringify({ identifier, newPassword })
     });
-
     button.disabled = false;
-
     if (!response.ok || !data.success) {
         showMessage(data.error || "No se pudo restablecer la contraseña.");
         return;
     }
-
     showMessage("Contraseña restablecida correctamente.", "success");
     setTimeout(loadSession, 700);
 });
@@ -192,30 +162,22 @@ $("#forgot-form").addEventListener("submit", async event => {
 $("#profile-form").addEventListener("submit", async event => {
     event.preventDefault();
     clearMessage();
-
     const selected = document.querySelector(".avatar-option.selected");
-    const displayName = $("#profile-display-name").value.trim();
-    const avatar = selected?.dataset.avatar;
-
     const { response, data } = await api("/api/auth/me", {
         method: "PATCH",
-        body: JSON.stringify({ displayName, avatar })
+        body: JSON.stringify({
+            displayName: $("#profile-display-name").value.trim(),
+            avatar: selected?.dataset.avatar
+        })
     });
-
     if (!response.ok || !data.success) {
         showMessage(data.error || "No se pudo actualizar el perfil.");
         return;
     }
-
     await loadSession();
 });
 
-$("#enter-catalog").addEventListener("click", () => {
-    window.location.href = "/";
-});
-
-$("#logout-button").addEventListener("click", () => {
-    window.location.href = "/api/session/logout";
-});
+$("#enter-catalog").addEventListener("click", () => { window.location.href = "/"; });
+$("#logout-button").addEventListener("click", () => { window.location.href = "/api/session/logout"; });
 
 loadSession();

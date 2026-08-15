@@ -26,12 +26,6 @@
         </svg>
     `;
 
-    const SVG_USER = `
-        <svg class="mobile-bottom-nav__icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 12a4.2 4.2 0 1 0 0-8.4A4.2 4.2 0 0 0 12 12zm0 2c-4.2 0-7.6 2.2-7.6 4.9 0 .6.4 1.1 1.1 1.1h13c.7 0 1.1-.5 1.1-1.1 0-2.7-3.4-4.9-7.6-4.9z"/>
-        </svg>
-    `;
-
     function esMovil() {
         return window.matchMedia(
             "(max-width: 600px)"
@@ -58,11 +52,6 @@
     }
 
     function mostrarTodosLosDramas() {
-        /*
-         * Utilizamos el botón TODOS del menú existente.
-         * Así no duplicamos ni alteramos la lógica de filtrado
-         * que ya funciona en app.js.
-         */
         const botonTodos = document.querySelector(
             '.menu-categoria-item[data-category-slug="todos"]'
         );
@@ -72,10 +61,6 @@
             return;
         }
 
-        /*
-         * Si el menú todavía no fue creado, abrimos categorías
-         * y damos tiempo a app.js para renderizarlo.
-         */
         const botonCategorias = document.getElementById(
             "boton-menu-categorias"
         );
@@ -154,7 +139,7 @@
                 src="/assets/avatar-1.png"
                 alt="Usuario"
             >
-            <span class="mobile-bottom-nav__label">PERFIL</span>
+            <span class="mobile-bottom-nav__label mobile-bottom-nav__username">Usuario</span>
         `;
 
         const menuUsuario = document.createElement("div");
@@ -248,23 +233,35 @@
                 ".mobile-bottom-nav__avatar"
             );
 
-            if (!avatar) {
-                return;
+            const username = botonUsuario.querySelector(
+                ".mobile-bottom-nav__username"
+            );
+
+            const displayName =
+                String(
+                    data.user.displayName ||
+                    data.user.name ||
+                    "Usuario"
+                ).trim() || "Usuario";
+
+            if (avatar) {
+                avatar.src =
+                    `/assets/${encodeURIComponent(
+                        data.user.avatar || "avatar-1.png"
+                    )}`;
+
+                avatar.alt =
+                    `Avatar de ${displayName}`;
             }
 
-            avatar.src =
-                `/assets/${encodeURIComponent(
-                    data.user.avatar || "avatar-1.png"
-                )}`;
-
-            avatar.alt =
-                `Avatar de ${
-                    data.user.displayName || "usuario"
-                }`;
+            if (username) {
+                username.textContent = displayName;
+                username.title = displayName;
+            }
 
         } catch (error) {
             console.warn(
-                "[NAVEGACIÓN MÓVIL] No se pudo cargar el avatar:",
+                "[NAVEGACIÓN MÓVIL] No se pudo cargar el usuario:",
                 error
             );
         }

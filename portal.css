@@ -4,8 +4,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { min-height: 100%; }
 body { min-height: 100vh; min-height: 100dvh; background: #0d0d0f; color: #fff; font-family: Arial, Helvetica, sans-serif; overflow-x: hidden; }
-/* Fondo del login: degradado rojo estilo Netflix que se funde progresivamente con el negro del arte del logo. */
-body.login-mode { background: radial-gradient(ellipse 100% 72% at 50% -6%, #3a0509 0%, #210205 27%, #160609 43%, #100a0c 56%, #0d0d0f 72%, #0d0d0f 100%); }
+/* Fondo del login: negro integrado en la parte superior y degradado rojo más visible en el centro, fundiéndose con negro hacia abajo. */
+body.login-mode { background: radial-gradient(ellipse 115% 75% at 50% 38%, rgba(65,4,10,.92) 0%, rgba(52,3,8,.82) 35%, rgba(28,2,6,.65) 58%, rgba(0,0,0,0) 82%), linear-gradient(180deg, #0d0d0f 0%, #0d0d0f 12%, #1b0205 22%, #270207 42%, #150408 68%, #080809 88%, #000 100%); }
 button, input { font: inherit; }
 button { cursor: pointer; touch-action: manipulation; }
 button:disabled { cursor: wait; opacity: .65; }

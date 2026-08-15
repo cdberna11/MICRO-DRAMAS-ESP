@@ -11,8 +11,8 @@
     >
 
     <title>
-        MICRO DRAMAS EN ESPAÑOL
-    </title>
+    MICRO DRAMAS EN ESPAÑOL
+</title>
 
     <link
         rel="stylesheet"
@@ -21,78 +21,27 @@
 
     <link
         rel="stylesheet"
-        href="catalog-user.css"
+        href="category-menu-fix.css"
     >
 
 </head>
 
-
 <body>
-
-    <!-- =====================================================
-         USUARIO LOGUEADO
-    ====================================================== -->
-
-    <div
-        id="catalog-user-menu"
-        class="catalog-user-menu"
-        hidden
-    >
-
-        <button
-            id="catalog-user-button"
-            class="catalog-user-button"
-            type="button"
-            aria-label="Abrir menú de usuario"
-            aria-expanded="false"
-        >
-            <img
-                id="catalog-user-avatar"
-                class="catalog-user-avatar"
-                src="assets/avatar-1.png"
-                alt="Avatar del usuario"
-            >
-
-            <span
-                class="catalog-user-chevron"
-                aria-hidden="true"
-            >
-                ▾
-            </span>
-        </button>
-
-        <div
-            id="catalog-user-dropdown"
-            class="catalog-user-dropdown"
-            hidden
-        >
-            <button
-                id="catalog-user-logout"
-                class="catalog-user-logout"
-                type="button"
-            >
-                Cerrar sesión
-            </button>
-        </div>
-
-    </div>
-
 
     <!-- =====================================================
          CABECERA
     ====================================================== -->
 
     <header class="site-header">
+       <div class="site-header__content">
 
-        <div class="site-header__content">
+    <img
+        src="assets/micro_drama_en_español_1.jpg"
+        alt="Micro Dramas en Español"
+        class="site-logo"
+    >
 
-            <img
-                src="assets/micro_drama_en_español_1.jpg"
-                alt="Micro Dramas en Español"
-                class="site-logo"
-            >
-
-        </div>
+</div>
 
     </header>
 
@@ -104,7 +53,6 @@
     <main class="site-main">
 
         <section class="catalog-section">
-
             <div
                 id="catalogo"
                 class="catalog-carousel"
@@ -115,170 +63,10 @@
 
     </main>
 
-    <!-- =====================================================
-         NAVEGACIÓN INFERIOR — SOLO MÓVIL
-    ====================================================== -->
-    <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Navegación móvil">
-        <button id="mobile-home-button" class="mobile-nav-button" type="button" aria-label="Inicio">
-            <span class="mobile-nav-icon" aria-hidden="true">⌂</span>
-            <span>Inicio</span>
-        </button>
-
-        <button id="mobile-categories-button" class="mobile-nav-button" type="button" aria-label="Categorías">
-            <span class="mobile-nav-icon mobile-nav-menu-icon" aria-hidden="true">☰</span>
-            <span>Categorías</span>
-        </button>
-
-        <button id="mobile-user-button" class="mobile-nav-button mobile-nav-user-button" type="button" aria-label="Perfil">
-            <img id="mobile-user-avatar" src="assets/avatar-1.png" alt="Perfil">
-            <span>Perfil</span>
-        </button>
-
-        <div id="mobile-user-dropdown" class="mobile-user-dropdown" hidden>
-            <button id="mobile-user-logout" type="button">Cerrar sesión</button>
-        </div>
-    </nav>
-
-
-    <!-- =====================================================
-         JAVASCRIPT DE LA CARTELERA
-    ====================================================== -->
 
     <script
         src="app.js"
     ></script>
-
-    <!--
-        Corrección específica del SEEK de la barra.
-        Se carga después de app.js para sustituir únicamente
-        las funciones de SEEK, manteniendo intacto el resto
-        del reproductor.
-    -->
-    <script
-        src="player-seek-fix.js"
-    ></script>
-
-    <script>
-        (async function cargarUsuarioCatalogo() {
-            const menu = document.getElementById("catalog-user-menu");
-            const button = document.getElementById("catalog-user-button");
-            const dropdown = document.getElementById("catalog-user-dropdown");
-            const avatar = document.getElementById("catalog-user-avatar");
-            const logout = document.getElementById("catalog-user-logout");
-            const mobileAvatar = document.getElementById("mobile-user-avatar");
-            const mobileUserButton = document.getElementById("mobile-user-button");
-            const mobileUserDropdown = document.getElementById("mobile-user-dropdown");
-            const mobileUserLogout = document.getElementById("mobile-user-logout");
-            const mobileHomeButton = document.getElementById("mobile-home-button");
-            const mobileCategoriesButton = document.getElementById("mobile-categories-button");
-
-            if (!menu || !button || !dropdown || !avatar || !logout) return;
-
-            try {
-                const response = await fetch("/api/auth/me", {
-                    method: "GET",
-                    credentials: "same-origin",
-                    cache: "no-store",
-                    headers: { "Accept": "application/json" }
-                });
-
-                const data = await response.json().catch(() => ({}));
-
-                if (!response.ok || !data.authenticated || !data.user) return;
-
-                const avatarFile = data.user.avatar || "avatar-1.png";
-                const avatarUrl = `/assets/${encodeURIComponent(avatarFile)}`;
-                avatar.src = avatarUrl;
-                avatar.alt = `Avatar de ${data.user.displayName || "usuario"}`;
-                if (mobileAvatar) {
-                    mobileAvatar.src = avatarUrl;
-                    mobileAvatar.alt = `Avatar de ${data.user.displayName || "usuario"}`;
-                }
-                menu.hidden = false;
-
-                button.addEventListener("click", event => {
-                    event.stopPropagation();
-                    const abierto = menu.classList.toggle("is-open");
-                    dropdown.hidden = !abierto;
-                    button.setAttribute("aria-expanded", String(abierto));
-                });
-
-                if (mobileUserButton && mobileUserDropdown) {
-                    mobileUserButton.addEventListener("click", event => {
-                        event.stopPropagation();
-                        mobileUserDropdown.hidden = !mobileUserDropdown.hidden;
-                    });
-                }
-
-                document.addEventListener("click", event => {
-                    if (!menu.contains(event.target)) {
-                        menu.classList.remove("is-open");
-                        dropdown.hidden = true;
-                        button.setAttribute("aria-expanded", "false");
-                    }
-                    if (mobileUserDropdown && mobileUserButton &&
-                        !mobileUserButton.contains(event.target) &&
-                        !mobileUserDropdown.contains(event.target)) {
-                        mobileUserDropdown.hidden = true;
-                    }
-                });
-
-                logout.addEventListener("click", () => {
-                    window.location.href = "/api/session/logout";
-                });
-
-                if (mobileUserLogout) {
-                    mobileUserLogout.addEventListener("click", () => {
-                        window.location.href = "/api/session/logout";
-                    });
-                }
-
-                if (mobileHomeButton) {
-                    mobileHomeButton.addEventListener("click", () => {
-                        /*
-                         * INICIO MÓVIL:
-                         * Si estamos dentro de un microdrama, primero regresamos
-                         * al catálogo. Si estamos viendo una categoría, volvemos
-                         * a TODAS. De esta forma la casita siempre representa
-                         * la pantalla inicial del portal.
-                         */
-                        const detalle = document.getElementById("detalle-movil");
-                        if (detalle && detalle.classList.contains("is-open") && typeof cerrarDetalleMovil === "function") {
-                            cerrarDetalleMovil();
-                        }
-
-                        const botonTodos = document.querySelector(
-                            ".menu-categorias-portal__list button:first-child"
-                        );
-
-                        if (botonTodos) {
-                            botonTodos.click();
-                        } else {
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                        }
-
-                        const menuCategorias = document.getElementById("menu-categorias-portal");
-                        if (menuCategorias && typeof cerrarMenuCategorias === "function") {
-                            cerrarMenuCategorias();
-                        }
-
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                    });
-                }
-
-                if (mobileCategoriesButton) {
-                    mobileCategoriesButton.addEventListener("click", () => {
-                        if (typeof alternarMenuCategorias === "function") {
-                            alternarMenuCategorias();
-                        }
-                    });
-                }
-
-            } catch (error) {
-                console.error("No se pudo cargar el usuario de la cartelera:", error);
-            }
-        })();
-    </script>
 
 </body>
 

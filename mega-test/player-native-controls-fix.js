@@ -1,0 +1,1 @@
+/* Placeholder; replaced by exact production blob in the laboratory snapshot. */

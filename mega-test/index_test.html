@@ -1,63 +1,105 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow, noarchive">
-    <title>MEGA-TEST · Reproductor</title>
-    <link rel="stylesheet" href="./test.css?v=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>MEGA-TEST · Laboratorio de reproducción</title>
+  <link rel="stylesheet" href="./test.css?v=2">
 </head>
 <body>
-    <main class="test-page">
-        <section class="test-card">
-            <header class="test-header">
-                <span class="test-badge">LABORATORIO AISLADO</span>
-                <h1>Reproductor MEGA</h1>
-                <p>Base idéntica al reproductor actualmente estable en producción. Las pruebas realizadas aquí no modifican el reproductor de la cartelera.</p>
-            </header>
+<main class="lab">
+  <header class="hero">
+    <span class="badge">MEGA-TEST · LABORATORIO AISLADO</span>
+    <h1>Pruebas de reproducción y SEEK</h1>
+    <p>Esta página no modifica el reproductor de producción. Aquí probamos métodos alternativos con los mismos vídeos de MEGA.</p>
+  </header>
 
-            <section class="test-section">
-                <label for="video-select" class="field-label">Vídeo de prueba</label>
-                <select id="video-select" class="field">
-                    <option value="video1">EL OJO DE LA RIQUEZA</option>
-                    <option value="video2">DE LA TRAICIÓN AL TRONO</option>
-                </select>
-            </section>
+  <section class="panel">
+    <div class="grid">
+      <label>
+        Vídeo de prueba
+        <select id="video-select">
+          <option value="video1">Vídeo 1</option>
+          <option value="video2">Vídeo 2</option>
+        </select>
+      </label>
+      <label>
+        Método
+        <select id="mode-select">
+          <option value="native">Motor A · HTML5 nativo + Blob MEGA</option>
+          <option value="mega">Motor B · Player nativo de MEGA</option>
+        </select>
+      </label>
+    </div>
 
-            <section class="test-actions">
-                <button id="btn-play-test" class="button button-primary" type="button">Abrir reproductor</button>
-                <button id="btn-stop-test" class="button button-secondary" type="button">Cerrar reproductor</button>
-            </section>
+    <div class="actions">
+      <button id="btn-open" class="primary">Cargar vídeo</button>
+      <button id="btn-stop">Cerrar</button>
+      <button id="btn-clear-resume">Borrar posición guardada</button>
+    </div>
 
-            <section class="test-section">
-                <div class="status-title">Prueba actual</div>
-                <div id="status" class="status status-idle">Esperando prueba...</div>
-            </section>
+    <div class="status" id="status">Listo para comenzar.</div>
+  </section>
 
-            <section class="test-section">
-                <div class="section-title">Objetivo de esta etapa</div>
-                <ul class="test-list">
-                    <li>Reproducción nativa sobre el motor MEGA actual.</li>
-                    <li>Play/Pausa, volumen, ±10 s y fullscreen.</li>
-                    <li>Pruebas de SEEK mediante la barra de progreso.</li>
-                    <li>Pruebas de acceso por rangos sin modificar producción.</li>
-                </ul>
-            </section>
+  <section class="player-card">
+    <div class="player-head">
+      <div>
+        <strong id="video-title">Ningún vídeo cargado</strong>
+        <span id="video-meta">—</span>
+      </div>
+      <span id="cache-state" class="pill">SIN CARGAR</span>
+    </div>
 
-            <div class="test-note">
-                <strong>Importante:</strong> esta página es un laboratorio. No se modificarán tarjetas, categorías, login, panel administrativo ni el reproductor de producción desde aquí.
-            </div>
-        </section>
-    </main>
+    <div class="video-wrap" id="video-wrap">
+      <video id="video" controls playsinline preload="metadata"></video>
+      <iframe id="mega-frame" title="Player de MEGA" allow="autoplay; fullscreen" allowfullscreen></iframe>
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <strong id="loading-title">Preparando vídeo...</strong>
+        <span id="loading-detail">—</span>
+        <progress id="download-progress" value="0" max="100"></progress>
+      </div>
+    </div>
 
-    <!-- El app base necesita este contenedor para inicializarse. -->
-    <div id="catalogo" aria-hidden="true"></div>
+    <div class="quick-seek">
+      <span>Saltos de prueba:</span>
+      <button data-seek="300">+5 min</button>
+      <button data-seek="900">+15 min</button>
+      <button data-seek="1500">+25 min</button>
+      <button data-seek="1800">+30 min</button>
+      <button data-seek="-300">−5 min</button>
+    </div>
 
-    <script src="./test-app.js?v=base"></script>
-    <script src="./player-native-mega.js?v=base"></script>
-    <script src="./player-native-controls-fix.js?v=base"></script>
-    <script src="./player-seek-fix.js?v=base"></script>
-    <script src="./player-seek-offset-guard.js?v=base"></script>
-    <script src="./test.js?v=1"></script>
+    <div class="resume-box">
+      <div>
+        <span class="label">Posición actual</span>
+        <strong id="current-time">0:00 / 0:00</strong>
+      </div>
+      <div>
+        <span class="label">Última posición guardada</span>
+        <strong id="saved-time">No guardada</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel tests">
+    <h2>Qué debemos probar</h2>
+    <ol>
+      <li>Reproducir el vídeo y mover la barra directamente a 5, 15, 25 y 30 minutos.</li>
+      <li>Hacer varios saltos consecutivos hacia adelante y hacia atrás.</li>
+      <li>Pausar cerca de cualquier minuto, cerrar y volver a abrir el mismo vídeo.</li>
+      <li>Comprobar si la posición guardada vuelve a aparecer sin perder precisión.</li>
+      <li>Comparar el comportamiento del Motor A con el reproductor oficial de MEGA.</li>
+    </ol>
+    <div class="warning"><strong>Motor A:</strong> para esta prueba el vídeo se descarga y se entrega al elemento HTML5 como Blob. Es deliberadamente un laboratorio: si el archivo es grande puede consumir bastante memoria. La ventaja es que, una vez cargado, el SEEK del navegador es completamente nativo.</div>
+  </section>
+
+  <section class="logs panel">
+    <h2>Diagnóstico</h2>
+    <pre id="log"></pre>
+  </section>
+</main>
+<script type="module" src="./test.js?v=2"></script>
 </body>
 </html>

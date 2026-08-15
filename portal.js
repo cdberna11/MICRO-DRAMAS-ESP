@@ -33,6 +33,7 @@ function showPanel(panel) {
     [loginPanel, pinPanel, registerPanel, forgotPanel, onboardingPanel, profilePanel].forEach(item => {
         item.hidden = item !== panel;
     });
+    document.body.classList.toggle("login-mode", panel === loginPanel);
     document.body.classList.toggle("pin-mode", panel === pinPanel);
     clearMessage();
     if (panel !== pinPanel) clearPinInputs();

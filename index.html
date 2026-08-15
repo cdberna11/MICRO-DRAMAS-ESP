@@ -29,9 +29,64 @@
         href="mobile-bottom-nav.css"
     >
 
+    <link
+        rel="stylesheet"
+        href="catalog-user.css"
+    >
+
 </head>
 
 <body>
+
+    <!-- =====================================================
+         USUARIO LOGUEADO — SOLO ESCRITORIO
+    ====================================================== -->
+
+    <div
+        id="catalog-user-menu"
+        class="catalog-user-menu"
+        hidden
+    >
+
+        <button
+            id="catalog-user-button"
+            class="catalog-user-button"
+            type="button"
+            aria-label="Abrir menú de usuario"
+            aria-expanded="false"
+        >
+            <span class="catalog-user-identity">
+                <img
+                    id="catalog-user-avatar"
+                    class="catalog-user-avatar"
+                    src="assets/avatar-1.png"
+                    alt="Avatar del usuario"
+                >
+                <span
+                    id="catalog-user-name"
+                    class="catalog-user-name"
+                >
+                    Usuario
+                </span>
+            </span>
+        </button>
+
+        <div
+            id="catalog-user-dropdown"
+            class="catalog-user-dropdown"
+            hidden
+        >
+            <button
+                id="catalog-user-logout"
+                class="catalog-user-logout"
+                type="button"
+            >
+                Cerrar sesión
+            </button>
+        </div>
+
+    </div>
+
 
     <!-- =====================================================
          CABECERA
@@ -76,6 +131,143 @@
     <script
         src="mobile-bottom-nav.js"
     ></script>
+
+    <script>
+        (async function cargarUsuarioCatalogo() {
+
+            const menu = document.getElementById(
+                "catalog-user-menu"
+            );
+
+            const button = document.getElementById(
+                "catalog-user-button"
+            );
+
+            const dropdown = document.getElementById(
+                "catalog-user-dropdown"
+            );
+
+            const avatar = document.getElementById(
+                "catalog-user-avatar"
+            );
+
+            const name = document.getElementById(
+                "catalog-user-name"
+            );
+
+            const logout = document.getElementById(
+                "catalog-user-logout"
+            );
+
+            if (
+                !menu ||
+                !button ||
+                !dropdown ||
+                !avatar ||
+                !name ||
+                !logout
+            ) {
+                return;
+            }
+
+            try {
+
+                const response = await fetch(
+                    "/api/auth/me",
+                    {
+                        method: "GET",
+                        credentials: "same-origin",
+                        cache: "no-store",
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    }
+                );
+
+                const data = await response.json().catch(
+                    () => ({})
+                );
+
+                if (
+                    !response.ok ||
+                    !data.authenticated ||
+                    !data.user
+                ) {
+                    return;
+                }
+
+                avatar.src =
+                    `/assets/${encodeURIComponent(
+                        data.user.avatar || "avatar-1.png"
+                    )}`;
+
+                const displayName =
+                    String(
+                        data.user.displayName ||
+                        data.user.name ||
+                        "Usuario"
+                    ).trim() || "Usuario";
+
+                name.textContent = displayName;
+                avatar.alt = `Avatar de ${displayName}`;
+                menu.hidden = false;
+
+                button.addEventListener(
+                    "click",
+                    event => {
+                        event.stopPropagation();
+
+                        const abierto =
+                            menu.classList.toggle(
+                                "is-open"
+                            );
+
+                        dropdown.hidden = !abierto;
+
+                        button.setAttribute(
+                            "aria-expanded",
+                            String(abierto)
+                        );
+                    }
+                );
+
+                document.addEventListener(
+                    "click",
+                    event => {
+                        if (!menu.contains(event.target)) {
+                            menu.classList.remove(
+                                "is-open"
+                            );
+
+                            dropdown.hidden = true;
+
+                            button.setAttribute(
+                                "aria-expanded",
+                                "false"
+                            );
+                        }
+                    }
+                );
+
+                logout.addEventListener(
+                    "click",
+                    () => {
+                        window.location.href =
+                            "/api/session/logout";
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "No se pudo cargar el usuario de la cartelera:",
+                    error
+                );
+
+            }
+
+        })();
+    </script>
 
 </body>
 

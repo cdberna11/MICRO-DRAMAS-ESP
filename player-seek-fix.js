@@ -9,13 +9,18 @@
    1. MP4Box calcule el offset antes de crear la sesión MSE.
    2. La segmentación se inicialice después del seek.
    3. El streaming comience desde el offset RAP correcto.
-   4. El reproductor espere a que el punto solicitado entre
-      realmente en el buffer antes de mover currentTime.
+   4. El reproductor pueda posicionarse mientras el buffer
+      remoto todavía está llegando.
 ========================================================= */
 
 (function instalarSeekRemotoOptimizado() {
 
-    const ESPERA_BUFFER = 30000;
+    /*
+     * 30 segundos era demasiado agresivo para un SEEK remoto
+     * en móvil. El reproductor puede estar descargando un bloque
+     * de 8 MB cuando todavía no aparece el rango objetivo.
+     */
+    const ESPERA_BUFFER = 120000;
     const TOLERANCIA_RAP = 6;
 
     function numeroValido(valor) {
@@ -23,18 +28,14 @@
     }
 
     function limpiarMediaSourceAnterior() {
-
         if (playerState.mp4box) {
             try {
                 playerState.mp4box.stop();
             } catch {}
         }
 
-        const mediaSourceAnterior =
-            playerState.mediaSource;
-
-        const urlAnterior =
-            playerState.mediaSourceUrl;
+        const mediaSourceAnterior = playerState.mediaSource;
+        const urlAnterior = playerState.mediaSourceUrl;
 
         if (
             mediaSourceAnterior &&
@@ -63,9 +64,7 @@
     }
 
     function obtenerRangoBufferObjetivo(tiempo) {
-
-        const video =
-            playerState.videoElement;
+        const video = playerState.videoElement;
 
         if (
             !video ||
@@ -78,57 +77,33 @@
         let mejor = null;
         let distancia = Infinity;
 
-        for (
-            let i = 0;
-            i < video.buffered.length;
-            i++
-        ) {
+        for (let i = 0; i < video.buffered.length; i++) {
             const inicio = video.buffered.start(i);
             const fin = video.buffered.end(i);
 
-            if (
-                tiempo >= inicio &&
-                tiempo <= fin
-            ) {
-                return {
-                    inicio,
-                    fin,
-                    exacto: true
-                };
+            if (tiempo >= inicio && tiempo <= fin) {
+                return { inicio, fin, exacto: true };
             }
 
-            const distanciaInicio =
-                Math.abs(inicio - tiempo);
+            const distanciaInicio = Math.abs(inicio - tiempo);
 
             if (
                 distanciaInicio <= TOLERANCIA_RAP &&
                 distanciaInicio < distancia
             ) {
                 distancia = distanciaInicio;
-                mejor = {
-                    inicio,
-                    fin,
-                    exacto: false
-                };
+                mejor = { inicio, fin, exacto: false };
             }
         }
 
         return mejor;
     }
 
-    function esperarBufferSeek(
-        tiempo,
-        token,
-        operationId,
-        generation
-    ) {
-
+    function esperarBufferSeek(tiempo, token, operationId, generation) {
         return new Promise(resolve => {
-
             const inicio = Date.now();
 
             const revisar = () => {
-
                 if (
                     playerState.stopped ||
                     token !== playerState.seekToken ||
@@ -139,18 +114,14 @@
                     return;
                 }
 
-                const rango =
-                    obtenerRangoBufferObjetivo(tiempo);
+                const rango = obtenerRangoBufferObjetivo(tiempo);
 
                 if (rango) {
                     resolve(rango);
                     return;
                 }
 
-                if (
-                    Date.now() - inicio >=
-                    ESPERA_BUFFER
-                ) {
+                if (Date.now() - inicio >= ESPERA_BUFFER) {
                     resolve(null);
                     return;
                 }
@@ -163,24 +134,13 @@
     }
 
     async function ejecutarSeekRealOptimizado(destino) {
+        const video = playerState.videoElement;
 
-        const video =
-            playerState.videoElement;
+        if (!video || playerState.stopped) return;
 
-        if (
-            !video ||
-            playerState.stopped
-        ) {
-            return;
-        }
+        const duration = obtenerDuracionVideo();
 
-        const duration =
-            obtenerDuracionVideo();
-
-        if (
-            !Number.isFinite(duration) ||
-            duration <= 0
-        ) {
+        if (!Number.isFinite(duration) || duration <= 0) {
             actualizarEstadoPlayer(
                 "La duración del vídeo todavía no está disponible."
             );
@@ -189,15 +149,10 @@
 
         const tiempo = Math.max(
             0,
-            Math.min(
-                duration - 0.05,
-                Number(destino)
-            )
+            Math.min(duration - 0.05, Number(destino))
         );
 
-        if (!Number.isFinite(tiempo)) {
-            return;
-        }
+        if (!Number.isFinite(tiempo)) return;
 
         if (playerState.seekInProgress) {
             playerState.pendingSeekTime = tiempo;
@@ -224,35 +179,20 @@
             }
         }
 
-        const token =
-            ++playerState.seekToken;
-
-        const operationId =
-            playerState.operationId;
-
-        const estabaReproduciendo =
-            !video.paused;
-
-        const generation =
-            ++playerState.streamGeneration;
+        const token = ++playerState.seekToken;
+        const operationId = playerState.operationId;
+        const estabaReproduciendo = !video.paused;
+        const generation = ++playerState.streamGeneration;
 
         playerState.seekInProgress = true;
         playerState.allowAutoplay = estabaReproduciendo;
 
         try {
-
             console.log("==========================================");
-            console.log(
-                `[SEEK] REMOTO OPTIMIZADO → ${formatoTiempo(tiempo)}`
-            );
+            console.log(`[SEEK] REMOTO OPTIMIZADO → ${formatoTiempo(tiempo)}`);
 
-            mostrarLoading(
-                `Buscando ${formatoTiempo(tiempo)}...`
-            );
-
-            actualizarEstadoPlayer(
-                `Buscando ${formatoTiempo(tiempo)}...`
-            );
+            mostrarLoading(`Buscando ${formatoTiempo(tiempo)}...`);
+            actualizarEstadoPlayer(`Buscando ${formatoTiempo(tiempo)}...`);
 
             try {
                 video.pause();
@@ -260,12 +200,7 @@
 
             limpiarMediaSourceAnterior();
 
-            /*
-             * Crear un MP4Box limpio y reconstruir solamente
-             * la estructura necesaria para conocer el offset.
-             */
-            const mp4box =
-                crearNuevoMP4Box();
+            const mp4box = crearNuevoMP4Box();
 
             if (
                 token !== playerState.seekToken ||
@@ -274,15 +209,9 @@
                 return;
             }
 
-            actualizarEstadoPlayer(
-                "Reconstruyendo estructura MP4..."
-            );
+            actualizarEstadoPlayer("Reconstruyendo estructura MP4...");
 
-            const encontrado =
-                await localizarMOOV(
-                    operationId,
-                    false
-                );
+            const encontrado = await localizarMOOV(operationId, false);
 
             if (
                 token !== playerState.seekToken ||
@@ -293,50 +222,27 @@
                 return;
             }
 
-            if (
-                !encontrado ||
-                !playerState.mp4Ready
-            ) {
+            if (!encontrado || !playerState.mp4Ready) {
                 throw new Error(
                     "MP4Box no pudo reconstruir la estructura del vídeo."
                 );
             }
 
-            /*
-             * IMPORTANTE:
-             * MP4Box calcula el offset ANTES de crear la
-             * nueva sesión MSE/segmentación. De esta forma
-             * los primeros segmentos generados corresponden
-             * al RAP cercano al destino y no al inicio del vídeo.
-             */
             let resultadoSeek;
 
             try {
-                resultadoSeek =
-                    mp4box.seek(
-                        tiempo,
-                        true
-                    );
+                resultadoSeek = mp4box.seek(tiempo, true);
             } catch (error) {
                 throw new Error(
-                    `MP4Box no pudo realizar SEEK: ${
-                        error.message || error
-                    }`
+                    `MP4Box no pudo realizar SEEK: ${error.message || error}`
                 );
             }
 
-            const offsetMega =
-                obtenerOffsetSeek(resultadoSeek);
+            const offsetMega = obtenerOffsetSeek(resultadoSeek);
 
+            console.log("[SEEK] mp4box.seek():", resultadoSeek);
             console.log(
-                "[SEEK] mp4box.seek():",
-                resultadoSeek
-            );
-
-            console.log(
-                `[SEEK] Offset MEGA RAP: ${
-                    Number(offsetMega).toLocaleString()
-                }`
+                `[SEEK] Offset MEGA RAP: ${Number(offsetMega).toLocaleString()}`
             );
 
             if (
@@ -344,9 +250,7 @@
                 offsetMega < 0 ||
                 offsetMega >= playerState.fileSize
             ) {
-                throw new Error(
-                    `Offset MEGA inválido: ${offsetMega}`
-                );
+                throw new Error(`Offset MEGA inválido: ${offsetMega}`);
             }
 
             if (
@@ -356,16 +260,9 @@
                 return;
             }
 
-            actualizarEstadoPlayer(
-                "Preparando nuevo buffer..."
-            );
+            actualizarEstadoPlayer("Preparando nuevo buffer...");
 
-            /*
-             * Ahora sí creamos MSE + SourceBuffers + init segments.
-             */
-            await crearSesionMedia(
-                operationId
-            );
+            await crearSesionMedia(operationId);
 
             if (
                 token !== playerState.seekToken ||
@@ -377,39 +274,36 @@
             }
 
             playerState.streamStarted = true;
-
-            actualizarEstadoPlayer(
-                `Cargando ${formatoTiempo(tiempo)}...`
-            );
+            actualizarEstadoPlayer(`Cargando ${formatoTiempo(tiempo)}...`);
 
             /*
-             * El streaming empieza exactamente desde el offset
-             * devuelto por MP4Box.seek().
+             * Posicionamos el elemento inmediatamente. El navegador
+             * puede quedar esperando al rango MSE mientras nosotros
+             * seguimos alimentando el buffer desde el RAP correcto.
              */
+            try {
+                video.currentTime = tiempo;
+            } catch {}
+
             iniciarStreamingMedia(
                 offsetMega,
                 operationId,
                 generation
             ).catch(error => {
-
                 if (
                     token === playerState.seekToken &&
                     !playerState.stopped
                 ) {
-                    console.error(
-                        "[SEEK] Streaming remoto optimizado:",
-                        error
-                    );
+                    console.error("[SEEK] Streaming remoto optimizado:", error);
                 }
             });
 
-            const rango =
-                await esperarBufferSeek(
-                    tiempo,
-                    token,
-                    operationId,
-                    generation
-                );
+            const rango = await esperarBufferSeek(
+                tiempo,
+                token,
+                operationId,
+                generation
+            );
 
             if (
                 token !== playerState.seekToken ||
@@ -424,35 +318,20 @@
                 );
             }
 
-            /*
-             * Si el destino exacto ya está dentro del buffer,
-             * usamos el tiempo solicitado. Si el RAP comienza
-             * unos segundos antes, también podemos posicionar
-             * exactamente sobre el destino siempre que esté
-             * dentro del rango disponible.
-             */
             let posicionFinal = tiempo;
 
-            if (
-                !estaEnBuffer(tiempo)
-            ) {
+            if (!estaEnBuffer(tiempo)) {
                 posicionFinal = rango.inicio;
             }
 
             posicionFinal = Math.max(
                 0,
-                Math.min(
-                    duration - 0.05,
-                    posicionFinal
-                )
+                Math.min(duration - 0.05, posicionFinal)
             );
 
-            video.currentTime =
-                posicionFinal;
+            video.currentTime = posicionFinal;
 
-            await new Promise(resolve =>
-                setTimeout(resolve, 100)
-            );
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             console.log(
                 `[SEEK] Resultado → solicitado ${formatoTiempo(tiempo)} / actual ${formatoTiempo(video.currentTime)}`
@@ -488,89 +367,61 @@
             console.log("[SEEK] ✓ SEEK REMOTO COMPLETADO");
 
         } catch (error) {
+            console.error("[SEEK] ERROR OPTIMIZADO:", error);
 
-            console.error(
-                "[SEEK] ERROR OPTIMIZADO:",
-                error
-            );
-
-            if (
-                token === playerState.seekToken
-            ) {
-                mostrarLoading(
-                    error.message ||
-                    "No se pudo realizar el salto."
-                );
-
+            if (token === playerState.seekToken) {
+                mostrarLoading(error.message || "No se pudo realizar el salto.");
                 actualizarEstadoPlayer(
-                    `Error SEEK: ${
-                        error.message || error
-                    }`
+                    `Error SEEK: ${error.message || error}`
                 );
             }
 
         } finally {
-
-            if (
-                token === playerState.seekToken
-            ) {
+            if (token === playerState.seekToken) {
                 playerState.seekInProgress = false;
 
-                const siguiente =
-                    playerState.pendingSeekTime;
-
+                const siguiente = playerState.pendingSeekTime;
                 playerState.pendingSeekTime = null;
 
                 if (
                     Number.isFinite(siguiente) &&
-                    Math.abs(
-                        siguiente -
-                        Number(video.currentTime)
-                    ) > 0.75
+                    Math.abs(siguiente - Number(video.currentTime)) > 0.75
                 ) {
                     setTimeout(() => {
-                        ejecutarSeekRealOptimizado(
-                            siguiente
-                        );
+                        ejecutarSeekRealOptimizado(siguiente);
                     }, 50);
                 }
             }
         }
     }
 
+    ejecutarSeekReal = ejecutarSeekRealOptimizado;
+
+    ejecutarSeekDesdeBarra = async function ejecutarSeekDesdeBarraOptimizado() {
+        const destino = Number(playerState.pendingSeekTime);
+
+        playerState.userSeeking = false;
+        playerState.pendingSeekTime = null;
+
+        if (!Number.isFinite(destino)) return;
+
+        console.log(`[BARRA] SEEK optimizado → ${formatoTiempo(destino)}`);
+        await ejecutarSeekRealOptimizado(destino);
+    };
+
+    console.log("[BARRA] ✓ SEEK remoto optimizado instalado.");
+
     /*
-     * Reemplaza únicamente las funciones globales de SEEK.
-     * El resto del reproductor permanece intacto.
+     * Cargar la corrección de fullscreen después del reproductor.
+     * Se mantiene separada para no tocar app.js.
      */
-    ejecutarSeekReal =
-        ejecutarSeekRealOptimizado;
-
-    ejecutarSeekDesdeBarra =
-        async function ejecutarSeekDesdeBarraOptimizado() {
-
-            const destino =
-                Number(
-                    playerState.pendingSeekTime
-                );
-
-            playerState.userSeeking = false;
-            playerState.pendingSeekTime = null;
-
-            if (!Number.isFinite(destino)) {
-                return;
-            }
-
-            console.log(
-                `[BARRA] SEEK optimizado → ${formatoTiempo(destino)}`
-            );
-
-            await ejecutarSeekRealOptimizado(
-                destino
-            );
-        };
-
-    console.log(
-        "[BARRA] ✓ SEEK remoto optimizado instalado."
-    );
+    try {
+        const script = document.createElement("script");
+        script.src = "player-fullscreen-fix.js?v=1";
+        script.async = false;
+        document.head.appendChild(script);
+    } catch (error) {
+        console.warn("[FULLSCREEN] No se pudo cargar la corrección:", error);
+    }
 
 })();

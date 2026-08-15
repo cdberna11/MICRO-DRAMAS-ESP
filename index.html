@@ -115,6 +115,30 @@
 
     </main>
 
+    <!-- =====================================================
+         NAVEGACIÓN INFERIOR — SOLO MÓVIL
+    ====================================================== -->
+    <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Navegación móvil">
+        <button id="mobile-home-button" class="mobile-nav-button" type="button" aria-label="Inicio">
+            <span class="mobile-nav-icon" aria-hidden="true">⌂</span>
+            <span>Inicio</span>
+        </button>
+
+        <button id="mobile-categories-button" class="mobile-nav-button" type="button" aria-label="Categorías">
+            <span class="mobile-nav-icon mobile-nav-menu-icon" aria-hidden="true">☰</span>
+            <span>Categorías</span>
+        </button>
+
+        <button id="mobile-user-button" class="mobile-nav-button mobile-nav-user-button" type="button" aria-label="Perfil">
+            <img id="mobile-user-avatar" src="assets/avatar-1.png" alt="Perfil">
+            <span>Perfil</span>
+        </button>
+
+        <div id="mobile-user-dropdown" class="mobile-user-dropdown" hidden>
+            <button id="mobile-user-logout" type="button">Cerrar sesión</button>
+        </div>
+    </nav>
+
 
     <!-- =====================================================
          JAVASCRIPT DE LA CARTELERA
@@ -131,6 +155,12 @@
             const dropdown = document.getElementById("catalog-user-dropdown");
             const avatar = document.getElementById("catalog-user-avatar");
             const logout = document.getElementById("catalog-user-logout");
+            const mobileAvatar = document.getElementById("mobile-user-avatar");
+            const mobileUserButton = document.getElementById("mobile-user-button");
+            const mobileUserDropdown = document.getElementById("mobile-user-dropdown");
+            const mobileUserLogout = document.getElementById("mobile-user-logout");
+            const mobileHomeButton = document.getElementById("mobile-home-button");
+            const mobileCategoriesButton = document.getElementById("mobile-categories-button");
 
             if (!menu || !button || !dropdown || !avatar || !logout) return;
 
@@ -146,8 +176,14 @@
 
                 if (!response.ok || !data.authenticated || !data.user) return;
 
-                avatar.src = `/assets/${encodeURIComponent(data.user.avatar || "avatar-1.png")}`;
+                const avatarFile = data.user.avatar || "avatar-1.png";
+                const avatarUrl = `/assets/${encodeURIComponent(avatarFile)}`;
+                avatar.src = avatarUrl;
                 avatar.alt = `Avatar de ${data.user.displayName || "usuario"}`;
+                if (mobileAvatar) {
+                    mobileAvatar.src = avatarUrl;
+                    mobileAvatar.alt = `Avatar de ${data.user.displayName || "usuario"}`;
+                }
                 menu.hidden = false;
 
                 button.addEventListener("click", event => {
@@ -157,17 +193,54 @@
                     button.setAttribute("aria-expanded", String(abierto));
                 });
 
+                if (mobileUserButton && mobileUserDropdown) {
+                    mobileUserButton.addEventListener("click", event => {
+                        event.stopPropagation();
+                        mobileUserDropdown.hidden = !mobileUserDropdown.hidden;
+                    });
+                }
+
                 document.addEventListener("click", event => {
                     if (!menu.contains(event.target)) {
                         menu.classList.remove("is-open");
                         dropdown.hidden = true;
                         button.setAttribute("aria-expanded", "false");
                     }
+                    if (mobileUserDropdown && mobileUserButton &&
+                        !mobileUserButton.contains(event.target) &&
+                        !mobileUserDropdown.contains(event.target)) {
+                        mobileUserDropdown.hidden = true;
+                    }
                 });
 
                 logout.addEventListener("click", () => {
                     window.location.href = "/api/session/logout";
                 });
+
+                if (mobileUserLogout) {
+                    mobileUserLogout.addEventListener("click", () => {
+                        window.location.href = "/api/session/logout";
+                    });
+                }
+
+                if (mobileHomeButton) {
+                    mobileHomeButton.addEventListener("click", () => {
+                        const detalle = document.getElementById("detalle-movil");
+                        if (detalle && detalle.classList.contains("is-open") && typeof cerrarDetalleMovil === "function") {
+                            cerrarDetalleMovil();
+                            return;
+                        }
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    });
+                }
+
+                if (mobileCategoriesButton) {
+                    mobileCategoriesButton.addEventListener("click", () => {
+                        if (typeof alternarMenuCategorias === "function") {
+                            alternarMenuCategorias();
+                        }
+                    });
+                }
 
             } catch (error) {
                 console.error("No se pudo cargar el usuario de la cartelera:", error);

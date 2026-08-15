@@ -1,0 +1,36 @@
+/* =========================================================
+   MICRO-DRAMAS-ESP — SCROLL DEL DETALLE MÓVIL
+   Solo aplica hasta 600px.
+   Escritorio permanece completamente intacto.
+
+   Objetivo:
+   Permitir que las descripciones largas del detalle móvil
+   puedan desplazarse hasta quedar por encima de la barra
+   inferior fija, dejando un pequeño margen visual.
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .mobile-detail__panel {
+        /* El panel continúa siendo el único contenedor que hace scroll. */
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+
+        /* Permite llevar el último contenido por encima de la barra. */
+        scroll-padding-bottom: calc(
+            92px + env(safe-area-inset-bottom)
+        );
+    }
+
+    .mobile-detail__content {
+        /*
+         * La barra inferior ocupa aproximadamente 62px + separación.
+         * Dejamos margen adicional para que la última línea de una
+         * descripción larga nunca quede debajo de la barra.
+         */
+        padding-bottom: calc(
+            112px + env(safe-area-inset-bottom)
+        );
+    }
+
+}

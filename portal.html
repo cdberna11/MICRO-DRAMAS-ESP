@@ -56,21 +56,18 @@
                 <h1>Crear cuenta</h1>
                 <p class="panel-subtitle">Registra tu cuenta y crea un PIN personal de 4 dígitos.</p>
                 <form id="register-form" novalidate>
-                    <label for="register-name">Nombre</label>
-                    <input id="register-name" type="text" autocomplete="name" placeholder="Tu nombre" maxlength="60" required>
-
-                    <label for="register-email">Correo electrónico</label>
-                    <input id="register-email" type="email" autocomplete="email" placeholder="correo@ejemplo.com" required>
-                    <p class="password-hint">Tu correo quedará guardado para futuras funciones de recuperación y confirmación.</p>
-
                     <label>Forma de acceso</label>
                     <div class="auth-method-options" role="group" aria-label="Forma de acceso">
                         <button type="button" class="auth-method-option selected" data-method="email">Correo</button>
                         <button type="button" class="auth-method-option" data-method="phone">Teléfono</button>
                     </div>
 
+                    <label for="register-name">Nombre</label>
+                    <input id="register-name" type="text" autocomplete="name" placeholder="Tu nombre" maxlength="60" required>
+
                     <label id="register-identifier-label" for="register-identifier">Correo de acceso</label>
                     <input id="register-identifier" type="email" autocomplete="username" placeholder="correo@ejemplo.com" required>
+                    <p class="password-hint">Este correo o teléfono será tu identificador para iniciar sesión.</p>
 
                     <label for="register-pin">PIN</label>
                     <input id="register-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password" placeholder="4 dígitos" required>
@@ -154,5 +151,6 @@
     </div>
 
     <script src="/portal.js"></script>
+    <script src="/portal-register-fix.js"></script>
 </body>
 </html>

@@ -1,318 +1,160 @@
 /* =========================================================
-   MICRO-DRAMAS-ESP — FIX CONTROLES REPRODUCTOR NATIVO
-
-   El reproductor nativo instala un listener de click en el
-   contenedor durante captura. Ese listener bloquea el click
-   antes de que llegue al control.
-
-   IMPORTANTE:
-   Los botones Play, -10, +10, Mute y Fullscreen comparten
-   actualmente la clase .md-player__button. No existen las
-   clases individuales que utilizaba la versión anterior de
-   este fix. Por eso el fix anterior interceptaba el click y
-   después no identificaba el botón, dejándolo sin acción.
-
-   Este archivo identifica los controles por su posición real
-   dentro de .md-player__buttons y mantiene intacto el resto.
+   MICRO-DRAMAS-ESP — CONTROLES FULLSCREEN
+   Mantiene intactas las acciones de los controles que ya
+   funcionan. Solo agrega mostrar/ocultar controles en fullscreen.
 ========================================================= */
 (function () {
     'use strict';
 
+    const CLASE = 'native-fullscreen-controls-visible';
+    let timer = null;
     let instalado = false;
 
-    function salirFullscreen() {
-        const fn =
-            document.exitFullscreen ||
-            document.webkitExitFullscreen;
+    function obtenerReproductorFullscreen() {
+        const elemento =
+            document.fullscreenElement ||
+            document.webkitFullscreenElement;
 
-        if (!fn) {
-            return Promise.resolve();
-        }
-
-        try {
-            return Promise.resolve(
-                fn.call(document)
-            ).catch(() => {});
-        } catch {
-            return Promise.resolve();
-        }
-    }
-
-    function entrarFullscreen(reproductor) {
-        const fn =
-            reproductor.requestFullscreen ||
-            reproductor.webkitRequestFullscreen;
-
-        if (!fn) {
-            return;
-        }
-
-        try {
-            const resultado = fn.call(
-                reproductor
-            );
-
-            if (
-                resultado &&
-                typeof resultado.catch === 'function'
-            ) {
-                resultado.catch(error => {
-                    console.warn(
-                        '[MEGA NATIVO] No se pudo entrar en fullscreen:',
-                        error
-                    );
-                });
-            }
-        } catch (error) {
-            console.warn(
-                '[MEGA NATIVO] No se pudo entrar en fullscreen:',
-                error
-            );
-        }
-    }
-
-    function estaEnFullscreen(reproductor) {
-        return (
-            document.fullscreenElement === reproductor ||
-            document.webkitFullscreenElement === reproductor
-        );
-    }
-
-    function obtenerTipoControl(control, reproductor) {
         if (
-            control.matches('.md-player__close')
+            elemento &&
+            elemento.matches &&
+            elemento.matches('.md-player')
         ) {
-            return 'close';
+            return elemento;
         }
 
-        const botones = Array.from(
-            reproductor.querySelectorAll(
-                '.md-player__buttons > .md-player__button'
-            )
-        );
+        return document.querySelector('.md-player.native-fullscreen');
+    }
 
-        const indice = botones.indexOf(
-            control
-        );
+    function obtenerControles(reproductor) {
+        if (!reproductor) return null;
 
-        switch (indice) {
-            case 0:
-                return 'play';
-            case 1:
-                return 'back10';
-            case 2:
-                return 'forward10';
-            case 3:
-                return 'mute';
-            case 4:
-                return 'fullscreen';
-            default:
-                return null;
+        return (
+            reproductor.querySelector('.md-player__controls') ||
+            reproductor.querySelector('.md-player__bottom') ||
+            reproductor.querySelector('.md-player__buttons')
+        );
+    }
+
+    function estaEnFullscreen() {
+        return !!obtenerReproductorFullscreen();
+    }
+
+    function mostrar(reproductor, ocultarDespues) {
+        const controles = obtenerControles(reproductor);
+        if (!controles) return;
+
+        clearTimeout(timer);
+        reproductor.classList.add(CLASE);
+        controles.classList.add(CLASE);
+        controles.removeAttribute('hidden');
+
+        if (ocultarDespues) {
+            timer = setTimeout(() => {
+                if (estaEnFullscreen()) {
+                    ocultar(reproductor);
+                }
+            }, 3200);
         }
     }
 
-    function cerrarReproductor(reproductor) {
-        const video =
-            reproductor.querySelector(
-                '.md-player__video'
-            );
+    function ocultar(reproductor) {
+        const controles = obtenerControles(reproductor);
+        clearTimeout(timer);
+        if (!controles) return;
 
-        salirFullscreen().finally(() => {
-            try {
-                if (
-                    typeof window.cerrarReproductor ===
-                    'function'
-                ) {
-                    window.cerrarReproductor();
-                    return;
-                }
-            } catch {}
-
-            if (video) {
-                try {
-                    video.pause();
-                    video.removeAttribute('src');
-                    video.load();
-                } catch {}
-            }
-
-            reproductor.classList.remove(
-                'native-fullscreen',
-                'is-open'
-            );
-
-            reproductor.setAttribute(
-                'aria-hidden',
-                'true'
-            );
-
-            document.body.classList.remove(
-                'video-player-open'
-            );
-        });
+        reproductor.classList.remove(CLASE);
+        controles.classList.remove(CLASE);
     }
 
-    function manejarControl(event, control) {
-        const reproductor =
-            control.closest('.md-player');
+    function restaurar(reproductor) {
+        const controles = obtenerControles(reproductor);
+        clearTimeout(timer);
+        if (!controles) return;
 
-        if (!reproductor) {
+        reproductor.classList.remove(CLASE);
+        controles.classList.remove(CLASE);
+        controles.removeAttribute('hidden');
+    }
+
+    function sincronizarFullscreen() {
+        const reproductor = obtenerReproductorFullscreen();
+
+        if (reproductor) {
+            ocultar(reproductor);
             return;
         }
 
-        const video =
-            reproductor.querySelector(
-                '.md-player__video'
-            );
+        document
+            .querySelectorAll('.md-player.' + CLASE)
+            .forEach(restaurar);
+    }
 
-        if (!video) {
+    function esControl(event) {
+        const target = event.target;
+        if (!(target instanceof Element)) return false;
+
+        return !!target.closest(
+            '.md-player__controls,' +
+            '.md-player__bottom,' +
+            '.md-player__buttons,' +
+            '.md-player__button,' +
+            '.md-player__close,' +
+            '.md-player__progress,' +
+            '.md-player__volume,' +
+            'button,input'
+        );
+    }
+
+    function alternarDesdeSuperficie(event) {
+        const reproductor = obtenerReproductorFullscreen();
+        if (!reproductor || esControl(event)) return;
+
+        const target = event.target;
+        if (!(target instanceof Element) || !reproductor.contains(target)) {
             return;
         }
 
-        const tipo =
-            obtenerTipoControl(
-                control,
-                reproductor
-            );
+        const controles = obtenerControles(reproductor);
+        if (!controles) return;
 
-        if (!tipo) {
-            return;
-        }
-
-        /*
-         * Este bloqueo es intencional: evita que el listener
-         * de captura del reproductor vuelva a detener el click.
-         */
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-
-        switch (tipo) {
-            case 'play':
-                if (video.paused) {
-                    video.play().catch(() => {});
-                } else {
-                    video.pause();
-                }
-                return;
-
-            case 'back10': {
-                const duration = Number(
-                    video.duration
-                );
-
-                if (
-                    Number.isFinite(duration) &&
-                    duration > 0
-                ) {
-                    video.currentTime = Math.max(
-                        0,
-                        (Number(video.currentTime) || 0) - 10
-                    );
-                }
-                return;
-            }
-
-            case 'forward10': {
-                const duration = Number(
-                    video.duration
-                );
-
-                if (
-                    Number.isFinite(duration) &&
-                    duration > 0
-                ) {
-                    video.currentTime = Math.min(
-                        duration - 0.05,
-                        (Number(video.currentTime) || 0) + 10
-                    );
-                }
-                return;
-            }
-
-            case 'mute':
-                video.muted = !video.muted;
-                return;
-
-            case 'fullscreen':
-                if (
-                    estaEnFullscreen(reproductor)
-                ) {
-                    salirFullscreen();
-                } else {
-                    entrarFullscreen(
-                        reproductor
-                    );
-                }
-                return;
-
-            case 'close':
-                cerrarReproductor(
-                    reproductor
-                );
-                return;
+        if (controles.classList.contains(CLASE)) {
+            ocultar(reproductor);
+        } else {
+            mostrar(reproductor, false);
         }
     }
 
     function instalar() {
-        if (instalado) {
-            return;
-        }
-
+        if (instalado) return;
         instalado = true;
 
         document.addEventListener(
+            'fullscreenchange',
+            sincronizarFullscreen
+        );
+
+        document.addEventListener(
+            'webkitfullscreenchange',
+            sincronizarFullscreen
+        );
+
+        /* Un toque/clic sobre el vídeo alterna la visibilidad.
+           Los controles existentes quedan completamente fuera. */
+        document.addEventListener(
             'click',
-            event => {
-                const target =
-                    event.target;
-
-                if (
-                    !(target instanceof Element)
-                ) {
-                    return;
-                }
-
-                const control =
-                    target.closest(
-                        '.md-player__close,' +
-                        '.md-player__button'
-                    );
-
-                if (!control) {
-                    return;
-                }
-
-                const reproductor =
-                    control.closest(
-                        '.md-player'
-                    );
-
-                if (!reproductor) {
-                    return;
-                }
-
-                /*
-                 * Solo interceptamos los botones del reproductor.
-                 * No afecta la barra de progreso ni el volumen.
-                 */
-                if (
-                    !control.matches(
-                        '.md-player__close,' +
-                        '.md-player__buttons > .md-player__button'
-                    )
-                ) {
-                    return;
-                }
-
-                manejarControl(
-                    event,
-                    control
-                );
-            },
-            true
+            alternarDesdeSuperficie,
+            false
         );
     }
 
-    instalar();
+    if (document.readyState === 'loading') {
+        document.addEventListener(
+            'DOMContentLoaded',
+            instalar,
+            { once: true }
+        );
+    } else {
+        instalar();
+    }
 })();

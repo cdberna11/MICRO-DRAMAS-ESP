@@ -11,8 +11,8 @@
     >
 
     <title>
-    MICRO DRAMAS EN ESPAÑOL
-</title>
+        MICRO DRAMAS EN ESPAÑOL
+    </title>
 
     <link
         rel="stylesheet"
@@ -93,16 +93,15 @@
     ====================================================== -->
 
     <header class="site-header">
-       <div class="site-header__content">
+        <div class="site-header__content">
 
-    <img
-        src="assets/micro_drama_en_español_1.jpg"
-        alt="Micro Dramas en Español"
-        class="site-logo"
-    >
+            <img
+                src="assets/micro_drama_en_español_1.jpg"
+                alt="Micro Dramas en Español"
+                class="site-logo"
+            >
 
-</div>
-
+        </div>
     </header>
 
 
@@ -118,19 +117,31 @@
                 class="catalog-carousel"
                 aria-label="Catálogo de microdramas"
             ></div>
-
         </section>
 
     </main>
 
 
-    <script
-        src="app.js"
-    ></script>
+    <!-- =====================================================
+         APLICACIÓN PRINCIPAL
+    ====================================================== -->
 
-    <script
-        src="mobile-bottom-nav.js"
-    ></script>
+    <script src="app.js"></script>
+
+    <!--
+         Correcciones aisladas del reproductor.
+         Debe cargarse DESPUÉS de app.js para sustituir
+         únicamente las rutas SEEK/fullscreen defectuosas.
+    -->
+    <script src="player-seek-fix.js?v=3"></script>
+
+    <!-- Navegación móvil existente -->
+    <script src="mobile-bottom-nav.js"></script>
+
+
+    <!-- =====================================================
+         USUARIO DE LA CARTELERA — ESCRITORIO
+    ====================================================== -->
 
     <script>
         (async function cargarUsuarioCatalogo() {

@@ -2,17 +2,17 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow, noarchive">
   <title>MEGA-TEST · Laboratorio de reproducción</title>
-  <link rel="stylesheet" href="./test.css?v=3">
+  <link rel="stylesheet" href="./test.css?v=4">
 </head>
 <body>
 <main class="lab">
   <header class="hero">
     <span class="badge">MEGA-TEST · LABORATORIO AISLADO</span>
     <h1>Pruebas de reproducción y SEEK</h1>
-    <p>Esta página es independiente de producción. Aquí probaremos distintos métodos hasta conseguir un SEEK fluido y una reanudación fiable.</p>
+    <p>Esta página es independiente de producción. Aquí probaremos el comportamiento de MEGA en escritorio y móvil antes de tocar el reproductor real.</p>
   </header>
 
   <section class="panel">
@@ -35,9 +35,11 @@
       <button id="btn-open" class="primary" type="button">▶ CARGAR VÍDEO</button>
       <button id="btn-stop" type="button">■ CERRAR</button>
       <button id="btn-clear-resume" type="button">Borrar posición guardada</button>
+      <button id="btn-open-mega" class="mobile-only" type="button">↗ Abrir MEGA directamente</button>
     </div>
 
     <div class="status" id="status">PASO 1: selecciona el vídeo y pulsa «CARGAR VÍDEO».</div>
+    <div id="mobile-help" class="mobile-help hidden">📱 <strong>Prueba móvil:</strong> toca el vídeo para mostrar/ocultar los controles de MEGA. En pantalla completa, toca una vez sobre el vídeo para intentar volver a mostrar la barra de controles.</div>
   </section>
 
   <section class="player-card">
@@ -56,7 +58,7 @@
         <span>Pulsa «CARGAR VÍDEO» arriba para iniciar la prueba.</span>
       </div>
       <video id="video" controls playsinline preload="metadata"></video>
-      <iframe id="mega-frame" title="Player de MEGA" allow="autoplay; fullscreen" allowfullscreen></iframe>
+      <iframe id="mega-frame" title="Player de MEGA" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen webkitallowfullscreen></iframe>
       <div id="loading" class="loading hidden">
         <div class="spinner"></div>
         <strong id="loading-title">Preparando vídeo...</strong>
@@ -65,7 +67,7 @@
       </div>
     </div>
 
-    <div class="quick-seek">
+    <div class="quick-seek" id="quick-seek">
       <span>Saltos de prueba:</span>
       <button data-seek="300" type="button">+5 min</button>
       <button data-seek="900" type="button">+15 min</button>
@@ -83,12 +85,13 @@
   <section class="panel tests">
     <h2>Plan de prueba</h2>
     <ol>
-      <li>Primero comprobaremos que el vídeo carga correctamente.</li>
-      <li>Después moveremos la barra a 5, 15, 25 y 30 minutos.</li>
-      <li>Luego haremos saltos consecutivos hacia delante y atrás.</li>
-      <li>Finalmente cerraremos y volveremos a abrir para comprobar RESUME.</li>
+      <li>Comprobar carga y reproducción en computadora.</li>
+      <li>Comprobar carga y controles en teléfono.</li>
+      <li>Mover la barra a 5, 15, 25, 30, 40 y 60 minutos.</li>
+      <li>Probar saltos hacia delante y atrás.</li>
+      <li>Entrar en pantalla completa y comprobar PLAY/PAUSE y SEEK.</li>
     </ol>
-    <div class="warning"><strong>Nota:</strong> Motor A descarga el archivo completo antes de reproducirlo. Es una prueba de concepto para verificar si el SEEK nativo del navegador resuelve el problema. No se utilizará así en producción si el consumo de memoria/tiempo no resulta adecuado.</div>
+    <div class="warning"><strong>Motor B:</strong> el reproductor y sus controles pertenecen a MEGA. Desde nuestra página no podemos modificar directamente sus botones internos porque el reproductor está dentro de un iframe de otro origen. Primero optimizamos el contenedor móvil y comprobamos qué controles expone realmente MEGA en el teléfono.</div>
   </section>
 
   <section class="logs panel">
@@ -97,6 +100,6 @@
   </section>
 </main>
 <script src="https://unpkg.com/megajs@1.3.10/dist/main.browser-umd.js"></script>
-<script src="./test.js?v=3"></script>
+<script src="./test.js?v=4"></script>
 </body>
 </html>

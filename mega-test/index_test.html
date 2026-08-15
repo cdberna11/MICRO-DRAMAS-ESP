@@ -1,321 +1,63 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <meta
-        name="robots"
-        content="noindex, nofollow, noarchive"
-    >
-
-    <title>
-        Prueba MEGA | Micro Dramas ESP
-    </title>
-
-    <link
-        rel="stylesheet"
-        href="./test.css"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <title>MEGA-TEST · Reproductor</title>
+    <link rel="stylesheet" href="./test.css?v=1">
 </head>
-
-
 <body>
-
     <main class="test-page">
-
         <section class="test-card">
-
             <header class="test-header">
-
-                <span class="test-badge">
-                    PRUEBA TÉCNICA
-                </span>
-
-                <h1>
-                    MEGA → MEGAJS
-                </h1>
-
-                <p>
-                    Prueba de acceso a vídeos MEGA
-                    sin utilizar el reproductor de MEGA.
-                </p>
-
+                <span class="test-badge">LABORATORIO AISLADO</span>
+                <h1>Reproductor MEGA</h1>
+                <p>Base idéntica al reproductor actualmente estable en producción. Las pruebas realizadas aquí no modifican el reproductor de la cartelera.</p>
             </header>
 
-
-            <!-- =====================================================
-                 SELECCIÓN DE VIDEO
-            ====================================================== -->
-
             <section class="test-section">
-
-                <label
-                    for="video-select"
-                    class="field-label"
-                >
-                    Vídeo de prueba
-                </label>
-
-                <select
-                    id="video-select"
-                    class="field"
-                >
-
-                    <option value="video1">
-                        EL OJO DE LA RIQUEZA
-                    </option>
-
-                    <option value="video2">
-                        DE LA TRAICIÓN AL TRONO
-                    </option>
-
+                <label for="video-select" class="field-label">Vídeo de prueba</label>
+                <select id="video-select" class="field">
+                    <option value="video1">EL OJO DE LA RIQUEZA</option>
+                    <option value="video2">DE LA TRAICIÓN AL TRONO</option>
                 </select>
-
             </section>
-
-
-            <!-- =====================================================
-                 BOTONES
-            ====================================================== -->
 
             <section class="test-actions">
-
-                <button
-                    id="btn-info"
-                    class="button button-primary"
-                    type="button"
-                >
-                    Leer información del archivo
-                </button>
-
-
-                <button
-                    id="btn-chunk"
-                    class="button button-secondary"
-                    type="button"
-                    disabled
-                >
-                    Probar lectura de 1 MB
-                </button>
-
+                <button id="btn-play-test" class="button button-primary" type="button">Abrir reproductor</button>
+                <button id="btn-stop-test" class="button button-secondary" type="button">Cerrar reproductor</button>
             </section>
-
-
-            <!-- =====================================================
-                 ESTADO
-            ====================================================== -->
 
             <section class="test-section">
-
-                <div class="status-title">
-                    Estado
-                </div>
-
-                <div
-                    id="status"
-                    class="status status-idle"
-                >
-                    Esperando prueba...
-                </div>
-
+                <div class="status-title">Prueba actual</div>
+                <div id="status" class="status status-idle">Esperando prueba...</div>
             </section>
-
-
-            <!-- =====================================================
-                 INFORMACIÓN
-            ====================================================== -->
 
             <section class="test-section">
-
-                <div class="section-title">
-                    Información del archivo
-                </div>
-
-                <div class="info-grid">
-
-                    <div class="info-item">
-
-                        <span class="info-label">
-                            Archivo
-                        </span>
-
-                        <span
-                            id="file-name"
-                            class="info-value"
-                        >
-                            —
-                        </span>
-
-                    </div>
-
-
-                    <div class="info-item">
-
-                        <span class="info-label">
-                            Tamaño
-                        </span>
-
-                        <span
-                            id="file-size"
-                            class="info-value"
-                        >
-                            —
-                        </span>
-
-                    </div>
-
-
-                    <div class="info-item">
-
-                        <span class="info-label">
-                            Tipo
-                        </span>
-
-                        <span
-                            id="file-type"
-                            class="info-value"
-                        >
-                            —
-                        </span>
-
-                    </div>
-
-
-                    <div class="info-item">
-
-                        <span class="info-label">
-                            Fuente
-                        </span>
-
-                        <span
-                            id="file-source"
-                            class="info-value"
-                        >
-                            MEGA
-                        </span>
-
-                    </div>
-
-                </div>
-
+                <div class="section-title">Objetivo de esta etapa</div>
+                <ul class="test-list">
+                    <li>Reproducción nativa sobre el motor MEGA actual.</li>
+                    <li>Play/Pausa, volumen, ±10 s y fullscreen.</li>
+                    <li>Pruebas de SEEK mediante la barra de progreso.</li>
+                    <li>Pruebas de acceso por rangos sin modificar producción.</li>
+                </ul>
             </section>
-
-
-            <!-- =====================================================
-                 PROGRESO
-            ====================================================== -->
-
-            <section class="test-section">
-
-                <div class="section-title">
-                    Datos recibidos durante la prueba
-                </div>
-
-
-                <div class="progress-container">
-
-                    <div
-                        id="progress-bar"
-                        class="progress-bar"
-                    ></div>
-
-                </div>
-
-
-                <div class="progress-info">
-
-                    <span
-                        id="progress-text"
-                    >
-                        0 B / 1 MB
-                    </span>
-
-                    <span
-                        id="progress-percent"
-                    >
-                        0%
-                    </span>
-
-                </div>
-
-            </section>
-
-
-            <!-- =====================================================
-                 RESULTADO
-            ====================================================== -->
-
-            <section class="test-section">
-
-                <div class="section-title">
-                    Resultado de la prueba
-                </div>
-
-                <div
-                    id="result-box"
-                    class="result-box"
-                >
-                    Todavía no se ha realizado ninguna prueba.
-                </div>
-
-            </section>
-
-
-            <!-- =====================================================
-                 DIAGNÓSTICO
-            ====================================================== -->
-
-            <section class="test-section">
-
-                <div class="section-title">
-                    Diagnóstico
-                </div>
-
-                <div
-                    id="diagnostic-log"
-                    class="diagnostic-log"
-                ></div>
-
-            </section>
-
-
-            <!-- =====================================================
-                 NOTA
-            ====================================================== -->
 
             <div class="test-note">
-
-                <strong>
-                    Importante:
-                </strong>
-
-                esta página no modifica tus vídeos,
-                no modifica D1 y no utiliza el iframe
-                del reproductor de MEGA.
-
-                La prueba de 1 MB solamente intenta leer
-                una pequeña porción del archivo.
-
+                <strong>Importante:</strong> esta página es un laboratorio. No se modificarán tarjetas, categorías, login, panel administrativo ni el reproductor de producción desde aquí.
             </div>
-
         </section>
-
     </main>
 
+    <!-- El app base necesita este contenedor para inicializarse. -->
+    <div id="catalogo" aria-hidden="true"></div>
 
-    <script
-        type="module"
-        src="./test.js"
-    ></script>
-
+    <script src="./test-app.js?v=base"></script>
+    <script src="./player-native-mega.js?v=base"></script>
+    <script src="./player-native-controls-fix.js?v=base"></script>
+    <script src="./player-seek-fix.js?v=base"></script>
+    <script src="./player-seek-offset-guard.js?v=base"></script>
+    <script src="./test.js?v=1"></script>
 </body>
-
 </html>

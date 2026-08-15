@@ -225,11 +225,33 @@
 
                 if (mobileHomeButton) {
                     mobileHomeButton.addEventListener("click", () => {
+                        /*
+                         * INICIO MÓVIL:
+                         * Si estamos dentro de un microdrama, primero regresamos
+                         * al catálogo. Si estamos viendo una categoría, volvemos
+                         * a TODAS. De esta forma la casita siempre representa
+                         * la pantalla inicial del portal.
+                         */
                         const detalle = document.getElementById("detalle-movil");
                         if (detalle && detalle.classList.contains("is-open") && typeof cerrarDetalleMovil === "function") {
                             cerrarDetalleMovil();
-                            return;
                         }
+
+                        const botonTodos = document.querySelector(
+                            ".menu-categorias-portal__list button:first-child"
+                        );
+
+                        if (botonTodos) {
+                            botonTodos.click();
+                        } else {
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                        }
+
+                        const menuCategorias = document.getElementById("menu-categorias-portal");
+                        if (menuCategorias && typeof cerrarMenuCategorias === "function") {
+                            cerrarMenuCategorias();
+                        }
+
                         window.scrollTo({ top: 0, behavior: "smooth" });
                     });
                 }

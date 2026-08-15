@@ -148,6 +148,16 @@
         src="app.js"
     ></script>
 
+    <!--
+        Corrección específica del SEEK de la barra.
+        Se carga después de app.js para sustituir únicamente
+        las funciones de SEEK, manteniendo intacto el resto
+        del reproductor.
+    -->
+    <script
+        src="player-seek-fix.js"
+    ></script>
+
     <script>
         (async function cargarUsuarioCatalogo() {
             const menu = document.getElementById("catalog-user-menu");

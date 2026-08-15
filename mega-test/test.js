@@ -1,14 +1,8 @@
 const MEGAJS_URL = 'https://unpkg.com/megajs@1.3.10/dist/main.browser-es.mjs';
 
 const VIDEOS = {
-  video1: {
-    title: 'Vídeo de prueba 1',
-    url: 'https://mega.nz/file/i4o11BTQ#-aSeSbRBjG878N5r5Q5te9SSvW-B19tjw5cfexOAdlQ'
-  },
-  video2: {
-    title: 'Vídeo de prueba 2',
-    url: 'https://mega.nz/file/2xIwkY6K#4Oe8Vuomh0NfMjjPKOFQIT0nEXnaA9ZcQGBLou5yj-E'
-  }
+  video1: { title: 'Vídeo de prueba 1', url: 'https://mega.nz/file/i4o11BTQ#-aSeSbRBjG878N5r5Q5te9SSvW-B19tjw5cfexOAdlQ' },
+  video2: { title: 'Vídeo de prueba 2', url: 'https://mega.nz/file/2xIwkY6K#4Oe8Vuomh0NfMjjPKOFQIT0nEXnaA9ZcQGBLou5yj-E' }
 };
 
 const $ = id => document.getElementById(id);
@@ -28,6 +22,9 @@ const meta = $('video-meta');
 const cacheState = $('cache-state');
 const currentTime = $('current-time');
 const savedTime = $('saved-time');
+const quickSeekBox = $('quick-seek');
+const mobileHelp = $('mobile-help');
+const openMegaButton = $('btn-open-mega');
 
 let MEGAFile = window.mega?.File || null;
 let currentFile = null;
@@ -40,10 +37,7 @@ function log(...args) {
   if (logBox) logBox.textContent = `${line}\n${logBox.textContent}`.slice(0, 16000);
 }
 
-function setStatus(text) {
-  status.textContent = text;
-  log(text);
-}
+function setStatus(text) { status.textContent = text; log(text); }
 
 function formatTime(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -120,6 +114,15 @@ async function loadMegaLibrary() {
   return MEGAFile;
 }
 
+function updateModeUI() {
+  const isMega = mode.value === 'mega';
+  quickSeekBox.style.display = isMega ? 'none' : 'flex';
+  mobileHelp.classList.toggle('hidden', !isMega || !('ontouchstart' in window));
+  openMegaButton.classList.toggle('mobile-only', isMega);
+  if (!isMega) openMegaButton.style.display = 'none';
+  else openMegaButton.style.display = '';
+}
+
 async function loadNative(drama, token) {
   destroyBlobUrl();
   showNativeVideo();
@@ -155,9 +158,7 @@ async function loadNative(drama, token) {
   });
 
   const chunks = [];
-  stream.on('data', chunk => {
-    if (token === loadToken) chunks.push(chunk);
-  });
+  stream.on('data', chunk => { if (token === loadToken) chunks.push(chunk); });
 
   const data = await new Promise((resolve, reject) => {
     stream.on('error', reject);
@@ -176,6 +177,10 @@ async function loadNative(drama, token) {
   setStatus('Motor A listo. Ahora puedes probar SEEK con la barra nativa.');
 }
 
+function getMegaEmbedUrl(drama) {
+  return drama.url.replace('https://mega.nz/file/', 'https://mega.nz/embed/');
+}
+
 function loadMegaPlayer(drama) {
   destroyBlobUrl();
   video.pause();
@@ -184,11 +189,20 @@ function loadMegaPlayer(drama) {
   placeholder.style.display = 'none';
   video.style.display = 'none';
   frame.style.display = 'block';
-  frame.src = drama.url.replace('https://mega.nz/file/', 'https://mega.nz/embed/');
+  frame.src = getMegaEmbedUrl(drama);
   cacheState.textContent = 'MEGA PLAYER';
   meta.textContent = 'Reproductor oficial de MEGA';
   showLoading(false);
-  setStatus('Motor B cargado. Usa su barra de progreso para comparar el SEEK.');
+  updateModeUI();
+  setStatus('Motor B cargado. En móvil, toca el vídeo para mostrar los controles de MEGA.');
+}
+
+function openMegaDirect() {
+  if (mode.value !== 'mega') return;
+  const drama = getDrama();
+  const url = getMegaEmbedUrl(drama);
+  log(`Abriendo MEGA directamente: ${url}`);
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 async function openVideo() {
@@ -197,6 +211,7 @@ async function openVideo() {
   title.textContent = drama.title;
   savedTime.textContent = getSavedPosition(drama) ? formatTime(getSavedPosition(drama)) : 'No guardada';
   meta.textContent = 'Preparando…';
+  updateModeUI();
   try {
     if (mode.value === 'mega') loadMegaPlayer(drama);
     else await loadNative(drama, token);
@@ -244,11 +259,15 @@ function quickSeek(delta) {
 $('btn-open').addEventListener('click', openVideo);
 $('btn-stop').addEventListener('click', closeVideo);
 $('btn-clear-resume').addEventListener('click', clearPosition);
+openMegaButton.addEventListener('click', openMegaDirect);
 select.addEventListener('change', () => {
   const drama = getDrama();
   savedTime.textContent = getSavedPosition(drama) ? formatTime(getSavedPosition(drama)) : 'No guardada';
 });
-mode.addEventListener('change', () => setStatus(`Método seleccionado: ${mode.options[mode.selectedIndex].text}`));
+mode.addEventListener('change', () => {
+  updateModeUI();
+  setStatus(`Método seleccionado: ${mode.options[mode.selectedIndex].text}`);
+});
 document.querySelectorAll('[data-seek]').forEach(button => button.addEventListener('click', () => quickSeek(Number(button.dataset.seek))));
 
 video.addEventListener('loadedmetadata', () => {
@@ -261,7 +280,7 @@ video.addEventListener('loadedmetadata', () => {
     setStatus(`Reanudación preparada en ${formatTime(saved)}.`);
   }
 });
-video.addEventListener('timeupdate', () => { updateTime(); });
+video.addEventListener('timeupdate', updateTime);
 video.addEventListener('pause', savePosition);
 video.addEventListener('ended', () => { savePosition(); setStatus('Vídeo terminado.'); });
 video.addEventListener('error', () => {
@@ -271,5 +290,6 @@ video.addEventListener('error', () => {
 window.addEventListener('beforeunload', savePosition);
 
 showPlaceholder();
+updateModeUI();
 log(`MEGAJS global: ${MEGAFile?.fromURL ? 'OK' : 'NO DISPONIBLE'}`);
 setStatus('PASO 1: selecciona el vídeo y pulsa «CARGAR VÍDEO».');

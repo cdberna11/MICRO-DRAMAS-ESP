@@ -225,7 +225,11 @@
         display: none !important;
     }
 
-    /* El botón existente de cerrar detalle se transforma en regreso. */
+    /* =====================================================
+       BOTÓN DE REGRESO DEL DETALLE
+       Mantiene exactamente su posición, pero centra la flecha
+       mediante CSS para evitar que el carácter quede desplazado.
+    ===================================================== */
     .mobile-detail__close {
         left: 14px !important;
         right: auto !important;
@@ -235,18 +239,57 @@
         background: rgba(20,20,20,.88) !important;
         font-size: 0 !important;
         border-radius: 50% !important;
+        position: fixed !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
     }
 
+    /* Línea horizontal de la flecha. */
     .mobile-detail__close::before {
-        content: "←";
-        font-size: 30px;
-        line-height: 1;
-        color: #fff;
+        content: "";
+        position: absolute;
+        width: 19px;
+        height: 3px;
+        left: 12px;
+        top: 20px;
+        border-radius: 3px;
+        background: #fff;
     }
 
-    /* En detalle la barra sigue disponible, pero no invade la portada. */
-    body.mobile-detail-open .mobile-bottom-nav {
-        opacity: .92;
+    /* Punta de flecha. */
+    .mobile-detail__close::after {
+        content: "";
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        left: 11px;
+        top: 14px;
+        border-left: 3px solid #fff;
+        border-bottom: 3px solid #fff;
+        border-radius: 1px;
+        transform: rotate(45deg);
+    }
+
+    /* =====================================================
+       MENÚ DE CATEGORÍAS
+       La barra inferior permanece visible, por lo que el panel
+       termina antes de ella y la última categoría nunca queda
+       oculta detrás de la navegación.
+    ===================================================== */
+    .menu-categorias-portal__panel {
+        height: calc(100% - 92px) !important;
+        max-height: calc(100dvh - 92px) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding-bottom: 24px !important;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+
+    .menu-categorias-portal__list {
+        padding-bottom: 12px !important;
     }
 
     /* El logo queda más pequeño y limpio en teléfonos. */

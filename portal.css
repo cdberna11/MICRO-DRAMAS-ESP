@@ -3,7 +3,8 @@
 ========================================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { min-height: 100%; }
-body { min-height: 100vh; min-height: 100dvh; background: radial-gradient(circle at 50% 0%, #3a0509 0%, #210205 27%, #080001 72%, #000 100%); color: #fff; font-family: Arial, Helvetica, sans-serif; overflow-x: hidden; }
+body { min-height: 100vh; min-height: 100dvh; background: #0d0d0f; color: #fff; font-family: Arial, Helvetica, sans-serif; overflow-x: hidden; }
+body.login-mode { background: radial-gradient(circle at 50% 0%, #3a0509 0%, #210205 27%, #080001 72%, #000 100%); }
 button, input { font: inherit; }
 button { cursor: pointer; touch-action: manipulation; }
 button:disabled { cursor: wait; opacity: .65; }

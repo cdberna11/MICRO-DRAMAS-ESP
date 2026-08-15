@@ -3,21 +3,26 @@
 ========================================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { min-height: 100%; }
-body { min-height: 100vh; min-height: 100dvh; background: #0d0d0f; color: #fff; font-family: Arial, Helvetica, sans-serif; overflow-x: hidden; }
+body { min-height: 100vh; min-height: 100dvh; background: radial-gradient(circle at 50% 0%, #3a0509 0%, #210205 27%, #080001 72%, #000 100%); color: #fff; font-family: Arial, Helvetica, sans-serif; overflow-x: hidden; }
 button, input { font: inherit; }
 button { cursor: pointer; touch-action: manipulation; }
 button:disabled { cursor: wait; opacity: .65; }
-.portal-screen { min-height: 100vh; min-height: 100dvh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 38px 20px 50px; }
-.portal-logo { display: block; width: 390px; max-width: min(78vw, 390px); height: auto; margin: 0 auto 28px; }
-.portal-card { width: min(430px, 94vw); padding: 28px; background: #15151b; border: 1px solid #303039; border-radius: 14px; box-shadow: 0 18px 50px rgba(0,0,0,.42); }
-.panel h1 { font-size: 25px; line-height: 1.2; text-align: center; margin-bottom: 8px; }
-.panel-subtitle { color: #a8a8b3; font-size: 14px; line-height: 1.5; text-align: center; margin-bottom: 22px; }
+
+/* Cabecera estilo Netflix */
+.portal-header { position: fixed; top: 0; left: 0; right: 0; z-index: 20; height: 88px; display: flex; align-items: center; padding: 0 0 0 clamp(28px, 10vw, 190px); border-bottom: 1px solid rgba(255,255,255,.08); background: linear-gradient(180deg, rgba(55,3,7,.94) 0%, rgba(37,2,5,.78) 100%); }
+.portal-brand { display: block; line-height: 0; }
+.portal-brand img { display: block; width: 150px; max-width: 28vw; height: auto; object-fit: contain; }
+
+.portal-screen { min-height: 100vh; min-height: 100dvh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 118px 20px 70px; }
+.portal-card { width: min(440px, 94vw); padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+.panel h1 { font-size: 32px; line-height: 1.2; text-align: left; margin-bottom: 10px; }
+.panel-subtitle { color: #c6bfc0; font-size: 17px; line-height: 1.5; text-align: left; margin-bottom: 25px; }
 form { display: grid; gap: 9px; }
-form label { color: #e9e9ee; font-size: 13px; font-weight: 700; margin-top: 6px; }
-input[type="text"], input[type="email"], input[type="tel"], input[type="password"] { width: 100%; min-height: 46px; padding: 0 13px; color: #fff; background: #0f0f14; border: 1px solid #3b3b47; border-radius: 8px; outline: none; font-size: 16px; }
-input:focus { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.14); }
-.password-hint { color: #8f8f9b; font-size: 11px; line-height: 1.45; margin-top: -3px; }
-.primary-button, .secondary-button, .catalog-button { width: 100%; min-height: 46px; border-radius: 8px; font-weight: 700; margin-top: 12px; transition: transform .18s ease, filter .18s ease; }
+form label { color: #f1eded; font-size: 13px; font-weight: 700; margin-top: 6px; }
+input[type="text"], input[type="email"], input[type="tel"], input[type="password"] { width: 100%; min-height: 56px; padding: 0 14px; color: #fff; background: rgba(25,18,19,.94); border: 1px solid #5c5153; border-radius: 4px; outline: none; font-size: 16px; }
+input:focus { border-color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
+.password-hint { color: #9e9496; font-size: 11px; line-height: 1.45; margin-top: -3px; }
+.primary-button, .secondary-button, .catalog-button { width: 100%; min-height: 50px; border-radius: 4px; font-weight: 700; margin-top: 12px; transition: transform .18s ease, filter .18s ease; }
 .primary-button { border: 1px solid #e50914; background: #e50914; color: #fff; }
 .secondary-button, .catalog-button { border: 1px solid #42424e; background: #202028; color: #fff; }
 .primary-button:hover, .secondary-button:hover, .catalog-button:hover { filter: brightness(1.12); transform: translateY(-1px); }
@@ -65,9 +70,9 @@ input:focus { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.14); }
 .manage-profile-button { margin-top: 4px; }
 
 /* Editor de perfil */
-.edit-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); }
-.edit-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.72); backdrop-filter: blur(2px); }
-.edit-modal-card { position: relative; z-index: 1; width: min(620px, 96vw); max-height: min(90vh, 90dvh); overflow-y: auto; padding: 30px; background: #fff; color: #111; border-radius: 12px; box-shadow: 0 25px 80px rgba(0,0,0,.55); -webkit-overflow-scrolling: touch; }
+.edit-modal, .migration-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+.edit-modal-backdrop, .migration-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.76); backdrop-filter: blur(3px); }
+.edit-modal-card, .migration-modal-card { position: relative; z-index: 1; width: min(620px, 96vw); max-height: min(90vh, 90dvh); overflow-y: auto; padding: 30px; background: #fff; color: #111; border-radius: 12px; box-shadow: 0 25px 80px rgba(0,0,0,.55); -webkit-overflow-scrolling: touch; }
 .edit-modal-card h2 { color: #111; font-size: 31px; text-align: center; margin-bottom: 22px; }
 .edit-modal-card form label { color: #111; }
 .edit-modal-card input[type="text"] { color: #111; background: #fff; border-color: #aaa; }
@@ -76,13 +81,21 @@ input:focus { border-color: #e50914; box-shadow: 0 0 0 2px rgba(229,9,20,.14); }
 .modal-close:hover { color: #e50914; }
 .modal-avatar-options { margin-top: 6px; }
 
+/* Ventana exclusiva para cuentas antiguas */
+.migration-modal-card { width: min(460px, 94vw); background: #17171b; color: #fff; border: 1px solid #34343d; border-radius: 10px; padding: 30px; box-shadow: 0 25px 80px rgba(0,0,0,.72); }
+.migration-icon { width: 48px; height: 48px; margin: 0 auto 13px; display: grid; place-items: center; border-radius: 50%; background: #351217; font-size: 23px; }
+.migration-modal-card h2 { text-align: center; font-size: 27px; margin-bottom: 10px; }
+.migration-text { color: #b9b9c2; font-size: 14px; line-height: 1.55; text-align: center; margin-bottom: 18px; }
+.migration-modal-card form label { color: #e9e9ee; }
+.migration-message { padding: 10px 12px; border-radius: 6px; font-size: 13px; line-height: 1.4; color: #ffd7da; background: #3a171b; border: 1px solid #9d2832; }
+
 /* Pantalla PIN a pantalla completa, inspirada en la experiencia Netflix */
 body.pin-mode { background: #000; overflow: hidden; }
+body.pin-mode .portal-header { display: none; }
 body.pin-mode .portal-screen { justify-content: center; padding: 30px 20px; }
-body.pin-mode .portal-logo { display: none; }
 body.pin-mode .portal-card { width: min(900px, 96vw); padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
 body.pin-mode .pin-panel { min-height: 0; }
-body.pin-mode .pin-panel h1 { font-size: clamp(30px, 4vw, 54px); margin-bottom: 28px; }
+body.pin-mode .pin-panel h1 { font-size: clamp(30px, 4vw, 54px); margin-bottom: 28px; text-align: center; }
 body.pin-mode .pin-panel .panel-subtitle { display: none; }
 body.pin-mode .pin-inputs { margin-top: 0; }
 body.pin-mode .pin-account-label { color: #888; font-size: 13px; margin-top: 18px; }
@@ -91,25 +104,28 @@ body.pin-mode #pin-back-login { width: min(360px, 100%); margin: 10px auto 0; }
 
 [hidden] { display: none !important; }
 @media (max-width: 600px) {
-    .portal-screen { padding: 26px 14px 40px; justify-content: flex-start; }
-    .portal-logo { width: 300px; max-width: 86vw; margin-bottom: 22px; }
-    .portal-card { width: min(430px, 100%); padding: 22px 18px; }
-    .panel h1 { font-size: 24px; }
-    .panel-subtitle { margin-bottom: 18px; }
+    .portal-header { height: 72px; padding-left: 22px; }
+    .portal-brand img { width: 128px; max-width: 42vw; }
+    .portal-screen { padding: 100px 20px 40px; justify-content: flex-start; }
+    .portal-card { width: min(440px, 100%); }
+    .panel h1 { font-size: 28px; }
+    .panel-subtitle { font-size: 15px; margin-bottom: 18px; }
     .primary-button, .secondary-button, .catalog-button { min-height: 48px; }
     .pin-inputs { gap: 9px; margin-top: 22px; }
     .pin-input { width: 56px !important; height: 66px; min-height: 66px !important; font-size: 27px !important; }
     .pin-input.filled { width: 63px !important; height: 72px; }
     body.pin-mode .portal-screen { padding: 24px 12px; }
     body.pin-mode .pin-panel h1 { font-size: clamp(28px, 8vw, 42px); }
-    .edit-modal { padding-left: 10px; padding-right: 10px; }
-    .edit-modal-card { width: 100%; max-height: 92dvh; padding: 24px 18px; border-radius: 12px; }
+    .edit-modal, .migration-modal { padding-left: 10px; padding-right: 10px; }
+    .edit-modal-card, .migration-modal-card { width: 100%; max-height: 92dvh; padding: 24px 18px; border-radius: 12px; }
     .edit-modal-card h2 { font-size: 26px; margin-bottom: 18px; }
+    .migration-modal-card h2 { font-size: 24px; }
     .modal-close { top: 7px; right: 8px; }
 }
 @media (max-width: 360px) {
-    .portal-logo { width: 255px; max-width: 84vw; }
-    .portal-card { padding: 19px 14px; }
+    .portal-header { height: 66px; }
+    .portal-brand img { width: 112px; }
+    .portal-screen { padding-top: 88px; }
     .avatar-options { gap: 6px; }
     .profile-avatar-button { width: 130px; height: 130px; }
     .welcome-block h1 { font-size: 24px; }

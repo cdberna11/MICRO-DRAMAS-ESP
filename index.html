@@ -2,311 +2,101 @@
 <html lang="es">
 
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>
-        MICRO DRAMAS EN ESPAÑOL
-    </title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
-    <link
-        rel="stylesheet"
-        href="category-menu-fix.css"
-    >
-
-    <link
-        rel="stylesheet"
-        href="mobile-bottom-nav.css"
-    >
-
-    <link
-        rel="stylesheet"
-        href="catalog-user.css"
-    >
-
-    <!-- Detalle ampliado de tarjetas: SOLO ESCRITORIO -->
-    <link
-        rel="stylesheet"
-        href="desktop-card-detail.css?v=1"
-    >
-
-    <!-- Ajuste de scroll: SOLO DETALLE MÓVIL -->
-    <link
-        rel="stylesheet"
-        href="mobile-detail-scroll.css?v=1"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MICRO DRAMAS EN ESPAÑOL</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="category-menu-fix.css">
+    <link rel="stylesheet" href="mobile-bottom-nav.css">
+    <link rel="stylesheet" href="catalog-user.css">
+    <link rel="stylesheet" href="desktop-card-detail.css?v=1">
+    <link rel="stylesheet" href="mobile-detail-scroll.css?v=1">
 </head>
 
 <body>
-
-    <!-- =====================================================
-         USUARIO LOGUEADO — SOLO ESCRITORIO
-    ====================================================== -->
-
-    <div
-        id="catalog-user-menu"
-        class="catalog-user-menu"
-        hidden
-    >
-
-        <button
-            id="catalog-user-button"
-            class="catalog-user-button"
-            type="button"
-            aria-label="Abrir menú de usuario"
-            aria-expanded="false"
-        >
+    <div id="catalog-user-menu" class="catalog-user-menu" hidden>
+        <button id="catalog-user-button" class="catalog-user-button" type="button" aria-label="Abrir menú de usuario" aria-expanded="false">
             <span class="catalog-user-identity">
-                <img
-                    id="catalog-user-avatar"
-                    class="catalog-user-avatar"
-                    src="assets/avatar-1.png"
-                    alt="Avatar del usuario"
-                >
-                <span
-                    id="catalog-user-name"
-                    class="catalog-user-name"
-                >
-                    Usuario
-                </span>
+                <img id="catalog-user-avatar" class="catalog-user-avatar" src="assets/avatar-1.png" alt="Avatar del usuario">
+                <span id="catalog-user-name" class="catalog-user-name">Usuario</span>
             </span>
         </button>
-
-        <div
-            id="catalog-user-dropdown"
-            class="catalog-user-dropdown"
-            hidden
-        >
-            <button
-                id="catalog-user-logout"
-                class="catalog-user-logout"
-                type="button"
-            >
-                Cerrar sesión
-            </button>
+        <div id="catalog-user-dropdown" class="catalog-user-dropdown" hidden>
+            <button id="catalog-user-logout" class="catalog-user-logout" type="button">Cerrar sesión</button>
         </div>
-
     </div>
-
-
-    <!-- =====================================================
-         CABECERA
-    ====================================================== -->
 
     <header class="site-header">
         <div class="site-header__content">
-
-            <img
-                src="assets/micro_drama_en_español_1.jpg"
-                alt="Micro Dramas en Español"
-                class="site-logo"
-            >
-
+            <img src="assets/micro_drama_en_español_1.jpg" alt="Micro Dramas en Español" class="site-logo">
         </div>
     </header>
 
-
-    <!-- =====================================================
-         CONTENIDO PRINCIPAL
-    ====================================================== -->
-
     <main class="site-main">
-
         <section class="catalog-section">
-            <div
-                id="catalogo"
-                class="catalog-carousel"
-                aria-label="Catálogo de microdramas"
-            ></div>
+            <div id="catalogo" class="catalog-carousel" aria-label="Catálogo de microdramas"></div>
         </section>
-
     </main>
 
-
-    <!-- =====================================================
-         APLICACIÓN PRINCIPAL
-    ====================================================== -->
-
     <script src="app.js"></script>
-
-    <!--
-         Nuevo motor de reproducción MEGA:
-         MEGAJS -> Service Worker -> HTTP Range -> <video> nativo.
-
-         Si este motor no puede inicializarse, el reproductor
-         anterior continúa disponible como fallback.
-    -->
     <script src="player-native-mega.js?v=1"></script>
-
-    <!-- Fix puntual: controles del reproductor nativo MEGA -->
-    <script src="player-native-controls-fix.js?v=2"></script>
-
-    <!--
-         Correcciones del reproductor anterior.
-         Se conservan para el fallback MSE existente.
-    -->
+    <!-- v3: controles nativos + alternancia de controles en fullscreen -->
+    <script src="player-native-controls-fix.js?v=3"></script>
     <script src="player-seek-fix.js?v=4"></script>
     <script src="player-seek-offset-guard.js?v=1"></script>
-
-    <!-- Detalle de tarjetas únicamente para escritorio -->
     <script src="desktop-card-detail.js?v=1"></script>
-
-    <!-- Navegación móvil existente -->
     <script src="mobile-bottom-nav.js"></script>
-
-
-    <!-- =====================================================
-         USUARIO DE LA CARTELERA — ESCRITORIO
-    ====================================================== -->
 
     <script>
         (async function cargarUsuarioCatalogo() {
+            const menu = document.getElementById("catalog-user-menu");
+            const button = document.getElementById("catalog-user-button");
+            const dropdown = document.getElementById("catalog-user-dropdown");
+            const avatar = document.getElementById("catalog-user-avatar");
+            const name = document.getElementById("catalog-user-name");
+            const logout = document.getElementById("catalog-user-logout");
 
-            const menu = document.getElementById(
-                "catalog-user-menu"
-            );
-
-            const button = document.getElementById(
-                "catalog-user-button"
-            );
-
-            const dropdown = document.getElementById(
-                "catalog-user-dropdown"
-            );
-
-            const avatar = document.getElementById(
-                "catalog-user-avatar"
-            );
-
-            const name = document.getElementById(
-                "catalog-user-name"
-            );
-
-            const logout = document.getElementById(
-                "catalog-user-logout"
-            );
-
-            if (
-                !menu ||
-                !button ||
-                !dropdown ||
-                !avatar ||
-                !name ||
-                !logout
-            ) {
-                return;
-            }
+            if (!menu || !button || !dropdown || !avatar || !name || !logout) return;
 
             try {
+                const response = await fetch("/api/auth/me", {
+                    method: "GET",
+                    credentials: "same-origin",
+                    cache: "no-store",
+                    headers: { "Accept": "application/json" }
+                });
 
-                const response = await fetch(
-                    "/api/auth/me",
-                    {
-                        method: "GET",
-                        credentials: "same-origin",
-                        cache: "no-store",
-                        headers: {
-                            "Accept": "application/json"
-                        }
-                    }
-                );
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.authenticated || !data.user) return;
 
-                const data = await response.json().catch(
-                    () => ({})
-                );
-
-                if (
-                    !response.ok ||
-                    !data.authenticated ||
-                    !data.user
-                ) {
-                    return;
-                }
-
-                avatar.src =
-                    `/assets/${encodeURIComponent(
-                        data.user.avatar || "avatar-1.png"
-                    )}`;
-
-                const displayName =
-                    String(
-                        data.user.displayName ||
-                        data.user.name ||
-                        "Usuario"
-                    ).trim() || "Usuario";
-
+                avatar.src = `/assets/${encodeURIComponent(data.user.avatar || "avatar-1.png")}`;
+                const displayName = String(data.user.displayName || data.user.name || "Usuario").trim() || "Usuario";
                 name.textContent = displayName;
                 avatar.alt = `Avatar de ${displayName}`;
                 menu.hidden = false;
 
-                button.addEventListener(
-                    "click",
-                    event => {
-                        event.stopPropagation();
+                button.addEventListener("click", event => {
+                    event.stopPropagation();
+                    const abierto = menu.classList.toggle("is-open");
+                    dropdown.hidden = !abierto;
+                    button.setAttribute("aria-expanded", String(abierto));
+                });
 
-                        const abierto =
-                            menu.classList.toggle(
-                                "is-open"
-                            );
-
-                        dropdown.hidden = !abierto;
-
-                        button.setAttribute(
-                            "aria-expanded",
-                            String(abierto)
-                        );
+                document.addEventListener("click", event => {
+                    if (!menu.contains(event.target)) {
+                        menu.classList.remove("is-open");
+                        dropdown.hidden = true;
+                        button.setAttribute("aria-expanded", "false");
                     }
-                );
+                });
 
-                document.addEventListener(
-                    "click",
-                    event => {
-                        if (!menu.contains(event.target)) {
-                            menu.classList.remove(
-                                "is-open"
-                            );
-
-                            dropdown.hidden = true;
-
-                            button.setAttribute(
-                                "aria-expanded",
-                                "false"
-                            );
-                        }
-                    }
-                );
-
-                logout.addEventListener(
-                    "click",
-                    () => {
-                        window.location.href =
-                            "/api/session/logout";
-                    }
-                );
-
+                logout.addEventListener("click", () => {
+                    window.location.href = "/api/session/logout";
+                });
             } catch (error) {
-
-                console.error(
-                    "No se pudo cargar el usuario de la cartelera:",
-                    error
-                );
-
+                console.error("No se pudo cargar el usuario de la cartelera:", error);
             }
-
         })();
     </script>
-
 </body>
-
 </html>

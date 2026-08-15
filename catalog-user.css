@@ -86,48 +86,201 @@
     outline: none;
 }
 
+/* =========================================================
+   NAVEGACIÓN INFERIOR MÓVIL
+   Solo se activa en teléfonos/tablets estrechas.
+========================================================= */
+.mobile-bottom-nav {
+    display: none;
+}
+
+.mobile-user-dropdown {
+    display: none;
+}
+
 @media (max-width: 600px) {
+    /* El avatar deja de competir con el logo y pasa a la barra inferior. */
     .catalog-user-menu {
-        top: max(10px, env(safe-area-inset-top));
-        right: max(10px, env(safe-area-inset-right));
+        display: none !important;
     }
 
-    .catalog-user-button {
-        min-width: 44px;
-        height: 44px;
-        padding: 4px;
+    .mobile-bottom-nav {
+        position: fixed;
+        left: 50%;
+        bottom: max(10px, env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        z-index: 99995;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: center;
+        width: min(92vw, 390px);
+        min-height: 66px;
+        padding: 7px;
+        border: 1px solid rgba(255,255,255,.13);
+        border-radius: 999px;
+        background: rgba(38,38,42,.92);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 10px 35px rgba(0,0,0,.55);
     }
 
-    .catalog-user-avatar {
-        width: 34px;
-        height: 34px;
+    .mobile-nav-button {
+        position: relative;
+        display: flex;
+        min-width: 0;
+        min-height: 52px;
+        padding: 4px 6px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: #d8d8dc;
+        font-size: 10px;
+        font-weight: 700;
+        touch-action: manipulation;
+    }
+
+    .mobile-nav-button:active,
+    .mobile-nav-button:focus-visible {
+        background: rgba(255,255,255,.10);
+        color: #fff;
+        outline: none;
+    }
+
+    .mobile-nav-icon {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        font-size: 25px;
+        line-height: 1;
+    }
+
+    .mobile-nav-menu-icon {
+        font-size: 21px;
+    }
+
+    .mobile-nav-user-button img {
+        display: block;
+        width: 29px;
+        height: 29px;
+        border-radius: 7px;
+        object-fit: cover;
+        border: 1px solid rgba(255,255,255,.18);
+    }
+
+    .mobile-user-dropdown {
+        position: absolute;
+        right: 7px;
+        bottom: calc(100% + 8px);
+        z-index: 2;
+        display: block;
+        width: 180px;
+        padding: 6px;
+        border: 1px solid #33333a;
+        border-radius: 9px;
+        background: #202020;
+        box-shadow: 0 12px 30px rgba(0,0,0,.6);
+    }
+
+    .mobile-user-dropdown[hidden] {
+        display: none;
+    }
+
+    .mobile-user-dropdown button {
+        width: 100%;
+        min-height: 44px;
+        padding: 11px 10px;
+        border: 0;
         border-radius: 6px;
+        background: transparent;
+        color: #fff;
+        text-align: left;
+        font-size: 14px;
+        font-weight: 700;
+        touch-action: manipulation;
     }
 
-    .catalog-user-chevron {
-        font-size: 11px;
+    .mobile-user-dropdown button:active,
+    .mobile-user-dropdown button:focus-visible {
+        background: #303036;
+        outline: none;
     }
 
-    .catalog-user-dropdown {
-        top: calc(100% + 6px);
-        width: 176px;
+    /* Evita que la barra cubra el final del catálogo. */
+    body {
+        padding-bottom: 88px;
+    }
+
+    /* El menú lateral se abre desde la barra inferior, no desde el botón superior. */
+    .boton-menu-categorias {
+        display: none !important;
+    }
+
+    /* En el detalle desaparece completamente el menú lateral/hamburguesa. */
+    body.mobile-detail-open .boton-menu-categorias {
+        display: none !important;
+    }
+
+    /* El botón existente de cerrar detalle se transforma en regreso. */
+    .mobile-detail__close {
+        left: 14px !important;
+        right: auto !important;
+        width: 44px !important;
+        height: 44px !important;
+        border: 1px solid rgba(255,255,255,.16) !important;
+        background: rgba(20,20,20,.88) !important;
+        font-size: 0 !important;
+        border-radius: 50% !important;
+    }
+
+    .mobile-detail__close::before {
+        content: "←";
+        font-size: 30px;
+        line-height: 1;
+        color: #fff;
+    }
+
+    /* En detalle la barra sigue disponible, pero no invade la portada. */
+    body.mobile-detail-open .mobile-bottom-nav {
+        opacity: .92;
+    }
+
+    /* El logo queda más pequeño y limpio en teléfonos. */
+    .site-logo {
+        width: 225px !important;
+        max-width: 70vw !important;
     }
 }
 
 @media (max-width: 360px) {
-    .catalog-user-menu {
-        top: max(8px, env(safe-area-inset-top));
-        right: max(8px, env(safe-area-inset-right));
+    .mobile-bottom-nav {
+        width: 94vw;
+        min-height: 62px;
+        bottom: max(7px, env(safe-area-inset-bottom));
     }
 
-    .catalog-user-button {
-        min-width: 42px;
-        height: 42px;
+    .mobile-nav-button {
+        min-height: 48px;
+        font-size: 9px;
     }
 
-    .catalog-user-avatar {
-        width: 32px;
-        height: 32px;
+    .mobile-nav-icon {
+        width: 26px;
+        height: 26px;
+        font-size: 23px;
+    }
+
+    .mobile-nav-user-button img {
+        width: 27px;
+        height: 27px;
+    }
+
+    .site-logo {
+        width: 205px !important;
     }
 }
 

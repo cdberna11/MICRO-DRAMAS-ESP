@@ -1,0 +1,204 @@
+/* =========================================================
+   ADMINISTRACIÓN DE USUARIOS
+========================================================= */
+
+.users-modal[hidden] {
+    display: none !important;
+}
+
+.users-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    padding: 24px;
+    align-items: center;
+    justify-content: center;
+}
+
+.users-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(3px);
+}
+
+.users-modal__dialog {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: min(1180px, 100%);
+    max-height: min(820px, calc(100vh - 48px));
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.users-modal__header {
+    display: flex;
+    padding: 20px 24px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-secondary);
+}
+
+.users-modal__header h3 {
+    font-size: 20px;
+}
+
+.users-modal__header p {
+    margin-top: 5px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.users-modal__close {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.users-modal__toolbar {
+    display: flex;
+    padding: 14px 24px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.users-modal__toolbar small {
+    color: var(--text-secondary);
+}
+
+.users-modal__table-wrap {
+    overflow: auto;
+    min-height: 180px;
+}
+
+.users-table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+}
+
+.users-table th,
+.users-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.users-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--surface-secondary);
+    color: #dedee4;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.users-table input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.users-status {
+    padding: 18px 24px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-align: center;
+}
+
+.users-status--error {
+    color: #ffd8dc;
+}
+
+.users-empty {
+    padding: 40px 24px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.button--publish {
+    min-height: 34px;
+    margin-left: 7px;
+    padding: 7px 12px;
+    border-color: rgba(53, 196, 106, 0.35);
+    background: rgba(53, 196, 106, 0.13);
+    color: #75e69d;
+    font-size: 12px;
+}
+
+.button--publish:hover:not(:disabled) {
+    background: rgba(53, 196, 106, 0.22);
+}
+
+.button--user-delete {
+    min-height: 34px;
+    padding: 7px 12px;
+    border-color: rgba(255, 83, 100, 0.4);
+    background: rgba(255, 83, 100, 0.1);
+    color: #ff9da8;
+    font-size: 12px;
+}
+
+.button--user-delete:hover:not(:disabled) {
+    background: rgba(255, 83, 100, 0.18);
+}
+
+.mega-status-cell {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.mega-status--missing {
+    color: #ff8c98;
+}
+
+.mega-status--ok {
+    color: var(--success);
+}
+
+body.users-modal-open {
+    overflow: hidden;
+}
+
+@media (max-width: 760px) {
+    .users-modal {
+        padding: 10px;
+    }
+
+    .users-modal__dialog {
+        max-height: calc(100vh - 20px);
+    }
+
+    .users-modal__header,
+    .users-modal__toolbar {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .users-modal__toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}

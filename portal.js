@@ -12,6 +12,7 @@ const onboardingPanel = $("#onboarding-panel");
 const profilePanel = $("#profile-panel");
 const authMessage = $("#auth-message");
 const editModal = $("#edit-profile-modal");
+const migrationModal = $("#pin-migration-modal");
 const pinInputs = Array.from(document.querySelectorAll(".pin-input"));
 let manageProfileMode = false;
 let pendingIdentifier = "";
@@ -151,6 +152,33 @@ function closeEditProfile() {
     document.body.style.overflow = "";
 }
 
+function showPinMigrationModal() {
+    clearMigrationMessage();
+    $("#migration-current-password").value = "";
+    $("#migration-pin").value = "";
+    $("#migration-pin-confirm").value = "";
+    migrationModal.hidden = false;
+    document.body.style.overflow = "hidden";
+    setTimeout(() => $("#migration-current-password")?.focus(), 60);
+}
+
+function clearMigrationMessage() {
+    const message = $("#migration-message");
+    message.hidden = true;
+    message.textContent = "";
+}
+
+function showMigrationMessage(message) {
+    const element = $("#migration-message");
+    element.textContent = message;
+    element.hidden = false;
+}
+
+function closePinMigrationModal() {
+    migrationModal.hidden = true;
+    document.body.style.overflow = "";
+}
+
 async function loadSession() {
     const { response, data } = await api("/api/auth/me", { method: "GET" });
 
@@ -244,6 +272,12 @@ $("#login-form").addEventListener("submit", async event => {
         body: JSON.stringify({ identifier })
     });
     button.disabled = false;
+
+    if (response.ok && data.requiresPinMigration) {
+        pendingIdentifier = identifier;
+        showPinMigrationModal();
+        return;
+    }
 
     if (!response.ok || !data.requiresPin) {
         showMessage(data.error || "No se pudo comprobar la cuenta.");
@@ -340,6 +374,45 @@ $("#register-form").addEventListener("submit", async event => {
 
 $("#forgot-disabled").addEventListener("click", () => {
     showMessage("La recuperación del PIN se habilitará cuando configuremos el envío de códigos por correo o teléfono.");
+});
+
+$("#pin-migration-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    clearMigrationMessage();
+
+    const currentPassword = $("#migration-current-password").value;
+    const pin = $("#migration-pin").value;
+    const confirmPin = $("#migration-pin-confirm").value;
+
+    if (!currentPassword) {
+        showMigrationMessage("Introduce tu contraseña actual para continuar.");
+        return;
+    }
+    if (!validPin(pin)) {
+        showMigrationMessage("El PIN debe tener exactamente 4 números.");
+        return;
+    }
+    if (pin !== confirmPin) {
+        showMigrationMessage("Los PIN no son iguales.");
+        return;
+    }
+
+    const button = $("#migration-submit");
+    button.disabled = true;
+    const { response, data } = await api("/api/auth/migrate-pin", {
+        method: "POST",
+        body: JSON.stringify({ identifier: pendingIdentifier, currentPassword, pin, confirmPin })
+    });
+    button.disabled = false;
+
+    if (!response.ok || !data.success) {
+        showMigrationMessage(data.error || "No se pudo actualizar el PIN.");
+        return;
+    }
+
+    pendingIdentifier = "";
+    closePinMigrationModal();
+    await loadSession();
 });
 
 $("#onboarding-form").addEventListener("submit", async event => {

@@ -1,0 +1,179 @@
+/* =========================================================
+   MICRO-DRAMAS-ESP — NAVEGACIÓN MÓVIL
+   Solo aplica hasta 600px.
+   Escritorio permanece intacto.
+========================================================= */
+
+.mobile-bottom-nav,
+.mobile-bottom-nav * {
+    box-sizing: border-box;
+}
+
+.mobile-bottom-nav {
+    display: none;
+}
+
+@media (max-width: 600px) {
+
+    /* Oculta el antiguo botón superior de categorías. */
+    #boton-menu-categorias {
+        display: none !important;
+    }
+
+    /* Barra flotante tipo píldora. */
+    .mobile-bottom-nav {
+        position: fixed;
+        left: 50%;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        gap: 4px;
+
+        width: min(330px, calc(100vw - 28px));
+        height: 62px;
+        padding: 7px 10px;
+
+        background: rgba(22, 22, 25, 0.97);
+        border: 1px solid rgba(255,255,255,0.13);
+        border-radius: 999px;
+        box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+
+        z-index: 99980;
+    }
+
+    .mobile-bottom-nav__button {
+        position: relative;
+        flex: 1 1 0;
+        min-width: 0;
+        height: 48px;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        color: #bcbcc4;
+
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-bottom-nav__button:active {
+        transform: scale(0.94);
+    }
+
+    .mobile-bottom-nav__icon {
+        width: 23px;
+        height: 23px;
+        display: block;
+        fill: currentColor;
+    }
+
+    .mobile-bottom-nav__label {
+        font-size: 9px;
+        line-height: 1;
+        font-weight: 700;
+    }
+
+    .mobile-bottom-nav__avatar {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255,255,255,0.22);
+        background: #29292f;
+    }
+
+    /* Menú de usuario: siempre aparece encima de la barra. */
+    .mobile-bottom-nav__user-menu {
+        position: fixed;
+        left: 50%;
+        bottom: calc(84px + env(safe-area-inset-bottom));
+        transform: translateX(50px);
+
+        min-width: 150px;
+        padding: 7px;
+
+        background: #18181c;
+        border: 1px solid rgba(255,255,255,0.13);
+        border-radius: 10px;
+        box-shadow: 0 12px 35px rgba(0,0,0,0.60);
+
+        z-index: 99982;
+    }
+
+    .mobile-bottom-nav__logout {
+        width: 100%;
+        min-height: 42px;
+        padding: 9px 12px;
+
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: #fff;
+
+        text-align: left;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    .mobile-bottom-nav__logout:active {
+        background: rgba(255,255,255,0.08);
+    }
+
+    /*
+       El panel de categorías queda sobre la barra, sin cubrirla
+       y sin ocupar toda la pantalla.
+    */
+    .menu-categorias-portal {
+        z-index: 99970 !important;
+    }
+
+    .menu-categorias-portal__panel {
+        width: min(310px, calc(100vw - 34px)) !important;
+        height: auto !important;
+        max-height: min(70vh, 560px) !important;
+        margin-bottom: calc(82px + env(safe-area-inset-bottom));
+        border-radius: 0 12px 12px 0;
+        overflow-y: auto !important;
+    }
+
+    .menu-categorias-portal__header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #111;
+    }
+
+    /* El título conserva espacio para la X del panel. */
+    .menu-categorias-portal__header h2 {
+        padding-left: 48px !important;
+    }
+
+    /* No deja contenido del catálogo escondido detrás de la barra. */
+    .site-main {
+        padding-bottom: 100px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-bottom-nav {
+        width: calc(100vw - 20px);
+    }
+
+    .mobile-bottom-nav__label {
+        font-size: 8px;
+    }
+}

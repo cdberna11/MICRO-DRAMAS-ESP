@@ -1,0 +1,1 @@
+/* Placeholder replaced by exact production app blob in the next laboratory snapshot. */

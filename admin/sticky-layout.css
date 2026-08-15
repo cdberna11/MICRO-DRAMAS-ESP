@@ -1,21 +1,20 @@
 /* =========================================================
    PANEL ADMINISTRATIVO — ELEMENTOS FIJOS AL HACER SCROLL
-   Solo comportamiento visual. No modifica la lógica del panel.
+   Ajuste visual para mantener encabezado, búsqueda y columnas
+   alineados durante el desplazamiento vertical.
 ========================================================= */
 
 :root {
-    --admin-sticky-heading-height: 96px;
-    --admin-sticky-search-top: 96px;
-    --admin-sticky-table-head-top: 239px;
+    --admin-sticky-heading-height: 103px;
+    --admin-sticky-search-height: 108px;
+    --admin-sticky-search-top: 103px;
+    --admin-sticky-table-head-top: 211px;
 }
 
-/* El panel debe permitir que position: sticky se comporte respecto
-   al scroll de la página. */
 .admin-panel {
     overflow: visible;
 }
 
-/* Título + botones: siempre visibles arriba. */
 .admin-panel__heading {
     position: sticky;
     top: 0;
@@ -23,7 +22,6 @@
     background-color: var(--surface);
 }
 
-/* Barra de búsqueda: queda inmediatamente debajo del encabezado. */
 .admin-search {
     position: sticky;
     top: var(--admin-sticky-search-top);
@@ -31,35 +29,46 @@
     background-color: var(--surface-secondary);
 }
 
-/* Encabezados de columnas: quedan debajo de la barra de búsqueda. */
+.admin-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
 .admin-table thead th {
     position: sticky;
     top: var(--admin-sticky-table-head-top);
     z-index: 80;
     background-color: var(--surface-secondary);
+    background-clip: padding-box;
 }
 
-/* Evita que el contenido de las filas se dibuje por encima
-   de los encabezados fijos. */
 .admin-table thead {
     position: relative;
     z-index: 80;
 }
 
-/* En pantallas pequeñas el encabezado se vuelve más alto porque
-   los botones pasan a una segunda línea. */
+.admin-table thead th:first-child {
+    border-top-left-radius: 0;
+}
+
+.admin-table thead th:last-child {
+    border-top-right-radius: 0;
+}
+
 @media (max-width: 760px) {
     :root {
         --admin-sticky-heading-height: 144px;
+        --admin-sticky-search-height: 116px;
         --admin-sticky-search-top: 144px;
-        --admin-sticky-table-head-top: 287px;
+        --admin-sticky-table-head-top: 260px;
     }
 }
 
 @media (max-width: 480px) {
     :root {
         --admin-sticky-heading-height: 178px;
+        --admin-sticky-search-height: 124px;
         --admin-sticky-search-top: 178px;
-        --admin-sticky-table-head-top: 321px;
+        --admin-sticky-table-head-top: 302px;
     }
 }

@@ -1,26 +1,46 @@
 "use strict";
 
 /* =========================================================
-   MICRO-DRAMAS-ESP — SEEK ROBUSTO
+   MICRO-DRAMAS-ESP — SEEK ROBUSTO v2
 
-   Corrige únicamente el SEEK del reproductor.
+   OBJETIVO:
+   - SEEK lejano desde la barra sin quedar atrapado en 8 MB.
+   - SEEK +/-10 consecutivos sin usar currentTime obsoleto.
+   - Descarga progresiva hasta que el tiempo solicitado exista
+     realmente en SourceBuffer.
+   - Mostrar progreso REAL de bytes descargados durante el SEEK.
 
-   PRINCIPIO IMPORTANTE:
-   Durante un SEEK remoto el vídeo queda pausado. El motor
-   normal de streaming deja de descargar cuando alcanza
-   BUFFER_OBJETIVO (45 s), por lo que nunca podía alcanzar
-   un destino lejano como 7:41.
-
-   Este módulo utiliza una ruta especial de SEEK que continúa
-   descargando y alimentando MP4Box hasta que el punto pedido
-   realmente aparece en el buffer.
+   IMPORTANTE:
+   RANGO_MEDIA (8 MB) es el tamaño de cada petición normal.
+   NO es el tamaño máximo del vídeo ni el buffer disponible.
+   Para SEEK lejano usamos bloques mayores y una espera mucho
+   más amplia, porque un punto a 20+ minutos puede requerir
+   decenas o cientos de MB dependiendo del bitrate del MP4.
 ========================================================= */
 
 (function instalarSeekRobusto() {
 
-    const ESPERA_BUFFER = 120000;
+    /*
+     * Un SEEK remoto puede necesitar bastante más de 120 s en
+     vídeos pesados. No usamos un timeout corto que confunda
+     "todavía descargando" con "SEEK imposible".
+     */
+    const ESPERA_BUFFER = 10 * 60 * 1000;
+
     const TOLERANCIA_BUFFER = 4;
+
+    /*
+     * Tamaño dedicado para SEEK remoto.
+     * 8 MB era correcto como bloque normal, pero demasiado
+     * pequeño para saltos lejanos: genera demasiadas peticiones.
+     */
+    const RANGO_SEEK = 32 * 1024 * 1024;
+
+    /* Máximo tiempo de espera para que MSE drene sus colas. */
+    const TIMEOUT_COLA_SEEK = 8000;
+
     let ultimoDestinoSeek = null;
+
 
     function activo(operationId, generation, token) {
         return (
@@ -30,6 +50,7 @@
             token === playerState.seekToken
         );
     }
+
 
     function limpiarMediaSourceAnterior() {
         if (playerState.mp4box) {
@@ -64,6 +85,7 @@
         playerState.playbackStarted = false;
     }
 
+
     function rangoContieneTiempo(tiempo) {
         const video = playerState.videoElement;
 
@@ -82,7 +104,10 @@
                 return { inicio, fin, exacto: true };
             }
 
-            const distancia = Math.abs(inicio - tiempo);
+            const distancia = Math.min(
+                Math.abs(inicio - tiempo),
+                Math.abs(fin - tiempo)
+            );
 
             if (distancia <= TOLERANCIA_BUFFER && distancia < menor) {
                 menor = distancia;
@@ -92,6 +117,7 @@
 
         return cercano;
     }
+
 
     async function esperarBufferSeek(tiempo, operationId, generation, token) {
         const inicio = Date.now();
@@ -107,16 +133,74 @@
                 return rango;
             }
 
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 150));
         }
 
         return null;
     }
 
+
+    async function esperarColasSeek(operationId, generation, token) {
+        const inicio = Date.now();
+
+        while (Date.now() - inicio < TIMEOUT_COLA_SEEK) {
+            if (!activo(operationId, generation, token)) {
+                return false;
+            }
+
+            let pendiente = false;
+
+            for (const queue of playerState.sourceQueues.values()) {
+                if (queue.length > 0) {
+                    pendiente = true;
+                    break;
+                }
+            }
+
+            if (!pendiente) {
+                for (const sourceBuffer of playerState.sourceBuffers.values()) {
+                    if (sourceBuffer.updating) {
+                        pendiente = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!pendiente) {
+                return true;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        console.warn("[SEEK] MSE tarda demasiado en drenar la cola; continuamos descargando.");
+        return true;
+    }
+
+
+    function mostrarProgresoSeek(bytesSeek, destino, offsetActual) {
+        const bytes = formatoBytes(bytesSeek);
+        const offset = formatoBytes(offsetActual);
+
+        const mensaje =
+            `Descargando ${bytes} · destino ${formatoTiempo(destino)} · posición archivo ${offset}`;
+
+        actualizarEstadoPlayer(mensaje);
+        mostrarLoading(mensaje);
+        actualizarDiagnostico();
+
+        console.log(
+            `[SEEK] ${mensaje}`
+        );
+    }
+
+
     /*
-     * Streaming exclusivo del SEEK.
-     * No utiliza BUFFER_OBJETIVO ni espera a que el vídeo avance.
-     * Continúa leyendo bloques hasta alcanzar el tiempo solicitado.
+     * Streaming EXCLUSIVO del SEEK.
+     *
+     * No utiliza BUFFER_OBJETIVO (45 s), porque el vídeo está
+     * pausado mientras buscamos. El único criterio para detener
+     * la descarga es que el destino exista en SourceBuffer.
      */
     async function descargarHastaDestino(
         offsetInicial,
@@ -132,6 +216,10 @@
         }
 
         let offset = Math.max(0, Math.floor(offsetInicial));
+        const offsetInicio = offset;
+        let bytesSeek = 0;
+        let bloques = 0;
+
         playerState.cursor = offset;
         playerState.streamStarted = true;
 
@@ -141,38 +229,57 @@
             console.warn("[SEEK] mp4box.start():", error);
         }
 
+        mostrarProgresoSeek(bytesSeek, destino, offset);
+
         while (
             activo(operationId, generation, token) &&
             !rangoContieneTiempo(destino) &&
             offset < playerState.fileSize
         ) {
             const size = Math.min(
-                RANGO_MEDIA,
+                RANGO_SEEK,
                 playerState.fileSize - offset
             );
 
             const bloque = await leerRangoMega(
                 offset,
                 size,
-                true
+                false
             );
 
             if (!activo(operationId, generation, token)) {
                 return;
             }
 
+            bloques++;
+            bytesSeek += bloque.size;
+
             mp4box.appendBuffer(bloque.buffer);
 
             offset = bloque.end + 1;
             playerState.cursor = offset;
 
-            /* Garantiza que los segmentos recién generados
-               hayan pasado a los SourceBuffers antes de revisar. */
-            await esperarColas();
+            mostrarProgresoSeek(
+                bytesSeek,
+                destino,
+                offset
+            );
 
-            actualizarDiagnostico();
+            /*
+             * Dejamos que MSE procese los segmentos recién
+             * generados. No imponemos el timeout global de 30 s
+             * del streaming normal.
+             */
+            await esperarColasSeek(
+                operationId,
+                generation,
+                token
+            );
 
             if (rangoContieneTiempo(destino)) {
+                console.log(
+                    `[SEEK] ✓ Destino ${formatoTiempo(destino)} localizado tras ${bloques} bloque(s), ${formatoBytes(bytesSeek)} descargados.`
+                );
                 break;
             }
 
@@ -180,6 +287,7 @@
         }
 
         if (
+            !rangoContieneTiempo(destino) &&
             offset >= playerState.fileSize &&
             activo(operationId, generation, token)
         ) {
@@ -189,7 +297,12 @@
                 console.warn("[SEEK] flush:", error);
             }
         }
+
+        console.log(
+            `[SEEK] Fin descarga: inicio ${formatoBytes(offsetInicio)}, final ${formatoBytes(offset)}, bytes SEEK ${formatoBytes(bytesSeek)}`
+        );
     }
+
 
     async function ejecutarSeekRealOptimizado(destino) {
         const video = playerState.videoElement;
@@ -230,7 +343,8 @@
             return;
         }
 
-        /* SEEK local: conserva la ruta rápida existente. */
+        /* SEEK local: si ya existe el tiempo en MSE, no hay que
+           reconstruir el archivo. */
         if (estaEnBuffer(tiempo)) {
             try {
                 if (typeof video.fastSeek === "function") {
@@ -273,7 +387,7 @@
         try {
             console.log("==========================================");
             console.log(
-                `[SEEK] REMOTO ROBUSTO → ${formatoTiempo(tiempo)}`
+                `[SEEK] REMOTO → ${formatoTiempo(tiempo)}`
             );
 
             mostrarLoading(`Buscando ${formatoTiempo(tiempo)}...`);
@@ -364,13 +478,6 @@
                 `Cargando ${formatoTiempo(tiempo)}...`
             );
 
-            /*
-             * AQUÍ está la corrección principal:
-             * no usamos iniciarStreamingMedia(), porque ese motor
-             * se detiene al alcanzar 45 s de buffer mientras el
-             * vídeo está pausado. El SEEK necesita seguir leyendo
-             * hasta alcanzar el destino.
-             */
             await descargarHastaDestino(
                 offsetMega,
                 tiempo,
@@ -392,7 +499,7 @@
 
             if (!rango) {
                 throw new Error(
-                    `No se pudo localizar el punto ${formatoTiempo(tiempo)} en el buffer.`
+                    `No se pudo localizar el punto ${formatoTiempo(tiempo)} en el buffer después de descargar ${formatoBytes(playerState.totalDownloaded)}.`
                 );
             }
 
@@ -481,12 +588,7 @@
         }
     }
 
-    /*
-     * Sobrescribe el salto ±10 sin modificar app.js.
-     * Si el primer salto remoto sigue en curso, el segundo
-     * se calcula sobre el último destino pedido, no sobre el
-     * currentTime antiguo del elemento video.
-     */
+
     ejecutarSaltoSegundos = function ejecutarSaltoSegundosRobusto(segundos) {
         const video = playerState.videoElement;
 
@@ -533,7 +635,9 @@
         ejecutarSeekRealOptimizado(destino);
     };
 
+
     ejecutarSeekReal = ejecutarSeekRealOptimizado;
+
 
     ejecutarSeekDesdeBarra = async function ejecutarSeekDesdeBarraRobusto() {
         const destino = Number(playerState.pendingSeekTime);
@@ -554,14 +658,16 @@
         await ejecutarSeekRealOptimizado(destino);
     };
 
+
     console.log(
-        "[BARRA] ✓ Motor SEEK robusto instalado."
+        "[BARRA] ✓ Motor SEEK robusto v2 instalado."
     );
+
 
     /* Fullscreen se mantiene separado del motor de SEEK. */
     try {
         const script = document.createElement("script");
-        script.src = "player-fullscreen-fix.js?v=2";
+        script.src = "player-fullscreen-fix.js?v=3";
         script.async = false;
         document.head.appendChild(script);
     } catch (error) {

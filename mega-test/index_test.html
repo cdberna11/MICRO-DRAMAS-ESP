@@ -5,53 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow, noarchive">
   <title>MEGA-TEST · Laboratorio de reproducción</title>
-  <link rel="stylesheet" href="./test.css?v=2">
+  <link rel="stylesheet" href="./test.css?v=3">
 </head>
 <body>
 <main class="lab">
   <header class="hero">
     <span class="badge">MEGA-TEST · LABORATORIO AISLADO</span>
     <h1>Pruebas de reproducción y SEEK</h1>
-    <p>Esta página no modifica el reproductor de producción. Aquí probamos métodos alternativos con los mismos vídeos de MEGA.</p>
+    <p>Esta página es independiente de producción. Aquí probaremos distintos métodos hasta conseguir un SEEK fluido y una reanudación fiable.</p>
   </header>
 
   <section class="panel">
     <div class="grid">
-      <label>
-        Vídeo de prueba
+      <label>Vídeo de prueba
         <select id="video-select">
-          <option value="video1">Vídeo 1</option>
-          <option value="video2">Vídeo 2</option>
+          <option value="video1">Vídeo 1 · MEGA</option>
+          <option value="video2">Vídeo 2 · MEGA</option>
         </select>
       </label>
-      <label>
-        Método
+      <label>Método
         <select id="mode-select">
-          <option value="native">Motor A · HTML5 nativo + Blob MEGA</option>
-          <option value="mega">Motor B · Player nativo de MEGA</option>
+          <option value="native">Motor A · HTML5 nativo + descarga MEGA</option>
+          <option value="mega">Motor B · Player oficial de MEGA</option>
         </select>
       </label>
     </div>
 
     <div class="actions">
-      <button id="btn-open" class="primary">Cargar vídeo</button>
-      <button id="btn-stop">Cerrar</button>
-      <button id="btn-clear-resume">Borrar posición guardada</button>
+      <button id="btn-open" class="primary" type="button">▶ CARGAR VÍDEO</button>
+      <button id="btn-stop" type="button">■ CERRAR</button>
+      <button id="btn-clear-resume" type="button">Borrar posición guardada</button>
     </div>
 
-    <div class="status" id="status">Listo para comenzar.</div>
+    <div class="status" id="status">PASO 1: selecciona el vídeo y pulsa «CARGAR VÍDEO».</div>
   </section>
 
   <section class="player-card">
     <div class="player-head">
       <div>
         <strong id="video-title">Ningún vídeo cargado</strong>
-        <span id="video-meta">—</span>
+        <span id="video-meta">Selecciona un vídeo para comenzar</span>
       </div>
       <span id="cache-state" class="pill">SIN CARGAR</span>
     </div>
 
     <div class="video-wrap" id="video-wrap">
+      <div id="video-placeholder" class="video-placeholder">
+        <div class="placeholder-icon">▶</div>
+        <strong>Vídeo todavía no cargado</strong>
+        <span>Pulsa «CARGAR VÍDEO» arriba para iniciar la prueba.</span>
+      </div>
       <video id="video" controls playsinline preload="metadata"></video>
       <iframe id="mega-frame" title="Player de MEGA" allow="autoplay; fullscreen" allowfullscreen></iframe>
       <div id="loading" class="loading hidden">
@@ -64,42 +67,36 @@
 
     <div class="quick-seek">
       <span>Saltos de prueba:</span>
-      <button data-seek="300">+5 min</button>
-      <button data-seek="900">+15 min</button>
-      <button data-seek="1500">+25 min</button>
-      <button data-seek="1800">+30 min</button>
-      <button data-seek="-300">−5 min</button>
+      <button data-seek="300" type="button">+5 min</button>
+      <button data-seek="900" type="button">+15 min</button>
+      <button data-seek="1500" type="button">+25 min</button>
+      <button data-seek="1800" type="button">+30 min</button>
+      <button data-seek="-300" type="button">−5 min</button>
     </div>
 
     <div class="resume-box">
-      <div>
-        <span class="label">Posición actual</span>
-        <strong id="current-time">0:00 / 0:00</strong>
-      </div>
-      <div>
-        <span class="label">Última posición guardada</span>
-        <strong id="saved-time">No guardada</strong>
-      </div>
+      <div><span class="label">Posición actual</span><strong id="current-time">0:00 / 0:00</strong></div>
+      <div><span class="label">Última posición guardada</span><strong id="saved-time">No guardada</strong></div>
     </div>
   </section>
 
   <section class="panel tests">
-    <h2>Qué debemos probar</h2>
+    <h2>Plan de prueba</h2>
     <ol>
-      <li>Reproducir el vídeo y mover la barra directamente a 5, 15, 25 y 30 minutos.</li>
-      <li>Hacer varios saltos consecutivos hacia adelante y hacia atrás.</li>
-      <li>Pausar cerca de cualquier minuto, cerrar y volver a abrir el mismo vídeo.</li>
-      <li>Comprobar si la posición guardada vuelve a aparecer sin perder precisión.</li>
-      <li>Comparar el comportamiento del Motor A con el reproductor oficial de MEGA.</li>
+      <li>Primero comprobaremos que el vídeo carga correctamente.</li>
+      <li>Después moveremos la barra a 5, 15, 25 y 30 minutos.</li>
+      <li>Luego haremos saltos consecutivos hacia delante y atrás.</li>
+      <li>Finalmente cerraremos y volveremos a abrir para comprobar RESUME.</li>
     </ol>
-    <div class="warning"><strong>Motor A:</strong> para esta prueba el vídeo se descarga y se entrega al elemento HTML5 como Blob. Es deliberadamente un laboratorio: si el archivo es grande puede consumir bastante memoria. La ventaja es que, una vez cargado, el SEEK del navegador es completamente nativo.</div>
+    <div class="warning"><strong>Nota:</strong> Motor A descarga el archivo completo antes de reproducirlo. Es una prueba de concepto para verificar si el SEEK nativo del navegador resuelve el problema. No se utilizará así en producción si el consumo de memoria/tiempo no resulta adecuado.</div>
   </section>
 
   <section class="logs panel">
     <h2>Diagnóstico</h2>
-    <pre id="log"></pre>
+    <pre id="log">Inicializando laboratorio…</pre>
   </section>
 </main>
-<script type="module" src="./test.js?v=2"></script>
+<script src="https://unpkg.com/megajs@1.3.10/dist/main.browser-umd.js"></script>
+<script src="./test.js?v=3"></script>
 </body>
 </html>

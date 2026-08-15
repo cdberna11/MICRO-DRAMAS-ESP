@@ -1,8 +1,45 @@
 /* =========================================================
-   CORRECCIÓN MÓVIL - TÍTULO DEL MENÚ DE CATEGORÍAS
-   Solo evita que el botón hamburguesa/X se superponga
-   sobre la palabra CATEGORÍAS.
+   CORRECCIÓN DEL MENÚ DE CATEGORÍAS
 ========================================================= */
+
+@media (min-width: 601px) {
+
+    .menu-categorias-portal__header {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        min-height: 46px;
+        gap: 0;
+    }
+
+    .menu-categorias-portal__header h2 {
+        flex: 1 1 auto;
+        margin: 0 0 0 54px !important;
+        padding: 0 !important;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    /*
+       La X funcional que queda visible es la del botón
+       hamburguesa de la esquina izquierda.
+       Conservamos este botón interno para no alterar el JS,
+       pero lo ocultamos visualmente para eliminar la segunda X.
+    */
+    .menu-categorias-portal__close {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 46px;
+        height: 46px;
+        padding: 0;
+        opacity: 0;
+        pointer-events: none;
+        font-size: 0;
+    }
+
+}
 
 @media (max-width: 600px) {
 

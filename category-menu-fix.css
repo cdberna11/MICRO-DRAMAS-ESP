@@ -1,0 +1,13 @@
+/* =========================================================
+   CORRECCIÓN MÓVIL - TÍTULO DEL MENÚ DE CATEGORÍAS
+   Solo evita que el botón hamburguesa/X se superponga
+   sobre la palabra CATEGORÍAS.
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .menu-categorias-portal__header h2 {
+        padding-left: 48px !important;
+    }
+
+}

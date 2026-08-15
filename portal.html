@@ -7,18 +7,22 @@
     <link rel="stylesheet" href="/portal.css">
 </head>
 <body>
-    <main class="portal-screen">
-        <img src="/assets/micro_drama_en_español_1.jpg" alt="Micro Dramas en Español" class="portal-logo">
+    <header class="portal-header" aria-label="Micro Dramas en Español">
+        <a class="portal-brand" href="/" aria-label="Micro Dramas en Español">
+            <img src="/assets/micro_drama_en_español_1.jpg" alt="Micro Dramas en Español">
+        </a>
+    </header>
 
+    <main class="portal-screen">
         <section class="portal-card" aria-label="Cuenta de usuario">
             <div id="auth-message" class="auth-message" hidden></div>
 
             <section id="login-panel" class="panel">
-                <h1>Iniciar sesión</h1>
-                <p class="panel-subtitle">Accede a tu cuenta para entrar a la cartelera.</p>
+                <h1>Ingresa tu info para iniciar sesión</h1>
+                <p class="panel-subtitle">O bien, comienza con una cuenta nueva.</p>
                 <form id="login-form" novalidate>
                     <label for="login-identifier">Correo o teléfono</label>
-                    <input id="login-identifier" type="text" inputmode="email" autocomplete="username" placeholder="correo@ejemplo.com o +507..." required>
+                    <input id="login-identifier" type="text" inputmode="email" autocomplete="username" placeholder="Email o número de celular" required>
                     <button id="login-submit" class="primary-button" type="submit">Continuar</button>
                 </form>
                 <button id="go-forgot" class="text-button" type="button">¿Olvidaste tu PIN?</button>
@@ -120,6 +124,25 @@
                 <label>Avatar</label>
                 <div id="edit-avatars" class="avatar-options modal-avatar-options"></div>
                 <button id="edit-save" class="primary-button" type="submit">Guardar</button>
+            </form>
+        </section>
+    </div>
+
+    <div id="pin-migration-modal" class="migration-modal" hidden>
+        <div class="migration-modal-backdrop"></div>
+        <section class="migration-modal-card" role="dialog" aria-modal="true" aria-labelledby="pin-migration-title">
+            <div class="migration-icon" aria-hidden="true">🔐</div>
+            <h2 id="pin-migration-title">Actualiza tu acceso</h2>
+            <p class="migration-text">Tu cuenta fue creada con contraseña. Para continuar con el nuevo sistema de acceso, crea ahora un PIN de 4 dígitos.</p>
+            <form id="pin-migration-form" novalidate>
+                <label for="migration-current-password">Contraseña actual</label>
+                <input id="migration-current-password" type="password" autocomplete="current-password" placeholder="Tu contraseña actual" required>
+                <label for="migration-pin">Nuevo PIN</label>
+                <input id="migration-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password" placeholder="4 dígitos" required>
+                <label for="migration-pin-confirm">Confirmar PIN</label>
+                <input id="migration-pin-confirm" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="new-password" placeholder="Repite tu PIN" required>
+                <p id="migration-message" class="migration-message" hidden></p>
+                <button id="migration-submit" class="primary-button" type="submit">Actualizar PIN y continuar</button>
             </form>
         </section>
     </div>

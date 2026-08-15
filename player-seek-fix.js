@@ -1,30 +1,34 @@
 "use strict";
 
 /* =========================================================
-   MICRO-DRAMAS-ESP
-   CORRECCIÓN DEL SEEK DE LA BARRA
+   MICRO-DRAMAS-ESP — SEEK ROBUSTO
 
-   Mantiene intacto el motor de reproducción actual.
-   Sustituye únicamente la ruta de SEEK remoto para que:
-   1. MP4Box calcule el offset antes de crear la sesión MSE.
-   2. La segmentación se inicialice después del seek.
-   3. El streaming comience desde el offset RAP correcto.
-   4. El reproductor pueda posicionarse mientras el buffer
-      remoto todavía está llegando.
+   Corrige únicamente el SEEK del reproductor.
+
+   PRINCIPIO IMPORTANTE:
+   Durante un SEEK remoto el vídeo queda pausado. El motor
+   normal de streaming deja de descargar cuando alcanza
+   BUFFER_OBJETIVO (45 s), por lo que nunca podía alcanzar
+   un destino lejano como 7:41.
+
+   Este módulo utiliza una ruta especial de SEEK que continúa
+   descargando y alimentando MP4Box hasta que el punto pedido
+   realmente aparece en el buffer.
 ========================================================= */
 
-(function instalarSeekRemotoOptimizado() {
+(function instalarSeekRobusto() {
 
-    /*
-     * 30 segundos era demasiado agresivo para un SEEK remoto
-     * en móvil. El reproductor puede estar descargando un bloque
-     * de 8 MB cuando todavía no aparece el rango objetivo.
-     */
     const ESPERA_BUFFER = 120000;
-    const TOLERANCIA_RAP = 6;
+    const TOLERANCIA_BUFFER = 4;
+    let ultimoDestinoSeek = null;
 
-    function numeroValido(valor) {
-        return Number.isFinite(Number(valor));
+    function activo(operationId, generation, token) {
+        return (
+            !playerState.stopped &&
+            operationId === playerState.operationId &&
+            generation === playerState.streamGeneration &&
+            token === playerState.seekToken
+        );
     }
 
     function limpiarMediaSourceAnterior() {
@@ -34,21 +38,18 @@
             } catch {}
         }
 
-        const mediaSourceAnterior = playerState.mediaSource;
-        const urlAnterior = playerState.mediaSourceUrl;
+        const mediaSource = playerState.mediaSource;
+        const url = playerState.mediaSourceUrl;
 
-        if (
-            mediaSourceAnterior &&
-            mediaSourceAnterior.readyState === "open"
-        ) {
+        if (mediaSource && mediaSource.readyState === "open") {
             try {
-                mediaSourceAnterior.endOfStream();
+                mediaSource.endOfStream();
             } catch {}
         }
 
-        if (urlAnterior) {
+        if (url) {
             try {
-                URL.revokeObjectURL(urlAnterior);
+                URL.revokeObjectURL(url);
             } catch {}
         }
 
@@ -63,19 +64,15 @@
         playerState.playbackStarted = false;
     }
 
-    function obtenerRangoBufferObjetivo(tiempo) {
+    function rangoContieneTiempo(tiempo) {
         const video = playerState.videoElement;
 
-        if (
-            !video ||
-            !video.buffered ||
-            video.buffered.length === 0
-        ) {
+        if (!video?.buffered?.length) {
             return null;
         }
 
-        let mejor = null;
-        let distancia = Infinity;
+        let cercano = null;
+        let menor = Infinity;
 
         for (let i = 0; i < video.buffered.length; i++) {
             const inicio = video.buffered.start(i);
@@ -85,58 +82,121 @@
                 return { inicio, fin, exacto: true };
             }
 
-            const distanciaInicio = Math.abs(inicio - tiempo);
+            const distancia = Math.abs(inicio - tiempo);
 
-            if (
-                distanciaInicio <= TOLERANCIA_RAP &&
-                distanciaInicio < distancia
-            ) {
-                distancia = distanciaInicio;
-                mejor = { inicio, fin, exacto: false };
+            if (distancia <= TOLERANCIA_BUFFER && distancia < menor) {
+                menor = distancia;
+                cercano = { inicio, fin, exacto: false };
             }
         }
 
-        return mejor;
+        return cercano;
     }
 
-    function esperarBufferSeek(tiempo, token, operationId, generation) {
-        return new Promise(resolve => {
-            const inicio = Date.now();
+    async function esperarBufferSeek(tiempo, operationId, generation, token) {
+        const inicio = Date.now();
 
-            const revisar = () => {
-                if (
-                    playerState.stopped ||
-                    token !== playerState.seekToken ||
-                    operationId !== playerState.operationId ||
-                    generation !== playerState.streamGeneration
-                ) {
-                    resolve(null);
-                    return;
-                }
+        while (Date.now() - inicio < ESPERA_BUFFER) {
+            if (!activo(operationId, generation, token)) {
+                return null;
+            }
 
-                const rango = obtenerRangoBufferObjetivo(tiempo);
+            const rango = rangoContieneTiempo(tiempo);
 
-                if (rango) {
-                    resolve(rango);
-                    return;
-                }
+            if (rango) {
+                return rango;
+            }
 
-                if (Date.now() - inicio >= ESPERA_BUFFER) {
-                    resolve(null);
-                    return;
-                }
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
-                setTimeout(revisar, 100);
-            };
+        return null;
+    }
 
-            revisar();
-        });
+    /*
+     * Streaming exclusivo del SEEK.
+     * No utiliza BUFFER_OBJETIVO ni espera a que el vídeo avance.
+     * Continúa leyendo bloques hasta alcanzar el tiempo solicitado.
+     */
+    async function descargarHastaDestino(
+        offsetInicial,
+        destino,
+        operationId,
+        generation,
+        token
+    ) {
+        const mp4box = playerState.mp4box;
+
+        if (!mp4box) {
+            throw new Error("MP4Box no disponible durante SEEK.");
+        }
+
+        let offset = Math.max(0, Math.floor(offsetInicial));
+        playerState.cursor = offset;
+        playerState.streamStarted = true;
+
+        try {
+            mp4box.start();
+        } catch (error) {
+            console.warn("[SEEK] mp4box.start():", error);
+        }
+
+        while (
+            activo(operationId, generation, token) &&
+            !rangoContieneTiempo(destino) &&
+            offset < playerState.fileSize
+        ) {
+            const size = Math.min(
+                RANGO_MEDIA,
+                playerState.fileSize - offset
+            );
+
+            const bloque = await leerRangoMega(
+                offset,
+                size,
+                true
+            );
+
+            if (!activo(operationId, generation, token)) {
+                return;
+            }
+
+            mp4box.appendBuffer(bloque.buffer);
+
+            offset = bloque.end + 1;
+            playerState.cursor = offset;
+
+            /* Garantiza que los segmentos recién generados
+               hayan pasado a los SourceBuffers antes de revisar. */
+            await esperarColas();
+
+            actualizarDiagnostico();
+
+            if (rangoContieneTiempo(destino)) {
+                break;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+        }
+
+        if (
+            offset >= playerState.fileSize &&
+            activo(operationId, generation, token)
+        ) {
+            try {
+                mp4box.flush();
+            } catch (error) {
+                console.warn("[SEEK] flush:", error);
+            }
+        }
     }
 
     async function ejecutarSeekRealOptimizado(destino) {
         const video = playerState.videoElement;
 
-        if (!video || playerState.stopped) return;
+        if (!video || playerState.stopped) {
+            return;
+        }
 
         const duration = obtenerDuracionVideo();
 
@@ -152,14 +212,25 @@
             Math.min(duration - 0.05, Number(destino))
         );
 
-        if (!Number.isFinite(tiempo)) return;
-
-        if (playerState.seekInProgress) {
-            playerState.pendingSeekTime = tiempo;
+        if (!Number.isFinite(tiempo)) {
             return;
         }
 
-        /* SEEK local: no reconstruimos nada si ya está cargado. */
+        ultimoDestinoSeek = tiempo;
+
+        /*
+         * Si ya existe un SEEK, no iniciamos otro MSE.
+         * Guardamos solamente el último destino solicitado.
+         */
+        if (playerState.seekInProgress) {
+            playerState.pendingSeekTime = tiempo;
+            console.log(
+                `[SEEK] En cola → ${formatoTiempo(tiempo)}`
+            );
+            return;
+        }
+
+        /* SEEK local: conserva la ruta rápida existente. */
         if (estaEnBuffer(tiempo)) {
             try {
                 if (typeof video.fastSeek === "function") {
@@ -173,26 +244,42 @@
                 }
 
                 actualizarControlesVideo();
+
+                setTimeout(() => {
+                    if (
+                        !playerState.stopped &&
+                        !playerState.seekInProgress &&
+                        Math.abs(Number(video.currentTime) - tiempo) > 0.75
+                    ) {
+                        ejecutarSeekRealOptimizado(tiempo);
+                    }
+                }, 200);
+
                 return;
             } catch {
-                /* Si falla, continuamos con SEEK remoto. */
+                /* Continuamos con SEEK remoto. */
             }
         }
 
         const token = ++playerState.seekToken;
         const operationId = playerState.operationId;
-        const estabaReproduciendo = !video.paused;
         const generation = ++playerState.streamGeneration;
+        const estabaReproduciendo = !video.paused;
 
         playerState.seekInProgress = true;
         playerState.allowAutoplay = estabaReproduciendo;
+        playerState.pendingSeekTime = null;
 
         try {
             console.log("==========================================");
-            console.log(`[SEEK] REMOTO OPTIMIZADO → ${formatoTiempo(tiempo)}`);
+            console.log(
+                `[SEEK] REMOTO ROBUSTO → ${formatoTiempo(tiempo)}`
+            );
 
             mostrarLoading(`Buscando ${formatoTiempo(tiempo)}...`);
-            actualizarEstadoPlayer(`Buscando ${formatoTiempo(tiempo)}...`);
+            actualizarEstadoPlayer(
+                `Buscando ${formatoTiempo(tiempo)}...`
+            );
 
             try {
                 video.pause();
@@ -200,25 +287,22 @@
 
             limpiarMediaSourceAnterior();
 
-            const mp4box = crearNuevoMP4Box();
+            crearNuevoMP4Box();
 
-            if (
-                token !== playerState.seekToken ||
-                operationId !== playerState.operationId
-            ) {
+            if (!activo(operationId, generation, token)) {
                 return;
             }
 
-            actualizarEstadoPlayer("Reconstruyendo estructura MP4...");
+            actualizarEstadoPlayer(
+                "Reconstruyendo estructura MP4..."
+            );
 
-            const encontrado = await localizarMOOV(operationId, false);
+            const encontrado = await localizarMOOV(
+                operationId,
+                false
+            );
 
-            if (
-                token !== playerState.seekToken ||
-                operationId !== playerState.operationId ||
-                generation !== playerState.streamGeneration ||
-                playerState.stopped
-            ) {
+            if (!activo(operationId, generation, token)) {
                 return;
             }
 
@@ -228,10 +312,25 @@
                 );
             }
 
+            const nuevaDuracion = obtenerDuracionMP4(
+                playerState.mp4Info
+            );
+
+            if (nuevaDuracion > 0) {
+                playerState.duration = nuevaDuracion;
+            }
+
+            actualizarEstadoPlayer(
+                `Calculando posición ${formatoTiempo(tiempo)}...`
+            );
+
             let resultadoSeek;
 
             try {
-                resultadoSeek = mp4box.seek(tiempo, true);
+                resultadoSeek = playerState.mp4box.seek(
+                    tiempo,
+                    true
+                );
             } catch (error) {
                 throw new Error(
                     `MP4Box no pudo realizar SEEK: ${error.message || error}`
@@ -246,75 +345,54 @@
             );
 
             if (
-                !numeroValido(offsetMega) ||
+                !Number.isFinite(offsetMega) ||
                 offsetMega < 0 ||
                 offsetMega >= playerState.fileSize
             ) {
                 throw new Error(`Offset MEGA inválido: ${offsetMega}`);
             }
 
-            if (
-                token !== playerState.seekToken ||
-                operationId !== playerState.operationId
-            ) {
-                return;
-            }
-
             actualizarEstadoPlayer("Preparando nuevo buffer...");
 
             await crearSesionMedia(operationId);
 
-            if (
-                token !== playerState.seekToken ||
-                operationId !== playerState.operationId ||
-                generation !== playerState.streamGeneration ||
-                playerState.stopped
-            ) {
+            if (!activo(operationId, generation, token)) {
                 return;
             }
 
-            playerState.streamStarted = true;
-            actualizarEstadoPlayer(`Cargando ${formatoTiempo(tiempo)}...`);
+            actualizarEstadoPlayer(
+                `Cargando ${formatoTiempo(tiempo)}...`
+            );
 
             /*
-             * Posicionamos el elemento inmediatamente. El navegador
-             * puede quedar esperando al rango MSE mientras nosotros
-             * seguimos alimentando el buffer desde el RAP correcto.
+             * AQUÍ está la corrección principal:
+             * no usamos iniciarStreamingMedia(), porque ese motor
+             * se detiene al alcanzar 45 s de buffer mientras el
+             * vídeo está pausado. El SEEK necesita seguir leyendo
+             * hasta alcanzar el destino.
              */
-            try {
-                video.currentTime = tiempo;
-            } catch {}
-
-            iniciarStreamingMedia(
+            await descargarHastaDestino(
                 offsetMega,
+                tiempo,
                 operationId,
-                generation
-            ).catch(error => {
-                if (
-                    token === playerState.seekToken &&
-                    !playerState.stopped
-                ) {
-                    console.error("[SEEK] Streaming remoto optimizado:", error);
-                }
-            });
+                generation,
+                token
+            );
+
+            if (!activo(operationId, generation, token)) {
+                return;
+            }
 
             const rango = await esperarBufferSeek(
                 tiempo,
-                token,
                 operationId,
-                generation
+                generation,
+                token
             );
-
-            if (
-                token !== playerState.seekToken ||
-                playerState.stopped
-            ) {
-                return;
-            }
 
             if (!rango) {
                 throw new Error(
-                    `No se pudo cargar el punto ${formatoTiempo(tiempo)}.`
+                    `No se pudo localizar el punto ${formatoTiempo(tiempo)} en el buffer.`
                 );
             }
 
@@ -331,7 +409,7 @@
 
             video.currentTime = posicionFinal;
 
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 150));
 
             console.log(
                 `[SEEK] Resultado → solicitado ${formatoTiempo(tiempo)} / actual ${formatoTiempo(video.currentTime)}`
@@ -364,13 +442,15 @@
                 );
             }
 
-            console.log("[SEEK] ✓ SEEK REMOTO COMPLETADO");
+            console.log("[SEEK] ✓ SEEK COMPLETADO");
 
         } catch (error) {
-            console.error("[SEEK] ERROR OPTIMIZADO:", error);
+            console.error("[SEEK] ERROR ROBUSTO:", error);
 
             if (token === playerState.seekToken) {
-                mostrarLoading(error.message || "No se pudo realizar el salto.");
+                mostrarLoading(
+                    error.message || "No se pudo realizar el salto."
+                );
                 actualizarEstadoPlayer(
                     `Error SEEK: ${error.message || error}`
                 );
@@ -385,43 +465,110 @@
 
                 if (
                     Number.isFinite(siguiente) &&
-                    Math.abs(siguiente - Number(video.currentTime)) > 0.75
+                    Math.abs(
+                        siguiente - Number(video.currentTime)
+                    ) > 0.75
                 ) {
+                    ultimoDestinoSeek = siguiente;
+
                     setTimeout(() => {
                         ejecutarSeekRealOptimizado(siguiente);
                     }, 50);
+                } else {
+                    ultimoDestinoSeek = null;
                 }
             }
         }
     }
 
+    /*
+     * Sobrescribe el salto ±10 sin modificar app.js.
+     * Si el primer salto remoto sigue en curso, el segundo
+     * se calcula sobre el último destino pedido, no sobre el
+     * currentTime antiguo del elemento video.
+     */
+    ejecutarSaltoSegundos = function ejecutarSaltoSegundosRobusto(segundos) {
+        const video = playerState.videoElement;
+
+        if (!video) {
+            return;
+        }
+
+        const duration = obtenerDuracionVideo();
+
+        if (!Number.isFinite(duration) || duration <= 0) {
+            actualizarEstadoPlayer(
+                "La duración del vídeo todavía no está disponible."
+            );
+            return;
+        }
+
+        let base;
+
+        if (playerState.seekInProgress) {
+            base = Number.isFinite(ultimoDestinoSeek)
+                ? ultimoDestinoSeek
+                : Number(video.currentTime);
+        } else {
+            base = Number(video.currentTime);
+        }
+
+        if (!Number.isFinite(base)) {
+            return;
+        }
+
+        const destino = Math.max(
+            0,
+            Math.min(
+                duration - 0.05,
+                base + Number(segundos)
+            )
+        );
+
+        console.log(
+            `[SEEK] Botón robusto ${segundos > 0 ? "+" : ""}${segundos}s → ${formatoTiempo(destino)}`
+        );
+
+        ultimoDestinoSeek = destino;
+        ejecutarSeekRealOptimizado(destino);
+    };
+
     ejecutarSeekReal = ejecutarSeekRealOptimizado;
 
-    ejecutarSeekDesdeBarra = async function ejecutarSeekDesdeBarraOptimizado() {
+    ejecutarSeekDesdeBarra = async function ejecutarSeekDesdeBarraRobusto() {
         const destino = Number(playerState.pendingSeekTime);
 
         playerState.userSeeking = false;
         playerState.pendingSeekTime = null;
 
-        if (!Number.isFinite(destino)) return;
+        if (!Number.isFinite(destino)) {
+            return;
+        }
 
-        console.log(`[BARRA] SEEK optimizado → ${formatoTiempo(destino)}`);
+        ultimoDestinoSeek = destino;
+
+        console.log(
+            `[BARRA] SEEK robusto → ${formatoTiempo(destino)}`
+        );
+
         await ejecutarSeekRealOptimizado(destino);
     };
 
-    console.log("[BARRA] ✓ SEEK remoto optimizado instalado.");
+    console.log(
+        "[BARRA] ✓ Motor SEEK robusto instalado."
+    );
 
-    /*
-     * Cargar la corrección de fullscreen después del reproductor.
-     * Se mantiene separada para no tocar app.js.
-     */
+    /* Fullscreen se mantiene separado del motor de SEEK. */
     try {
         const script = document.createElement("script");
-        script.src = "player-fullscreen-fix.js?v=1";
+        script.src = "player-fullscreen-fix.js?v=2";
         script.async = false;
         document.head.appendChild(script);
     } catch (error) {
-        console.warn("[FULLSCREEN] No se pudo cargar la corrección:", error);
+        console.warn(
+            "[FULLSCREEN] No se pudo cargar la corrección:",
+            error
+        );
     }
 
 })();

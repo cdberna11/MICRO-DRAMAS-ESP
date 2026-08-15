@@ -214,3 +214,63 @@ function inicializarMejorasAdmin() {
 }
 
 document.addEventListener("DOMContentLoaded", inicializarMejorasAdmin);
+
+
+/* =========================================================
+   CORRECCIÓN AISLADA — REFRESCAR DESPUÉS DE CREAR
+   =========================================================
+
+   admin.js ya guarda correctamente el microdrama y muestra
+   "Microdrama guardado correctamente.".
+
+   No modificamos el flujo de guardado existente.
+   Solamente observamos ese mensaje de éxito y refrescamos
+   la página cuando se trata de un NUEVO microdrama.
+
+   Las ediciones existentes y las demás acciones del panel
+   permanecen sin cambios.
+========================================================= */
+
+function inicializarRefrescoDespuesDeGuardar() {
+
+    const mensaje =
+        document.getElementById("mensaje-admin");
+
+    if (!mensaje) {
+        return;
+    }
+
+    const observer = new MutationObserver(() => {
+
+        const texto =
+            String(mensaje.textContent || "").trim();
+
+        const esExitoNuevo =
+            texto === "Microdrama guardado correctamente." &&
+            mensaje.hidden === false;
+
+        if (!esExitoNuevo) {
+            return;
+        }
+
+        observer.disconnect();
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 150);
+
+    });
+
+    observer.observe(mensaje, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["hidden"]
+    });
+}
+
+document.addEventListener(
+    "DOMContentLoaded",
+    inicializarRefrescoDespuesDeGuardar
+);

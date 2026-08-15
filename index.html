@@ -129,9 +129,17 @@
     <script src="app.js"></script>
 
     <!--
-         Correcciones aisladas del reproductor.
-         Debe cargarse DESPUÉS de app.js para sustituir
-         únicamente las rutas SEEK/fullscreen defectuosas.
+         Nuevo motor de reproducción MEGA:
+         MEGAJS -> Service Worker -> HTTP Range -> <video> nativo.
+
+         Si este motor no puede inicializarse, el reproductor
+         anterior continúa disponible como fallback.
+    -->
+    <script src="player-native-mega.js?v=1"></script>
+
+    <!--
+         Correcciones del reproductor anterior.
+         Se conservan para el fallback MSE existente.
     -->
     <script src="player-seek-fix.js?v=4"></script>
     <script src="player-seek-offset-guard.js?v=1"></script>

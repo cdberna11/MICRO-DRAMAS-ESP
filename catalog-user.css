@@ -130,3 +130,13 @@
         height: 32px;
     }
 }
+
+/* =========================================================
+   AJUSTE MENÚ DE CATEGORÍAS — MÓVIL
+   Evita que el botón X/hamburguesa cubra el título.
+========================================================= */
+@media (max-width: 600px) {
+    .menu-categorias-portal__header h2 {
+        padding-left: 40px !important;
+    }
+}

@@ -1,14 +1,16 @@
 /* =========================================================
    MICRO-DRAMAS-ESP — CONTROLES NATIVOS + FULLSCREEN
 
-   Mantiene las acciones de los controles que ya funcionan y
-   añade únicamente la alternancia de visibilidad en fullscreen.
+   Mantiene intactas las acciones de los controles que ya
+   funcionan y añade únicamente la alternancia de visibilidad
+   en fullscreen.
 ========================================================= */
 (function () {
     'use strict';
 
-    const CLASE = 'native-fullscreen-controls-visible';
-    let timer = null;
+    /* Esta es la clase que ya utiliza el reproductor nativo
+       para mostrar sus controles durante fullscreen. */
+    const CLASE = 'native-controls-visible';
     let instalado = false;
 
     function salirFullscreen() {
@@ -154,10 +156,6 @@
         }
     }
 
-    /* =====================================================
-       FULLSCREEN — VISIBILIDAD DE CONTROLES
-    ====================================================== */
-
     function obtenerReproductorFullscreen() {
         const elemento =
             document.fullscreenElement ||
@@ -188,27 +186,21 @@
         const controles = obtenerControles(reproductor);
         if (!controles) return;
 
-        clearTimeout(timer);
-        reproductor.classList.add(CLASE);
         controles.classList.add(CLASE);
         controles.removeAttribute('hidden');
     }
 
     function ocultar(reproductor) {
         const controles = obtenerControles(reproductor);
-        clearTimeout(timer);
         if (!controles) return;
 
-        reproductor.classList.remove(CLASE);
         controles.classList.remove(CLASE);
     }
 
     function restaurar(reproductor) {
         const controles = obtenerControles(reproductor);
-        clearTimeout(timer);
         if (!controles) return;
 
-        reproductor.classList.remove(CLASE);
         controles.classList.remove(CLASE);
         controles.removeAttribute('hidden');
     }
@@ -217,11 +209,15 @@
         const reproductor = obtenerReproductorFullscreen();
 
         if (reproductor) {
+            /* Entrar: controles ocultos. */
             ocultar(reproductor);
         } else {
+            /* Salir: controles normales visibles. */
             document
-                .querySelectorAll('.md-player.' + CLASE)
-                .forEach(restaurar);
+                .querySelectorAll('.md-player')
+                .forEach(reproductorAbierto => {
+                    restaurar(reproductorAbierto);
+                });
         }
     }
 
@@ -264,7 +260,19 @@
         if (instalado) return;
         instalado = true;
 
-        /* PRIMERO: conservar las acciones funcionales de los controles. */
+        /*
+         * SUPERFICIE: se ejecuta en window/captura antes del listener
+         * del contenedor del reproductor. Así el toque llega incluso
+         * cuando el reproductor nativo bloquea la propagación después.
+         * Los botones quedan excluidos y conservan sus funciones.
+         */
+        window.addEventListener(
+            'click',
+            alternarDesdeSuperficie,
+            true
+        );
+
+        /* CONTROLES: se mantiene exactamente el manejador que ya funciona. */
         document.addEventListener(
             'click',
             event => {
@@ -291,7 +299,6 @@
             true
         );
 
-        /* SEGUNDO: sincronizar entrada/salida de fullscreen. */
         document.addEventListener(
             'fullscreenchange',
             sincronizarFullscreen
@@ -300,13 +307,6 @@
         document.addEventListener(
             'webkitfullscreenchange',
             sincronizarFullscreen
-        );
-
-        /* TERCERO: solo una superficie libre del vídeo alterna controles. */
-        document.addEventListener(
-            'click',
-            alternarDesdeSuperficie,
-            false
         );
     }
 

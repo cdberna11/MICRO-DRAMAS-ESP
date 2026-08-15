@@ -32,6 +32,38 @@
         ).matches;
     }
 
+    /*
+     * El detalle móvil pertenece a app.js.
+     * Lo cerramos antes de cambiar la vista del catálogo para
+     * que Home/Categorías no trabajen detrás del detalle abierto.
+     */
+    function cerrarDetalleMovilSeguro() {
+        if (!esMovil()) {
+            return;
+        }
+
+        if (
+            typeof window.cerrarDetalleMovil ===
+            "function"
+        ) {
+            window.cerrarDetalleMovil();
+            return;
+        }
+
+        const detalle = document.getElementById(
+            "detalle-movil"
+        );
+
+        if (detalle) {
+            detalle.classList.remove("is-open");
+            detalle.setAttribute("aria-hidden", "true");
+        }
+
+        document.body.classList.remove(
+            "mobile-detail-open"
+        );
+    }
+
     function cerrarMenuCategoriasSeguro() {
         const boton = document.querySelector(
             ".menu-categorias-portal__close"
@@ -52,6 +84,8 @@
     }
 
     function mostrarTodosLosDramas() {
+        cerrarDetalleMovilSeguro();
+
         const botonTodos = document.querySelector(
             '.menu-categoria-item[data-category-slug="todos"]'
         );
@@ -84,6 +118,7 @@
 
     function abrirCategorias() {
         cerrarMenuUsuario();
+        cerrarDetalleMovilSeguro();
 
         const botonCategorias = document.getElementById(
             "boton-menu-categorias"

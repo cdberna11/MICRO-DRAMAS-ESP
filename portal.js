@@ -34,6 +34,7 @@ function showPanel(panel) {
         item.hidden = item !== panel;
     });
     document.body.classList.toggle("login-mode", panel === loginPanel);
+    document.body.classList.toggle("profile-mode", panel === profilePanel);
     document.body.classList.toggle("pin-mode", panel === pinPanel);
     clearMessage();
     if (panel !== pinPanel) clearPinInputs();
@@ -200,7 +201,6 @@ async function loadSession() {
 
     manageProfileMode = false;
     $("#profile-name").textContent = user.displayName;
-    $("#profile-account").textContent = user.email || user.phone || "";
     $("#profile-avatar-img").src = avatarUrl(user.avatar);
     $("#profile-avatar-img").alt = `Avatar de ${user.displayName}`;
     $("#profile-avatar-button").classList.remove("manage-mode");
@@ -259,191 +259,126 @@ $("#pin-back-login").addEventListener("click", () => {
 
 $("#login-form").addEventListener("submit", async event => {
     event.preventDefault();
-    clearMessage();
     const identifier = $("#login-identifier").value.trim();
-    if (!identifier) {
-        showMessage("Introduce tu correo o número de teléfono.");
-        return;
-    }
+    if (!identifier) return showMessage("Escribe tu correo o teléfono.");
 
     const button = $("#login-submit");
     button.disabled = true;
-    const { response, data } = await api("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ identifier })
-    });
-    button.disabled = false;
+    try {
+        const { response, data } = await api("/api/auth/login-start", {
+            method: "POST",
+            body: JSON.stringify({ identifier })
+        });
 
-    if (response.ok && data.requiresPinMigration) {
+        if (!response.ok) {
+            if (data.code === "PASSWORD_ACCOUNT") {
+                pendingIdentifier = identifier;
+                showPinMigrationModal();
+                return;
+            }
+            return showMessage(data.error || "No se pudo iniciar sesión.");
+        }
+
         pendingIdentifier = identifier;
-        showPinMigrationModal();
-        return;
+        $("#pin-account-label").textContent = "";
+        showPanel(pinPanel);
+        setTimeout(focusFirstPin, 60);
+    } catch {
+        showMessage("No se pudo conectar con el servidor.");
+    } finally {
+        button.disabled = false;
     }
-
-    if (!response.ok || !data.requiresPin) {
-        showMessage(data.error || "No se pudo comprobar la cuenta.");
-        return;
-    }
-
-    pendingIdentifier = identifier;
-    $("#pin-account-label").textContent = data.user?.email || data.user?.phone || identifier;
-    showPanel(pinPanel);
-    setTimeout(focusFirstPin, 40);
 });
 
 $("#pin-form").addEventListener("submit", async event => {
     event.preventDefault();
-    clearMessage();
     const pin = getPinValue();
-    if (!validPin(pin)) {
-        showMessage("Introduce los 4 dígitos de tu PIN.");
-        focusFirstPin();
-        return;
-    }
+    if (!validPin(pin)) return showMessage("El PIN debe tener 4 dígitos.");
 
     const button = $("#pin-submit");
     button.disabled = true;
-    const { response, data } = await api("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ identifier: pendingIdentifier, pin })
-    });
-    button.disabled = false;
-
-    if (!response.ok || !data.success) {
-        showMessage(data.error || "PIN incorrecto.");
-        clearPinInputs();
-        focusFirstPin();
-        return;
+    try {
+        const { response, data } = await api("/api/auth/login", {
+            method: "POST",
+            body: JSON.stringify({ identifier: pendingIdentifier, pin })
+        });
+        if (!response.ok) {
+            clearPinInputs();
+            focusFirstPin();
+            return showMessage(data.error || "PIN incorrecto.");
+        }
+        pendingIdentifier = "";
+        await loadSession();
+    } catch {
+        showMessage("No se pudo conectar con el servidor.");
+    } finally {
+        button.disabled = false;
     }
-
-    pendingIdentifier = "";
-    await loadSession();
 });
 
 document.querySelectorAll(".auth-method-option").forEach(button => {
     button.addEventListener("click", () => {
-        registerAuthMethod = button.dataset.method;
+        registerAuthMethod = button.dataset.method || "email";
         updateRegisterMethodUI();
     });
 });
 
 $("#register-form").addEventListener("submit", async event => {
     event.preventDefault();
-    clearMessage();
-    const displayName = $("#register-name").value.trim();
-    const email = $("#register-email").value.trim();
+    const name = $("#register-name").value.trim();
+    const email = $("#register-email").value.trim().toLowerCase();
     const identifier = $("#register-identifier").value.trim();
-    const pin = $("#register-pin").value;
-    const confirmPin = $("#register-pin-confirm").value;
+    const pin = $("#register-pin").value.trim();
+    const pinConfirm = $("#register-pin-confirm").value.trim();
 
-    if (displayName.length < 2) {
-        showMessage("Escribe un nombre válido.");
-        return;
-    }
-    if (!email || !email.includes("@")) {
-        showMessage("Introduce un correo electrónico válido.");
-        return;
-    }
-    if (!identifier) {
-        showMessage(registerAuthMethod === "phone" ? "Introduce tu número de teléfono." : "Introduce tu correo de acceso.");
-        return;
-    }
-    if (!validPin(pin)) {
-        showMessage("El PIN debe tener exactamente 4 números.");
-        return;
-    }
-    if (pin !== confirmPin) {
-        showMessage("Los PIN no son iguales.");
-        return;
-    }
+    if (!name || !email || !identifier) return showMessage("Completa todos los campos.");
+    if (!validPin(pin)) return showMessage("El PIN debe tener exactamente 4 números.");
+    if (pin !== pinConfirm) return showMessage("Los PIN no son iguales.");
 
     const button = $("#register-submit");
     button.disabled = true;
-    const { response, data } = await api("/api/auth/register", {
-        method: "POST",
-        body: JSON.stringify({ displayName, email, identifier, pin, confirmPin, authMethod: registerAuthMethod })
-    });
-    button.disabled = false;
-
-    if (!response.ok || !data.success) {
-        showMessage(data.error || "No se pudo crear la cuenta.");
-        return;
+    try {
+        const { response, data } = await api("/api/auth/register", {
+            method: "POST",
+            body: JSON.stringify({
+                displayName: name,
+                email,
+                identifier,
+                authMethod: registerAuthMethod,
+                pin
+            })
+        });
+        if (!response.ok) return showMessage(data.error || "No se pudo completar el registro.");
+        pendingIdentifier = identifier;
+        showPanel(pinPanel);
+        setTimeout(focusFirstPin, 60);
+    } catch {
+        showMessage("No se pudo conectar con el servidor.");
+    } finally {
+        button.disabled = false;
     }
-
-    await loadSession();
-});
-
-$("#forgot-disabled").addEventListener("click", () => {
-    showMessage("La recuperación del PIN se habilitará cuando configuremos el envío de códigos por correo o teléfono.");
-});
-
-$("#pin-migration-form").addEventListener("submit", async event => {
-    event.preventDefault();
-    clearMigrationMessage();
-
-    const currentPassword = $("#migration-current-password").value;
-    const pin = $("#migration-pin").value;
-    const confirmPin = $("#migration-pin-confirm").value;
-
-    if (!currentPassword) {
-        showMigrationMessage("Introduce tu contraseña actual para continuar.");
-        return;
-    }
-    if (!validPin(pin)) {
-        showMigrationMessage("El PIN debe tener exactamente 4 números.");
-        return;
-    }
-    if (pin !== confirmPin) {
-        showMigrationMessage("Los PIN no son iguales.");
-        return;
-    }
-
-    const button = $("#migration-submit");
-    button.disabled = true;
-    const { response, data } = await api("/api/auth/migrate-pin", {
-        method: "POST",
-        body: JSON.stringify({ identifier: pendingIdentifier, currentPassword, pin, confirmPin })
-    });
-    button.disabled = false;
-
-    if (!response.ok || !data.success) {
-        showMigrationMessage(data.error || "No se pudo actualizar el PIN.");
-        return;
-    }
-
-    pendingIdentifier = "";
-    closePinMigrationModal();
-    await loadSession();
 });
 
 $("#onboarding-form").addEventListener("submit", async event => {
     event.preventDefault();
-    clearMessage();
     const displayName = $("#onboarding-name").value.trim();
     const avatar = selectedAvatar("#onboarding-avatars");
-
-    if (displayName.length < 2) {
-        showMessage("El nombre debe tener al menos 2 caracteres.");
-        return;
-    }
-    if (!avatar) {
-        showMessage("Selecciona un avatar para continuar.");
-        return;
-    }
+    if (!displayName || !avatar) return showMessage("Selecciona un nombre y un avatar.");
 
     const button = $("#onboarding-submit");
     button.disabled = true;
-    const { response, data } = await api("/api/auth/me", {
-        method: "PATCH",
-        body: JSON.stringify({ displayName, avatar })
-    });
-    button.disabled = false;
-
-    if (!response.ok || !data.success) {
-        showMessage(data.error || "No se pudo guardar el perfil.");
-        return;
+    try {
+        const { response, data } = await api("/api/auth/profile", {
+            method: "PUT",
+            body: JSON.stringify({ displayName, avatar })
+        });
+        if (!response.ok) return showMessage(data.error || "No se pudo guardar el perfil.");
+        await loadSession();
+    } catch {
+        showMessage("No se pudo conectar con el servidor.");
+    } finally {
+        button.disabled = false;
     }
-    await loadSession();
 });
 
 $("#profile-avatar-button").addEventListener("click", () => {
@@ -455,50 +390,78 @@ $("#profile-avatar-button").addEventListener("click", () => {
 });
 
 $("#manage-profile-button").addEventListener("click", () => {
-    manageProfileMode = true;
-    $("#profile-avatar-button").classList.add("manage-mode");
+    manageProfileMode = !manageProfileMode;
+    $("#profile-avatar-button").classList.toggle("manage-mode", manageProfileMode);
 });
 
-$("#edit-profile-form").addEventListener("submit", async event => {
-    event.preventDefault();
-    clearMessage();
-    const displayName = $("#edit-display-name").value.trim();
-    const avatar = selectedAvatar("#edit-avatars");
-
-    if (displayName.length < 2) {
-        showMessage("El nombre debe tener al menos 2 caracteres.");
-        return;
-    }
-    if (!avatar) {
-        showMessage("Selecciona un avatar para continuar.");
-        return;
-    }
-
-    const button = $("#edit-save");
+$("#logout-button").addEventListener("click", async () => {
+    const button = $("#logout-button");
     button.disabled = true;
-    const { response, data } = await api("/api/auth/me", {
-        method: "PATCH",
-        body: JSON.stringify({ displayName, avatar })
-    });
-    button.disabled = false;
-
-    if (!response.ok || !data.success) {
-        showMessage(data.error || "No se pudo actualizar el perfil.");
-        return;
+    try {
+        await api("/api/auth/logout", { method: "POST" });
+    } finally {
+        window.location.href = "/portal";
     }
-
-    closeEditProfile();
-    await loadSession();
 });
 
 $("#close-edit-profile").addEventListener("click", closeEditProfile);
-editModal.querySelector("[data-close-edit]").addEventListener("click", closeEditProfile);
-document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && !editModal.hidden) closeEditProfile();
+document.querySelector("[data-close-edit]")?.addEventListener("click", closeEditProfile);
+
+$("#edit-profile-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    const displayName = $("#edit-display-name").value.trim();
+    const avatar = selectedAvatar("#edit-avatars");
+    if (!displayName || !avatar) return;
+
+    const button = $("#edit-save");
+    button.disabled = true;
+    try {
+        const { response, data } = await api("/api/auth/profile", {
+            method: "PUT",
+            body: JSON.stringify({ displayName, avatar })
+        });
+        if (!response.ok) return showMessage(data.error || "No se pudo guardar el perfil.");
+        closeEditProfile();
+        manageProfileMode = false;
+        await loadSession();
+    } catch {
+        showMessage("No se pudo conectar con el servidor.");
+    } finally {
+        button.disabled = false;
+    }
 });
 
-$("#logout-button").addEventListener("click", () => {
-    window.location.href = "/api/session/logout";
+$("#pin-migration-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    const currentPassword = $("#migration-current-password").value;
+    const pin = $("#migration-pin").value.trim();
+    const pinConfirm = $("#migration-pin-confirm").value.trim();
+
+    clearMigrationMessage();
+    if (!currentPassword) return showMigrationMessage("Escribe tu contraseña actual.");
+    if (!validPin(pin)) return showMigrationMessage("El PIN debe tener exactamente 4 números.");
+    if (pin !== pinConfirm) return showMigrationMessage("Los PIN no son iguales.");
+
+    const button = $("#migration-submit");
+    button.disabled = true;
+    try {
+        const { response, data } = await api("/api/auth/migrate-pin", {
+            method: "POST",
+            body: JSON.stringify({ identifier: pendingIdentifier, currentPassword, pin })
+        });
+        if (!response.ok) return showMigrationMessage(data.error || "No se pudo actualizar el PIN.");
+        closePinMigrationModal();
+        pendingIdentifier = "";
+        await loadSession();
+    } catch {
+        showMigrationMessage("No se pudo conectar con el servidor.");
+    } finally {
+        button.disabled = false;
+    }
+});
+
+migrationModal?.addEventListener("click", event => {
+    if (event.target.classList.contains("migration-modal-backdrop")) closePinMigrationModal();
 });
 
 preparePinInputs();

@@ -19,6 +19,8 @@ function userPayload(user) {
         authProvider: user.auth_provider || "local",
         displayName: user.display_name,
         avatar: user.avatar,
+        role: user.role || "user",
+        isAdmin: String(user.role || "user").toLowerCase() === "admin",
         profileCompleted: Boolean(user.profile_completed),
         emailVerified: Boolean(user.email_verified),
         phoneVerified: Boolean(user.phone_verified)
@@ -70,6 +72,8 @@ export async function onRequestPatch(context) {
                 id: user.id,
                 displayName,
                 avatar,
+                role: user.role || "user",
+                isAdmin: String(user.role || "user").toLowerCase() === "admin",
                 profileCompleted: true
             }
         });

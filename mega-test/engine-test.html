@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow, noarchive">
-  <title>MEGA-TEST · Motor Vidstack + MEGA / Shaka + MEGA</title>
-  <link rel="stylesheet" href="./engine-test.css?v=3">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>MEGA-TEST · Motores de reproducción</title>
+  <link rel="stylesheet" href="./engine-test.css?v=4">
   <link rel="stylesheet" href="https://cdn.vidstack.io/player/theme.css">
   <link rel="stylesheet" href="https://cdn.vidstack.io/player/video.css">
   <script type="module" src="https://cdn.vidstack.io/player"></script>
@@ -17,8 +17,9 @@
   <header>
     <a href="./index_test.html">← Volver al Player MEGA</a>
     <span class="badge">MOTOR LAB · SIN PRODUCCIÓN</span>
-    <h1>Motor real: Vidstack + MEGA</h1>
-    <p>Ahora sí probamos el archivo MEGA real de 5+ GB mediante MEGAJS + MP4Box + MediaSource. Shaka queda preparado como segundo candidato.</p>
+    <h1>Laboratorio de motores</h1>
+    <p>Primero resolvemos el motor de reproducción. La interfaz bonita queda para después.</p>
+    <p><a class="mega-engine-link" href="./mega-videostream-test.html">⭐ Abrir Motor E · MEGA VideoStream 5.7</a></p>
   </header>
 
   <section class="panel source-panel">
@@ -38,10 +39,10 @@
 
   <section class="engine-card featured">
     <div class="engine-head">
-      <div><span class="tag">MOTOR C1 · PRINCIPAL</span><h2>Vidstack + MEGAJS + MP4Box + MSE</h2></div>
+      <div><span class="tag">MOTOR C1</span><h2>Vidstack + MEGAJS + MP4Box + MSE</h2></div>
       <span id="vidstack-state" class="state">SIN PROBAR</span>
     </div>
-    <p>Este es el experimento real. No crea un Blob de 5 GB. Lee rangos de MEGA, los entrega a MP4Box y alimenta un MediaSource que controla Vidstack.</p>
+    <p>Experimento anterior. Se mantiene disponible para comparación, pero el nuevo candidato prioritario es el VideoStream de MEGA.</p>
     <media-player id="vidstack-player" title="Microdrama MEGA" load="idle" controls playsinline>
       <media-provider></media-provider>
       <media-video-layout></media-video-layout>
@@ -57,26 +58,26 @@
 
   <section class="engine-card">
     <div class="engine-head">
-      <div><span class="tag">MOTOR C2 · SEGUNDO CANDIDATO</span><h2>Shaka + MEGA</h2></div>
+      <div><span class="tag">MOTOR C2</span><h2>Shaka + MEGA</h2></div>
       <span id="shaka-state" class="state">PENDIENTE</span>
     </div>
-    <p>Shaka no puede consumir directamente un enlace mega.nz/file. Lo dejamos preparado para la fase de adaptador cuando terminemos la prueba real de Vidstack.</p>
+    <p>Shaka no consume directamente un enlace mega.nz/file; queda reservado para una fase posterior si VideoStream no resulta suficiente.</p>
     <video id="shaka-video" controls playsinline></video>
     <button id="run-shaka">▶ Analizar Shaka + MEGA</button>
     <pre id="shaka-log">Pendiente.</pre>
   </section>
 
   <section class="panel verdict">
-    <h2>Objetivo de esta fase</h2>
+    <h2>Orden de evaluación</h2>
     <ol>
-      <li>Reproducir el vídeo real sin descargar los 5.29 GB.</li>
-      <li>Confirmar que MP4Box puede generar segmentos compatibles con MSE.</li>
-      <li>Comprobar que Vidstack controla correctamente el elemento de vídeo.</li>
-      <li>Después probar SEEK remoto. Si Vidstack supera esta fase, será nuestro candidato principal.</li>
+      <li><b>Motor E:</b> MEGA VideoStream 5.7 + MEGAJS con nuestros vídeos reales.</li>
+      <li>Play sin descargar los 5.29 GB.</li>
+      <li>SEEK largo hacia adelante y atrás.</li>
+      <li>Prueba en escritorio y móvil.</li>
+      <li>Solo después comparar contra Vidstack/Shaka.</li>
     </ol>
-    <div class="important"><strong>Nota:</strong> el primer arranque puede tardar unos segundos porque el laboratorio necesita obtener la estructura MP4. No se descargará el archivo completo.</div>
   </section>
 </main>
-<script src="./engine-test.js?v=3"></script>
+<script src="./engine-test.js?v=4"></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 const SESSION_COOKIE = "md_user_session";
 const SESSION_MAX_AGE = 60 * 60 * 3;
 const PASSWORD_HASH_ITERATIONS = 10000;
+const OWNER_ADMIN_EMAIL = "christopherbernal11@gmail.com";
 
 function bytesToHex(bytes) {
     return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
@@ -111,6 +112,10 @@ export async function ensureUserSchema(db) {
     await db.prepare(`UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE updated_at = ''`).run();
     await db.prepare(`UPDATE user_sessions SET created_at = CURRENT_TIMESTAMP WHERE created_at = ''`).run();
     await db.prepare(`UPDATE user_sessions SET last_activity_at = CURRENT_TIMESTAMP WHERE last_activity_at = ''`).run();
+
+    // Cuenta propietaria del proyecto: se eleva automáticamente a administrador.
+    // Esto no crea una cuenta nueva ni modifica contraseña/PIN ni ningún otro dato.
+    await db.prepare(`UPDATE users SET role = 'admin', updated_at = CURRENT_TIMESTAMP WHERE lower(email) = ?`).bind(OWNER_ADMIN_EMAIL).run();
 
     try { await db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id)`).run(); } catch {}
     try { await db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at)`).run(); } catch {}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <title>Acceso administrativo | Micro Dramas ESP</title>
+    <link rel="stylesheet" href="/admin/admin-login.css?v=1">
+</head>
+<body>
+    <main class="admin-login-page">
+        <section class="admin-login-card" aria-labelledby="admin-login-title">
+            <div class="admin-login-brand">
+                <img src="/assets/micro_drama_en_español_1.jpg" alt="Micro Dramas en Español">
+            </div>
+
+            <div class="admin-login-heading">
+                <span class="admin-login-badge">PANEL ADMINISTRATIVO</span>
+                <h1 id="admin-login-title">Iniciar sesión</h1>
+                <p id="admin-login-description">Utiliza la misma cuenta de la cartelera. Solo los usuarios con permisos de administrador pueden entrar.</p>
+            </div>
+
+            <form id="admin-login-form" class="admin-login-form" novalidate>
+                <div id="admin-step-identifier">
+                    <label for="admin-identifier">Correo electrónico o teléfono</label>
+                    <input id="admin-identifier" name="identifier" type="text" autocomplete="username" inputmode="email" placeholder="correo@ejemplo.com" required>
+                    <button id="admin-continue" class="admin-login-button" type="submit">Continuar</button>
+                </div>
+
+                <div id="admin-step-pin" hidden>
+                    <div class="admin-login-user" id="admin-login-user"></div>
+                    <label for="admin-pin">PIN de acceso</label>
+                    <input id="admin-pin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="4" pattern="[0-9]{4}" placeholder="••••">
+                    <div class="admin-pin-actions">
+                        <button id="admin-back" class="admin-login-secondary" type="button">Volver</button>
+                        <button id="admin-submit-pin" class="admin-login-button" type="submit">Entrar al administrador</button>
+                    </div>
+                </div>
+
+                <div id="admin-login-message" class="admin-login-message" role="alert" hidden></div>
+            </form>
+
+            <a class="admin-login-catalog" href="/">← Volver a la cartelera</a>
+        </section>
+    </main>
+    <script src="/admin/admin-login.js?v=1" defer></script>
+</body>
+</html>

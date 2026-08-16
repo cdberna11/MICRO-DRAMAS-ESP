@@ -3,84 +3,108 @@ const MEGA_URLS = {
   video2: 'https://mega.nz/file/2xIwkY6K#4Oe8Vuomh0NfMjjPKOFQIT0nEXnaA9ZcQGBLou5yj-E'
 };
 
-const VIDSTACK_TEST_MP4 = 'https://files.vidstack.io/sprite-fight/720p.mp4';
-const SHAKA_TEST_MPD = 'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd';
-
 const $ = id => document.getElementById(id);
-const megaStatus = $('mega-status');
-const megaSource = $('mega-source');
+let megaFile = null;
+let shakaPlayer = null;
+let activeVideo = null;
 
-function write(id, text) {
-  const el = $(id);
-  if (el) el.textContent = text;
-}
-
-function appendLog(id, text) {
+function log(id, text) {
   const el = $(id);
   if (!el) return;
-  el.textContent = `[${new Date().toLocaleTimeString()}] ${text}\n${el.textContent}`.slice(0, 10000);
+  el.textContent = `[${new Date().toLocaleTimeString()}] ${text}\n${el.textContent}`.slice(0, 14000);
 }
 
-async function probeMega() {
-  const url = MEGA_URLS[megaSource.value];
-  megaStatus.textContent = 'Abriendo MEGAJS y leyendo atributos…';
+function selectedUrl() {
+  return MEGA_URLS[$('mega-source').value];
+}
+
+function selectedName() {
+  return $('mega-source').value === 'video1' ? 'Vídeo MEGA 1' : 'Vídeo MEGA 2';
+}
+
+function setStatus(text) {
+  $('mega-status').textContent = text;
+}
+
+function updateSourceLabel() {
+  $('source-label').textContent = selectedUrl();
+}
+
+async function openMegaAttributes() {
+  setStatus('Abriendo MEGAJS y leyendo atributos…');
   try {
     const { File } = await import('https://unpkg.com/megajs/dist/main.browser-es.mjs');
-    const file = File.fromURL(url);
-    await file.loadAttributes();
-    megaStatus.textContent = `OK · ${file.name || 'archivo'} · ${(Number(file.size || 0) / 1024 / 1024 / 1024).toFixed(2)} GB · sin descargar el archivo completo.`;
+    megaFile = File.fromURL(selectedUrl());
+    await megaFile.loadAttributes();
+    const gb = (Number(megaFile.size || 0) / 1024 ** 3).toFixed(2);
+    setStatus(`MEGA OK · ${megaFile.name || selectedName()} · ${gb} GB · todavía no se ha descargado el archivo.`);
+    return megaFile;
   } catch (error) {
-    megaStatus.textContent = `ERROR MEGAJS: ${error?.message || error}`;
+    setStatus(`MEGA ERROR · ${error?.message || error}`);
+    throw error;
   }
+}
+
+/*
+ * Este adaptador es deliberadamente conservador: no intenta convertir un
+ * enlace MEGA en un MP4 completo. Primero obtiene metadatos y demuestra que
+ * MEGAJS permite solicitar rangos. El siguiente paso será conectar esos
+ * rangos a MP4Box/MSE, reutilizando la lógica que ya funciona en producción.
+ */
+async function probeMegaRange(file) {
+  const size = Number(file.size || 0);
+  const end = Math.min(size, 4 * 1024 * 1024);
+  log('vidstack-log', `Solicitando rango experimental 0-${end - 1} (${(end / 1024 / 1024).toFixed(1)} MB)…`);
+  const stream = file.download({ start: 0, end });
+  let bytes = 0;
+  return new Promise((resolve, reject) => {
+    stream.on('data', chunk => {
+      bytes += chunk.byteLength || chunk.length || 0;
+      if (bytes >= end) log('vidstack-log', `Rango recibido: ${(bytes / 1024 / 1024).toFixed(1)} MB.`);
+    });
+    stream.on('error', reject);
+    stream.on('end', () => resolve(bytes));
+  });
 }
 
 async function runVidstack() {
-  const state = $('vidstack-state');
-  state.textContent = 'CARGANDO';
-  appendLog('vidstack-log', 'Cargando fuente MP4 de referencia…');
+  $('vidstack-state').textContent = 'ANALIZANDO MEGA';
+  log('vidstack-log', `Fuente: ${selectedName()}`);
   try {
-    const player = $('vidstack-player');
-    player.src = { src: VIDSTACK_TEST_MP4, type: 'video/mp4' };
-    await customElements.whenDefined('media-player');
-    player.addEventListener('media-loaded-metadata', () => appendLog('vidstack-log', `metadata: duración ${player.state.duration.toFixed(2)} s`), { once: true });
-    player.addEventListener('media-error', event => appendLog('vidstack-log', `error: ${event.detail?.message || 'desconocido'}`));
-    player.addEventListener('media-can-play', () => appendLog('vidstack-log', 'can-play recibido. Prueba PLAY y SEEK.'));
-    state.textContent = 'LISTO';
-    appendLog('vidstack-log', 'Vidstack inicializado. El SEEK se puede probar con su barra nativa/layout.');
+    const file = await openMegaAttributes();
+    await probeMegaRange(file);
+    $('vidstack-state').textContent = 'MEGA + RANGO OK';
+    log('vidstack-log', 'MEGAJS puede abrir el archivo y entregar un rango sin descargarlo completo.');
+    log('vidstack-log', 'Siguiente fase necesaria: MEGAJS → MP4Box → MSE → <video> de Vidstack.');
   } catch (error) {
-    state.textContent = 'ERROR';
-    appendLog('vidstack-log', `ERROR: ${error?.message || error}`);
+    $('vidstack-state').textContent = 'ERROR';
+    log('vidstack-log', `ERROR: ${error?.message || error}`);
   }
 }
-
-let shakaPlayer = null;
 
 async function runShaka() {
-  const state = $('shaka-state');
-  state.textContent = 'CARGANDO';
-  appendLog('shaka-log', 'Inicializando Shaka Player…');
+  $('shaka-state').textContent = 'ANALIZANDO MEGA';
+  log('shaka-log', `Fuente: ${selectedName()}`);
   try {
-    shaka.polyfill.installAll();
-    if (!shaka.Player.isBrowserSupported()) throw new Error('El navegador no soporta las APIs requeridas por Shaka.');
-    const video = $('shaka-video');
-    if (shakaPlayer) await shakaPlayer.destroy();
-    shakaPlayer = new shaka.Player(video);
-    shakaPlayer.addEventListener('error', event => {
-      const detail = event.detail || {};
-      appendLog('shaka-log', `ERROR ${detail.code || ''}: ${detail.message || 'Shaka error'}`);
-    });
-    await shakaPlayer.load(SHAKA_TEST_MPD);
-    state.textContent = 'LISTO';
-    appendLog('shaka-log', 'DASH cargado correctamente. Prueba PLAY, SEEK adelante/atrás y buffering.');
+    const file = await openMegaAttributes();
+    const size = Number(file.size || 0);
+    log('shaka-log', `Archivo MEGA: ${(size / 1024 ** 3).toFixed(2)} GB.`);
+    log('shaka-log', 'Shaka no acepta directamente mega.nz/file como manifest DASH/HLS.');
+    log('shaka-log', 'Se necesita un adaptador de manifest/red o una representación segmentada compatible con Shaka.');
+    $('shaka-state').textContent = 'ADAPTADOR PENDIENTE';
   } catch (error) {
-    state.textContent = 'ERROR';
-    appendLog('shaka-log', `ERROR: ${error?.message || error}`);
+    $('shaka-state').textContent = 'ERROR';
+    log('shaka-log', `ERROR: ${error?.message || error}`);
   }
 }
 
-$('probe-mega').addEventListener('click', probeMega);
+$('mega-source').addEventListener('change', () => {
+  updateSourceLabel();
+  setStatus('Vídeo cambiado. Ejecuta nuevamente el motor que quieras probar.');
+});
 $('run-vidstack').addEventListener('click', runVidstack);
 $('run-shaka').addEventListener('click', runShaka);
 
-appendLog('vidstack-log', `Fuente de prueba: ${VIDSTACK_TEST_MP4}`);
-appendLog('shaka-log', `Manifiesto de prueba: ${SHAKA_TEST_MPD}`);
+updateSourceLabel();
+log('vidstack-log', 'Laboratorio listo.');
+log('shaka-log', 'Laboratorio listo.');

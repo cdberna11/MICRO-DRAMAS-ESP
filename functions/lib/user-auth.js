@@ -69,7 +69,8 @@ export async function ensureUserSchema(db) {
         last_login_at TEXT,
         auth_provider TEXT NOT NULL DEFAULT 'local',
         google_sub TEXT,
-        pin_enabled INTEGER NOT NULL DEFAULT 0
+        pin_enabled INTEGER NOT NULL DEFAULT 0,
+        role TEXT NOT NULL DEFAULT 'user'
     )`).run();
 
     await db.prepare(`CREATE TABLE IF NOT EXISTS user_sessions (
@@ -97,6 +98,7 @@ export async function ensureUserSchema(db) {
     await addColumnIfMissing(db, userColumns, "users", "auth_provider", "TEXT NOT NULL DEFAULT 'local'");
     await addColumnIfMissing(db, userColumns, "users", "google_sub", "TEXT");
     await addColumnIfMissing(db, userColumns, "users", "pin_enabled", "INTEGER NOT NULL DEFAULT 0");
+    await addColumnIfMissing(db, userColumns, "users", "role", "TEXT NOT NULL DEFAULT 'user'");
 
     const sessionColumns = await getTableColumns(db, "user_sessions");
     await addColumnIfMissing(db, sessionColumns, "user_sessions", "user_id", "INTEGER NOT NULL DEFAULT 0");
@@ -104,6 +106,7 @@ export async function ensureUserSchema(db) {
     await addColumnIfMissing(db, sessionColumns, "user_sessions", "last_activity_at", "TEXT NOT NULL DEFAULT ''");
     await addColumnIfMissing(db, sessionColumns, "user_sessions", "expires_at", "TEXT NOT NULL DEFAULT ''");
 
+    await db.prepare(`UPDATE users SET role = 'user' WHERE role IS NULL OR role = ''`).run();
     await db.prepare(`UPDATE users SET created_at = CURRENT_TIMESTAMP WHERE created_at = ''`).run();
     await db.prepare(`UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE updated_at = ''`).run();
     await db.prepare(`UPDATE user_sessions SET created_at = CURRENT_TIMESTAMP WHERE created_at = ''`).run();
@@ -111,6 +114,7 @@ export async function ensureUserSchema(db) {
 
     try { await db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id)`).run(); } catch {}
     try { await db.prepare(`CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at)`).run(); } catch {}
+    try { await db.prepare(`CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)`).run(); } catch {}
     try { await db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL`).run(); } catch {}
     try { await db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone) WHERE phone IS NOT NULL`).run(); } catch {}
     try { await db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub) WHERE google_sub IS NOT NULL`).run(); } catch {}
@@ -139,7 +143,7 @@ export async function getUserFromSession(db, request, touch = true) {
     const row = await db.prepare(`
         SELECT u.id, u.email, u.phone, u.auth_method, u.auth_provider, u.google_sub,
                u.display_name, u.avatar, u.profile_completed, u.phone_verified, u.email_verified,
-               s.id AS session_id, s.expires_at, s.last_activity_at
+               u.role, s.id AS session_id, s.expires_at, s.last_activity_at
         FROM user_sessions s JOIN users u ON u.id = s.user_id
         WHERE s.id = ? LIMIT 1
     `).bind(sessionId).first();
@@ -156,4 +160,18 @@ export async function getUserFromSession(db, request, touch = true) {
     }
     return row;
 }
+
+export async function getAdminFromRequest(db, request, touch = false) {
+    const user = await getUserFromSession(db, request, touch);
+    if (user && String(user.role || "user").toLowerCase() === "admin") return user;
+
+    const cookies = request.headers.get("Cookie") || "";
+    const legacySession = cookies.split(";").some(cookie => cookie.trim() === "microdramas_session=1");
+    if (legacySession) {
+        return { id: null, display_name: "Administrador legado", role: "admin", legacy: true };
+    }
+
+    return null;
+}
+
 export { SESSION_COOKIE, SESSION_MAX_AGE };

@@ -1,10 +1,14 @@
 /* =========================================================
    MICRO-DRAMAS-ESP — MOTOR E OFICIAL
 
-   Basado directamente en /mega-test/mega-videostream-test.js.
-   El portal usa el mismo VideoStream oficial + MEGAJS + adapter
-   createReadStream(start,end), y el mismo <video> HTML5 con
-   controles nativos.
+   Android + Windows/desktop: conserva exactamente el flujo
+   MEGA VideoStream + MEGAJS + MediaSource que ya fue validado.
+
+   Apple/iOS: añade una ruta específica usando ManagedMediaSource
+   cuando WebKit no expone MediaSource tradicional.
+
+   La arquitectura, el adapter MEGA y los controles HTML5 son los
+   mismos. Solo cambia la capa MediaSource en el ecosistema Apple.
 ========================================================= */
 (function () {
     'use strict';
@@ -18,10 +22,72 @@
     let videoStream = null;
     let activeRun = 0;
     let player = null;
+    let mediaSourceMode = 'native-mse';
 
     function log(...args) {
         console.log('[MOTOR E]', ...args);
     }
+
+    function isAppleMobileWebKit() {
+        const ua = navigator.userAgent || '';
+        const platform = navigator.platform || '';
+        const touchMac = platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+        return /iPhone|iPad|iPod/i.test(ua) || touchMac;
+    }
+
+    /*
+     * IMPORTANTE:
+     * MEGA VideoStream utiliza el paquete `mediasource`, que captura
+     * window.MediaSource cuando el bundle se carga. Por eso la ruta
+     * Apple debe prepararse ANTES de cargar VideoStream.
+     *
+     * En Android/Windows no hacemos absolutamente nada aquí.
+     */
+    function prepareAppleMediaSource() {
+        if (!isAppleMobileWebKit()) {
+            mediaSourceMode = 'native-mse';
+            return;
+        }
+
+        const managed = window.ManagedMediaSource;
+        const native = window.MediaSource;
+
+        if (typeof managed === 'function' && typeof managed.isTypeSupported === 'function') {
+            try {
+                /*
+                 * WebKit requiere que el remote playback esté desactivado
+                 * para que ManagedMediaSource pueda abrirse. El video se
+                 * configura también con disableRemotePlayback más abajo.
+                 *
+                 * El bundle oficial de MEGA VideoStream no conoce
+                 * ManagedMediaSource, pero su dependencia `mediasource`
+                 * obtiene el constructor desde window.MediaSource.
+                 * En iOS sustituimos SOLO ese constructor por MMS.
+                 */
+                window.MediaSource = managed;
+                mediaSourceMode = 'managed-mse-ios';
+                log('Apple/iOS detectado → usando ManagedMediaSource.');
+                return;
+            } catch (error) {
+                console.warn('[MOTOR E] No se pudo preparar ManagedMediaSource:', error);
+            }
+        }
+
+        if (typeof native === 'function') {
+            mediaSourceMode = 'native-mse-ios-fallback';
+            log('Apple/iOS detectado → ManagedMediaSource no disponible; usando MediaSource tradicional.');
+            return;
+        }
+
+        mediaSourceMode = 'unsupported-ios';
+        log('Apple/iOS detectado → no hay MediaSource ni ManagedMediaSource disponibles.');
+    }
+
+    /*
+     * Debe ejecutarse inmediatamente, antes de importar/cargar VideoStream.
+     * Android y Windows quedan sin modificación.
+     */
+    prepareAppleMediaSource();
 
     function installMegaVideoStreamShims() {
         if (typeof window.d === 'undefined') window.d = 0;
@@ -47,7 +113,7 @@
         }
 
         installMegaVideoStreamShims();
-        log('Cargando MEGA VideoStream 5.7.0 desde jsDelivr…');
+        log(`Cargando MEGA VideoStream 5.7.0. Modo: ${mediaSourceMode}`);
 
         try {
             await loadScript(VIDEOSTREAM_UMD_URL);
@@ -80,7 +146,7 @@
             size: Number(file.size || 0),
             name: file.name,
             createReadStream(opts = {}) {
-                if (token !== activeRun) throw new Error('Prueba cancelada.');
+                if (token !== activeRun) throw new Error('Reproducción cancelada.');
 
                 const start = Math.max(0, Number.isFinite(opts.start) ? opts.start : 0);
                 const end = Number.isFinite(opts.end) ? opts.end : null;
@@ -196,6 +262,16 @@
         const close = overlay.querySelector('.mega-videostream-portal__close');
         const backdrop = overlay.querySelector('.mega-videostream-portal__backdrop');
 
+        /*
+         * Requisito de WebKit para ManagedMediaSource en Safari/iOS:
+         * desactivar explícitamente remote playback cuando no ofrecemos
+         * una fuente HLS/AirPlay alternativa.
+         */
+        if (isAppleMobileWebKit()) {
+            video.disableRemotePlayback = true;
+            video.setAttribute('disableRemotePlayback', '');
+        }
+
         close.addEventListener('click', stop);
         backdrop.addEventListener('click', stop);
 
@@ -259,7 +335,12 @@
         }
 
         try {
-            log('Cargando MEGA VideoStream…');
+            log(`Preparando reproducción. Plataforma: ${isAppleMobileWebKit() ? 'Apple/WebKit' : 'Chromium/otros'} · modo=${mediaSourceMode}`);
+
+            if (mediaSourceMode === 'unsupported-ios') {
+                throw new Error('Este dispositivo Apple no dispone de ManagedMediaSource ni MediaSource compatibles. Actualiza iOS a 17.1 o posterior.');
+            }
+
             const VS = await loadVideoStream();
             if (token !== activeRun) return true;
 
@@ -271,7 +352,7 @@
             videoStream = new VS(adapter, v, {});
 
             v.load();
-            log('VideoStream creado correctamente. No se usa Blob ni iframe.');
+            log(`VideoStream creado correctamente. Capa de reproducción: ${mediaSourceMode}. No se usa Blob ni iframe.`);
 
             try { await v.play(); } catch {}
             return true;

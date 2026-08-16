@@ -1,8 +1,11 @@
-/* MICRO-DRAMAS-ESP — Motor E oficial de reproducción MEGA
- * MEGA VideoStream 5.7 + MEGAJS
- * Mantiene la interfaz existente del portal y sustituye únicamente
- * el motor de reproducción por streaming por rangos.
- */
+/* =========================================================
+   MICRO-DRAMAS-ESP — MOTOR E OFICIAL
+
+   Basado directamente en /mega-test/mega-videostream-test.js.
+   El portal usa el mismo VideoStream oficial + MEGAJS + adapter
+   createReadStream(start,end), y el mismo <video> HTML5 con
+   controles nativos.
+========================================================= */
 (function () {
     'use strict';
 
@@ -11,213 +14,28 @@
     const VIDEOSTREAM_UMD_FALLBACK = 'https://raw.githubusercontent.com/meganz/videostream/dd8ced8/dist/index.js';
 
     let VideoStreamClass = null;
-    let videoStream = null;
     let megaFile = null;
+    let videoStream = null;
     let activeRun = 0;
-    let controlsWiredFor = null;
+    let player = null;
 
-    function formatTime(value) {
-        if (!Number.isFinite(value) || value < 0) return '0:00';
-        const total = Math.floor(value);
-        const h = Math.floor(total / 3600);
-        const m = Math.floor((total % 3600) / 60);
-        const s = total % 60;
-        return h > 0
-            ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-            : `${m}:${String(s).padStart(2, '0')}`;
-    }
-
-    function blockOriginal(element, handler) {
-        if (!element) return;
-        element.addEventListener('click', event => {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            handler(event);
-        }, true);
-    }
-
-    function updateControls(elements, video) {
-        const duration = Number(video.duration);
-        const current = Number(video.currentTime) || 0;
-
-        if (Number.isFinite(duration) && duration > 0) {
-            elements.progress.value = String((current / duration) * 100);
-        }
-
-        elements.time.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
-        elements.play.textContent = video.paused ? '▶' : '❚❚';
-        elements.mute.textContent = video.muted || video.volume === 0
-            ? '🔇'
-            : video.volume < 0.5 ? '🔉' : '🔊';
-        elements.status.textContent = video.networkState === 2
-            ? 'MEGA · DESCARGANDO'
-            : video.paused ? 'MEGA · PAUSADO' : 'MEGA · REPRODUCIENDO';
-    }
-
-    function exitFullscreen() {
-        const fn = document.exitFullscreen || document.webkitExitFullscreen;
-        if (!fn) return Promise.resolve();
-        try { return Promise.resolve(fn.call(document)).catch(() => {}); }
-        catch { return Promise.resolve(); }
-    }
-
-    function isFullscreen(elements) {
-        return document.fullscreenElement === elements.reproductor ||
-            document.webkitFullscreenElement === elements.reproductor;
-    }
-
-    function enterFullscreen(elements) {
-        const fn = elements.reproductor.requestFullscreen || elements.reproductor.webkitRequestFullscreen;
-        if (!fn) return;
-        try {
-            const result = fn.call(elements.reproductor);
-            if (result?.catch) result.catch(() => {});
-        } catch {}
-    }
-
-    function setupFullscreen(elements, video) {
-        const sync = () => {
-            const full = isFullscreen(elements);
-            elements.reproductor.classList.toggle('native-fullscreen', full);
-            if (!full) elements.controls.classList.remove('native-controls-visible');
-        };
-
-        document.addEventListener('fullscreenchange', sync);
-        document.addEventListener('webkitfullscreenchange', sync);
-
-        blockOriginal(elements.fullscreen, () => {
-            if (isFullscreen(elements)) exitFullscreen();
-            else enterFullscreen(elements);
-        });
-
-        blockOriginal(elements.reproductor, event => {
-            if (!isFullscreen(elements)) return;
-            if (event.target.closest('.md-player__controls, .md-player__header')) return;
-
-            elements.controls.classList.add('native-controls-visible');
-            clearTimeout(elements._nativeHideTimer);
-            elements._nativeHideTimer = setTimeout(() => {
-                if (!video.paused && isFullscreen(elements)) {
-                    elements.controls.classList.remove('native-controls-visible');
-                }
-            }, 2500);
-        });
-
-        video.addEventListener('play', () => {
-            if (isFullscreen(elements)) elements.controls.classList.remove('native-controls-visible');
-        });
-    }
-
-    function installFullscreenCss() {
-        if (document.getElementById('mega-videostream-player-style')) return;
-        const style = document.createElement('style');
-        style.id = 'mega-videostream-player-style';
-        style.textContent = `
-.md-player.native-fullscreen { padding:0 !important; background:#000 !important; }
-.md-player.native-fullscreen .md-player__window { width:100% !important; height:100% !important; max-height:none !important; border:0 !important; border-radius:0 !important; }
-.md-player.native-fullscreen .md-player__area { flex:1 !important; min-height:0 !important; aspect-ratio:auto !important; }
-.md-player.native-fullscreen .md-player__controls { display:none !important; }
-.md-player.native-fullscreen .md-player__controls.native-controls-visible { display:block !important; position:absolute; left:0; right:0; bottom:0; z-index:10; }
-.md-player.native-fullscreen .md-player__header { position:absolute; left:0; right:0; top:0; z-index:11; background:linear-gradient(rgba(0,0,0,.75),transparent); }
-`;
-        document.head.appendChild(style);
-    }
-
-    function wireControls(elements, video) {
-        if (controlsWiredFor === video) return;
-        controlsWiredFor = video;
-
-        const seek = seconds => {
-            const duration = Number(video.duration);
-            if (!Number.isFinite(duration) || duration <= 0) return;
-            video.currentTime = Math.max(0, Math.min(duration - 0.05, (Number(video.currentTime) || 0) + seconds));
-            updateControls(elements, video);
-        };
-
-        blockOriginal(elements.play, () => {
-            if (video.paused) video.play().catch(() => {});
-            else video.pause();
-        });
-        blockOriginal(elements.retroceder, () => seek(-10));
-        blockOriginal(elements.avanzar, () => seek(10));
-        blockOriginal(elements.mute, () => {
-            video.muted = !video.muted;
-            updateControls(elements, video);
-        });
-        blockOriginal(elements.volume, () => {
-            video.volume = Number(elements.volume.value);
-            video.muted = video.volume === 0;
-            updateControls(elements, video);
-        });
-        blockOriginal(elements.progress, () => {
-            const duration = Number(video.duration);
-            if (!Number.isFinite(duration) || duration <= 0) return;
-            const target = duration * (Number(elements.progress.value) / 100);
-            video.currentTime = Math.max(0, Math.min(duration - 0.05, target));
-            updateControls(elements, video);
-        });
-        elements.progress.addEventListener('input', event => {
-            event.stopImmediatePropagation();
-            const duration = Number(video.duration);
-            if (Number.isFinite(duration) && duration > 0) {
-                const target = duration * (Number(elements.progress.value) / 100);
-                elements.time.textContent = `${formatTime(target)} / ${formatTime(duration)}`;
-            }
-        }, true);
-
-        blockOriginal(elements.cerrar, () => closePlayer(elements, video));
-
-        ['loadedmetadata','durationchange','timeupdate','progress','playing','pause','seeked','waiting','stalled'].forEach(type => {
-            video.addEventListener(type, () => updateControls(elements, video));
-        });
-        video.addEventListener('loadedmetadata', () => elements.loading.classList.add('is-hidden'));
-        video.addEventListener('canplay', () => elements.loading.classList.add('is-hidden'));
-        video.addEventListener('playing', () => elements.loading.classList.add('is-hidden'));
-        video.addEventListener('waiting', () => {
-            elements.loadingMessage.textContent = 'Cargando...';
-            elements.loading.classList.remove('is-hidden');
-        });
-        video.addEventListener('error', () => {
-            const code = video.error?.code || 0;
-            elements.loadingMessage.textContent = `No se pudo reproducir el vídeo. Error ${code}.`;
-            elements.loading.classList.remove('is-hidden');
-            elements.status.textContent = `MEGA · ERROR ${code}`;
-        });
-
-        setupFullscreen(elements, video);
-    }
-
-    function closePlayer(elements, video) {
-        clearTimeout(elements._nativeHideTimer);
-        activeRun++;
-        try { videoStream?.destroy?.(); } catch {}
-        videoStream = null;
-        megaFile = null;
-        video.pause();
-        exitFullscreen().finally(() => {
-            try { video.removeAttribute('src'); video.load(); } catch {}
-            elements.reproductor.classList.remove('native-fullscreen', 'is-open');
-            elements.reproductor.setAttribute('aria-hidden', 'true');
-            document.body.classList.remove('video-player-open');
-            if (window.playerState) {
-                playerState.open = false;
-                playerState.stopped = true;
-                playerState.loading = false;
-            }
-        });
+    function log(...args) {
+        console.log('[MOTOR E]', ...args);
     }
 
     function installMegaVideoStreamShims() {
         if (typeof window.d === 'undefined') window.d = 0;
         if (typeof window.vsNT !== 'function') window.vsNT = fn => setTimeout(fn, 0);
-        if (typeof window.queueMicrotask !== 'function') window.queueMicrotask = fn => Promise.resolve().then(fn);
+        if (typeof window.queueMicrotask !== 'function') {
+            window.queueMicrotask = fn => Promise.resolve().then(fn);
+        }
     }
 
     const loadScript = src => new Promise((resolve, reject) => {
         const script = document.createElement('script');
         script.src = src;
         script.async = true;
-        script.onload = resolve;
+        script.onload = () => resolve();
         script.onerror = () => reject(new Error(`No se pudo cargar VideoStream desde ${src}`));
         document.head.appendChild(script);
     });
@@ -227,18 +45,32 @@
             VideoStreamClass = window.videostream;
             return VideoStreamClass;
         }
+
         installMegaVideoStreamShims();
-        try { await loadScript(VIDEOSTREAM_UMD_URL); }
-        catch { await loadScript(VIDEOSTREAM_UMD_FALLBACK); }
+        log('Cargando MEGA VideoStream 5.7.0 desde jsDelivr…');
+
+        try {
+            await loadScript(VIDEOSTREAM_UMD_URL);
+        } catch (error) {
+            log('CDN principal falló. Probando GitHub Raw…', error);
+            await loadScript(VIDEOSTREAM_UMD_FALLBACK);
+        }
+
         VideoStreamClass = window.videostream;
-        if (typeof VideoStreamClass !== 'function') throw new Error('MEGA VideoStream no pudo inicializarse.');
+
+        if (typeof VideoStreamClass !== 'function') {
+            throw new Error('El bundle oficial cargó, pero window.videostream no es una función/clase.');
+        }
+
+        log('MEGA VideoStream 5.7.0 cargado correctamente.');
         return VideoStreamClass;
     }
 
-    async function loadMegaFile(url) {
+    async function loadMega(url) {
         const { File } = await import(MEGAJS_URL);
         const file = File.fromURL(url);
         await file.loadAttributes();
+        log(`MEGA: ${file.name || 'Vídeo'} · ${(Number(file.size || 0) / 2 ** 30).toFixed(2)} GB.`);
         return file;
     }
 
@@ -247,47 +79,171 @@
             filesize: Number(file.size || 0),
             size: Number(file.size || 0),
             name: file.name,
-            createReadStream(options = {}) {
-                if (token !== activeRun) throw new Error('Reproducción cancelada.');
-                const start = Math.max(0, Number.isFinite(options.start) ? options.start : 0);
-                const end = Number.isFinite(options.end) ? options.end : null;
+            createReadStream(opts = {}) {
+                if (token !== activeRun) throw new Error('Prueba cancelada.');
+
+                const start = Math.max(0, Number.isFinite(opts.start) ? opts.start : 0);
+                const end = Number.isFinite(opts.end) ? opts.end : null;
                 const megaOptions = { start };
                 if (end !== null) megaOptions.end = end;
-                return file.download(megaOptions);
+
+                log(`MEGA RANGE: ${start.toLocaleString()} → ${end === null ? 'EOF' : end.toLocaleString()}.`);
+                const stream = file.download(megaOptions);
+                log(`Stream MEGA: pipe=${typeof stream.pipe}, constructor=${stream?.constructor?.name || typeof stream}.`);
+                return stream;
             }
         };
     }
 
-    async function startMegaVideoStream(drama) {
+    function createPortalPlayer() {
+        if (player) return player;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'mega-videostream-portal-player';
+        overlay.setAttribute('aria-hidden', 'true');
+
+        overlay.innerHTML = `
+            <div class="mega-videostream-portal__backdrop"></div>
+            <div class="mega-videostream-portal__window" role="dialog" aria-modal="true" aria-label="Reproductor de vídeo">
+                <div class="mega-videostream-portal__topbar">
+                    <div class="mega-videostream-portal__title"></div>
+                    <button type="button" class="mega-videostream-portal__close" aria-label="Cerrar reproductor">×</button>
+                </div>
+                <video class="mega-videostream-portal__video" controls playsinline preload="auto"></video>
+            </div>
+        `;
+
+        const style = document.createElement('style');
+        style.id = 'mega-videostream-portal-style';
+        style.textContent = `
+#mega-videostream-portal-player {
+    position: fixed;
+    inset: 0;
+    z-index: 1000000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.94);
+    padding: 20px;
+    box-sizing: border-box;
+}
+#mega-videostream-portal-player.is-open { display: flex; }
+.mega-videostream-portal__window {
+    width: min(1200px,100%);
+    max-height: 95vh;
+    display: flex;
+    flex-direction: column;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 25px 80px rgba(0,0,0,.65);
+}
+.mega-videostream-portal__topbar {
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 14px;
+    background: #111;
+    color: #fff;
+}
+.mega-videostream-portal__title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 16px;
+    font-weight: 600;
+}
+.mega-videostream-portal__close {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,.10);
+    color: #fff;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+}
+.mega-videostream-portal__video {
+    display: block;
+    width: 100%;
+    max-height: calc(95vh - 50px);
+    aspect-ratio: 16 / 9;
+    background: #000;
+    object-fit: contain;
+}
+@media (max-width:700px) {
+    #mega-videostream-portal-player { padding:0; }
+    .mega-videostream-portal__window {
+        width:100%; height:100%; max-height:100%; border-radius:0;
+    }
+    .mega-videostream-portal__video {
+        flex:1; min-height:0; max-height:none; aspect-ratio:auto;
+        height:calc(100% - 50px);
+    }
+}
+`;
+
+        document.head.appendChild(style);
+        document.body.appendChild(overlay);
+
+        const video = overlay.querySelector('.mega-videostream-portal__video');
+        const title = overlay.querySelector('.mega-videostream-portal__title');
+        const close = overlay.querySelector('.mega-videostream-portal__close');
+        const backdrop = overlay.querySelector('.mega-videostream-portal__backdrop');
+
+        close.addEventListener('click', stop);
+        backdrop.addEventListener('click', stop);
+
+        player = { overlay, video, title };
+        return player;
+    }
+
+    async function stop() {
+        activeRun++;
+
+        try { videoStream?.destroy?.(); } catch (error) { log('Destroy:', error); }
+        videoStream = null;
+        megaFile = null;
+
+        if (player?.video) {
+            try {
+                player.video.pause();
+                player.video.removeAttribute('src');
+                player.video.load();
+            } catch {}
+        }
+
+        if (player?.overlay) {
+            player.overlay.classList.remove('is-open');
+            player.overlay.setAttribute('aria-hidden', 'true');
+        }
+
+        document.body.classList.remove('video-player-open');
+    }
+
+    async function start(drama) {
         const url = typeof drama?.video_url === 'string' ? drama.video_url.trim() : '';
         if (!url || !/^https:\/\/(?:www\.)?mega\.(?:nz|co\.nz)\//i.test(url)) return false;
 
-        if (window.playerState?.open) {
-            try { closePlayer(playerState.playerElements, playerState.playerElements.video); } catch {}
-        }
-
-        crearReproductor();
-        installFullscreenCss();
-
-        const elements = playerState.playerElements;
-        const video = elements.video;
         const token = ++activeRun;
+        await stop();
+        activeRun = token;
 
-        playerState.open = true;
-        playerState.loading = true;
-        playerState.stopped = false;
-        playerState.drama = drama;
-        playerState.playbackStarted = false;
-
-        elements.titulo.textContent = drama.title || '';
-        elements.progress.value = '0';
-        elements.time.textContent = '0:00 / 0:00';
-        elements.status.textContent = 'MEGA · CONECTANDO';
-        elements.loadingMessage.textContent = 'Conectando con MEGA...';
-        elements.loading.classList.remove('is-hidden');
-        elements.reproductor.classList.add('is-open');
-        elements.reproductor.setAttribute('aria-hidden', 'false');
+        const current = createPortalPlayer();
+        current.title.textContent = drama.title || '';
+        current.overlay.classList.add('is-open');
+        current.overlay.setAttribute('aria-hidden', 'false');
         document.body.classList.add('video-player-open');
+
+        const v = current.video;
+        v.controls = true;
+        v.playsInline = true;
+        v.preload = 'auto';
 
         if (typeof registrarVista === 'function') {
             registrarVista(drama).then(resultado => {
@@ -296,70 +252,53 @@
                 drama.period_views = resultado.period_views;
                 drama.top_period_start = resultado.top_period_start;
                 drama.top_period_views = resultado.top_period_views;
-                if (typeof actualizarVistasTarjeta === 'function') actualizarVistasTarjeta(drama, resultado.views);
+                if (typeof actualizarVistasTarjeta === 'function') {
+                    actualizarVistasTarjeta(drama, resultado.views);
+                }
             }).catch(() => {});
         }
 
-        video.crossOrigin = 'anonymous';
-        video.preload = 'auto';
-        video.controls = false;
-        wireControls(elements, video);
-        updateControls(elements, video);
-
         try {
+            log('Cargando MEGA VideoStream…');
             const VS = await loadVideoStream();
             if (token !== activeRun) return true;
-            megaFile = await loadMegaFile(url);
+
+            megaFile = await loadMega(url);
             if (token !== activeRun) return true;
 
             const adapter = makeFileAdapter(megaFile, token);
-            videoStream = new VS(adapter, video, {});
-            video.load();
+            log('Creando VideoStream(adapter, HTMLMediaElement, opts={})…');
+            videoStream = new VS(adapter, v, {});
 
-            elements.status.textContent = 'MEGA · LISTO';
-            elements.loadingMessage.textContent = 'Listo para reproducir.';
+            v.load();
+            log('VideoStream creado correctamente. No se usa Blob ni iframe.');
 
-            try {
-                await video.play();
-                playerState.playbackStarted = true;
-                elements.loading.classList.add('is-hidden');
-                updateControls(elements, video);
-            } catch {
-                elements.loading.classList.add('is-hidden');
-                elements.status.textContent = 'MEGA · LISTO — pulsa PLAY';
-                updateControls(elements, video);
-            }
-
-            console.log('[MEGA VIDEOSTREAM] Motor E activado:', drama.title);
+            try { await v.play(); } catch {}
             return true;
         } catch (error) {
-            console.error('[MEGA VIDEOSTREAM] Error:', error);
-            elements.status.textContent = 'MEGA · ERROR';
-            elements.loadingMessage.textContent = `No se pudo reproducir el vídeo. ${error?.message || error}`;
-            elements.loading.classList.remove('is-hidden');
-            try { videoStream?.destroy?.(); } catch {}
-            videoStream = null;
-            megaFile = null;
-            return false;
+            console.error('[MOTOR E] ERROR DE INICIALIZACIÓN:', error);
+            if (token === activeRun) {
+                try { v.pause(); v.removeAttribute('src'); v.load(); } catch {}
+                const message = document.createElement('div');
+                message.style.cssText = 'position:absolute;inset:50px 0 0;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;color:#fff;text-align:center;background:#000;z-index:2;';
+                message.textContent = `No se pudo iniciar el vídeo: ${error?.message || error}`;
+                current.overlay.querySelector('.mega-videostream-portal__window').appendChild(message);
+            }
+            return true;
         }
     }
 
-    window.__microDramasMegaVideoStream = {
-        start: startMegaVideoStream,
-        stop: () => {
-            if (window.playerState?.playerElements) closePlayer(playerState.playerElements, playerState.playerElements.video);
+    window.__microDramasMegaVideoStream = { start, stop };
+
+    /* Reemplazo completo: jamás se llama al reproductor anterior. */
+    window.reproducirDrama = async function (drama) {
+        try {
+            const handled = await start(drama);
+            if (handled) return;
+        } catch (error) {
+            console.error('[MOTOR E] Error:', error);
         }
     };
 
-    const original = window.reproducirDrama;
-    if (typeof original === 'function') {
-        window.reproducirDrama = async function (drama) {
-            try {
-                if (await startMegaVideoStream(drama)) return;
-            } catch (error) {
-                console.warn('[MEGA VIDEOSTREAM] Fallback al reproductor anterior:', error);
-            }
-            return original(drama);
-        };
-    }
+    window.detenerReproductor = stop;
 })();

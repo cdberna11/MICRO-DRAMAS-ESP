@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow, noarchive">
   <title>MEGA-TEST · Player MEGA</title>
-  <link rel="stylesheet" href="./test.css?v=5">
+  <link rel="stylesheet" href="./test.css?v=6">
 </head>
 <body>
 <main class="lab">
   <header class="hero">
     <span class="badge">MEGA-TEST · LABORATORIO AISLADO</span>
-    <h1>Prueba del reproductor MEGA</h1>
-    <p>Esta página prueba exclusivamente el reproductor oficial de MEGA en computadora y teléfono. No modifica el reproductor de producción.</p>
+    <h1>Prueba del motor de reproducción</h1>
+    <p>Esta página prueba exclusivamente el reproductor oficial de MEGA. Los motores alternativos se prueban en un laboratorio separado, sin tocar producción.</p>
   </header>
 
   <section class="panel">
@@ -24,14 +24,13 @@
         </select>
       </label>
     </div>
-
     <div class="actions">
       <button id="btn-open" class="primary" type="button">▶ CARGAR VÍDEO</button>
       <button id="btn-stop" type="button">■ CERRAR</button>
+      <a class="secondary-link" href="./engine-test.html">⚙️ Probar Vidstack / Shaka</a>
     </div>
-
     <div class="status" id="status">Selecciona un vídeo y pulsa «CARGAR VÍDEO».</div>
-    <div class="mobile-help">📱 <strong>Modo móvil:</strong> el reproductor se mantiene en formato horizontal 16:9 aunque el teléfono esté en vertical. Toca el vídeo para mostrar los controles de MEGA. Después prueba SEEK hacia delante y atrás y pantalla completa.</div>
+    <div class="mobile-help">📱 <strong>Modo móvil:</strong> el reproductor se mantiene en formato horizontal 16:9. Toca el vídeo para mostrar los controles de MEGA y prueba SEEK hacia delante y atrás.</div>
   </section>
 
   <section class="player-card">
@@ -42,7 +41,6 @@
       </div>
       <span id="cache-state" class="pill">SIN CARGAR</span>
     </div>
-
     <div class="video-wrap" id="video-wrap">
       <div id="video-placeholder" class="video-placeholder">
         <div class="placeholder-icon">▶</div>
@@ -51,10 +49,7 @@
       </div>
       <iframe id="mega-frame" title="Player oficial de MEGA" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen webkitallowfullscreen></iframe>
     </div>
-
-    <div class="test-note">
-      <strong>SEEK:</strong> utiliza directamente la barra del reproductor MEGA. Prueba 5, 10, 20, 40 y 60 minutos, además de moverla hacia atrás.
-    </div>
+    <div class="test-note"><strong>SEEK:</strong> utiliza directamente la barra del reproductor MEGA. Prueba 5, 10, 20, 40 y 60 minutos, además de moverla hacia atrás.</div>
   </section>
 
   <section class="panel tests">
@@ -62,12 +57,12 @@
     <ol>
       <li>Comprobar reproducción en computadora.</li>
       <li>Comprobar reproducción en teléfono en formato horizontal 16:9.</li>
-      <li>Comprobar que aparecen PLAY/PAUSE y el resto de controles.</li>
+      <li>Comprobar PLAY/PAUSE y el resto de controles.</li>
       <li>Arrastrar la barra hacia 5, 10, 20, 40 y 60 minutos.</li>
       <li>Arrastrar nuevamente hacia atrás.</li>
       <li>Entrar en pantalla completa y comprobar PLAY/PAUSE + SEEK.</li>
     </ol>
-    <div class="warning"><strong>Importante:</strong> aquí utilizamos únicamente el Player oficial de MEGA. La prueba A de descarga completa queda eliminada porque no es adecuada para vídeos de varios GB ni para teléfonos.</div>
+    <div class="warning"><strong>Importante:</strong> esta página conserva únicamente el Player oficial de MEGA como referencia. La prueba A de descarga completa queda eliminada.</div>
   </section>
 
   <section class="logs panel">
@@ -75,6 +70,6 @@
     <pre id="log">Inicializando laboratorio…</pre>
   </section>
 </main>
-<script src="./test.js?v=5"></script>
+<script src="./test.js?v=6"></script>
 </body>
 </html>

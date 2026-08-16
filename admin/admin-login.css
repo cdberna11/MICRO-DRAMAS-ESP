@@ -23,7 +23,15 @@ body {
     box-shadow: 0 24px 70px rgba(0, 0, 0, .45);
 }
 .admin-login-brand { text-align: center; margin-bottom: 24px; }
-.admin-login-brand img { width: min(250px, 75%); max-height: 72px; object-fit: contain; border-radius: 8px; }
+.admin-login-brand img {
+    width: min(250px, 75%);
+    max-height: 72px;
+    object-fit: contain;
+    border-radius: 8px;
+    /* Desvanece los bordes negros del arte para integrarlo con el fondo. */
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 42%, rgba(0,0,0,.92) 57%, transparent 82%);
+    mask-image: radial-gradient(ellipse at center, #000 42%, rgba(0,0,0,.92) 57%, transparent 82%);
+}
 .admin-login-heading { text-align: center; }
 .admin-login-badge {
     display: inline-block;

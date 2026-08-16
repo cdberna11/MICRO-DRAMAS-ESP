@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>MEGA-TEST · Vidstack vs Shaka</title>
+  <link rel="stylesheet" href="./engine-test.css?v=1">
+  <link rel="stylesheet" href="https://cdn.vidstack.io/player/theme.css">
+  <link rel="stylesheet" href="https://cdn.vidstack.io/player/video.css">
+  <script type="importmap">{"imports":{"" : ""}}</script>
+  <script src="https://cdn.vidstack.io/player" type="module"></script>
+  <script src="https://cdn.jsdelivr.net/npm/shaka-player@5.1.2/dist/shaka-player.ui.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@5.1.2/dist/controls.css">
+</head>
+<body>
+<main class="engine-lab">
+  <header>
+    <a href="./index_test.html">← Volver al Player MEGA</a>
+    <span class="badge">MOTOR LAB · SIN PRODUCCIÓN</span>
+    <h1>Vidstack vs Shaka Player</h1>
+    <p>Primero probamos los motores por separado. Todavía no copiamos la interfaz final ni tocamos el reproductor de producción.</p>
+  </header>
+
+  <section class="panel source-panel">
+    <h2>Fuente de referencia</h2>
+    <select id="mega-source">
+      <option value="video1">Vídeo MEGA 1 · 5 GB aprox.</option>
+      <option value="video2">Vídeo MEGA 2</option>
+    </select>
+    <button id="probe-mega">Comprobar MEGAJS + metadatos</button>
+    <div id="mega-status" class="status">No se ha comprobado la fuente MEGA.</div>
+    <small>Esta comprobación no descarga el vídeo completo. Solo verifica que MEGAJS puede abrir el enlace y leer sus atributos.</small>
+  </section>
+
+  <section class="engine-grid">
+    <article class="engine-card">
+      <div class="engine-head">
+        <div><span class="tag">MOTOR C1</span><h2>Vidstack</h2></div>
+        <span id="vidstack-state" class="state">SIN PROBAR</span>
+      </div>
+      <p>Prueba el motor/provider HTML5 de Vidstack con una fuente MP4 de referencia. El objetivo de esta primera fase es validar el player, SEEK y manejo del elemento video antes de conectarlo a MEGA.</p>
+      <media-player id="vidstack-player" title="Vidstack engine test" load="eager" controls>
+        <media-provider></media-provider>
+        <media-video-layout></media-video-layout>
+      </media-player>
+      <button id="run-vidstack">▶ Probar Vidstack</button>
+      <pre id="vidstack-log">Esperando prueba…</pre>
+    </article>
+
+    <article class="engine-card">
+      <div class="engine-head">
+        <div><span class="tag">MOTOR C2</span><h2>Shaka Player</h2></div>
+        <span id="shaka-state" class="state">SIN PROBAR</span>
+      </div>
+      <p>Prueba Shaka con un stream MPEG-DASH de referencia. Shaka está diseñado alrededor de HLS/DASH + MSE/EME; esta prueba nos permite validar su motor antes de estudiar el adaptador MEGA.</p>
+      <div class="shaka-wrap" data-shaka-player-container>
+        <video id="shaka-video" data-shaka-player playsinline></video>
+      </div>
+      <button id="run-shaka">▶ Probar Shaka</button>
+      <pre id="shaka-log">Esperando prueba…</pre>
+    </article>
+  </section>
+
+  <section class="panel verdict">
+    <h2>Qué estamos intentando demostrar</h2>
+    <ol>
+      <li>Vidstack: reproducción, SEEK y estabilidad del elemento HTML5.</li>
+      <li>Shaka: reproducción DASH, buffering y SEEK.</li>
+      <li>MEGAJS: acceso por chunks y lectura por rangos sin descargar los 5 GB completos. MEGAJS documenta que <code>download()</code> admite <code>start</code>/<code>end</code> y descargas por chunks.</li>
+      <li>Después de estas pruebas, construiremos el adaptador MEGA → MSE que sea necesario y conectaremos cada motor al mismo flujo.</li>
+    </ol>
+    <div class="important"><strong>Importante:</strong> una URL <code>mega.nz/file/...</code> no es un manifiesto HLS/DASH. Por eso no voy a fingir que Shaka puede consumirla directamente. Shaka permite plugins de manifest y de red personalizados; esa será la segunda fase si el motor base supera esta prueba.</div>
+  </section>
+</main>
+<script src="./engine-test.js?v=1"></script>
+</body>
+</html>

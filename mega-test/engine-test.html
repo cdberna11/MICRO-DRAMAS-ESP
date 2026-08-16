@@ -4,70 +4,79 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow, noarchive">
-  <title>MEGA-TEST · Motores reales con MEGA</title>
-  <link rel="stylesheet" href="./engine-test.css?v=2">
+  <title>MEGA-TEST · Motor Vidstack + MEGA / Shaka + MEGA</title>
+  <link rel="stylesheet" href="./engine-test.css?v=3">
   <link rel="stylesheet" href="https://cdn.vidstack.io/player/theme.css">
   <link rel="stylesheet" href="https://cdn.vidstack.io/player/video.css">
-  <script src="https://cdn.vidstack.io/player" type="module"></script>
-  <script src="https://cdn.jsdelivr.net/npm/shaka-player@5.1.2/dist/shaka-player.compiled.js"></script>
+  <script type="module" src="https://cdn.vidstack.io/player"></script>
+  <script src="https://cdn.jsdelivr.net/npm/shaka-player@5.1.2/dist/shaka-player.ui.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@5.1.2/dist/controls.css">
 </head>
 <body>
 <main class="engine-lab">
   <header>
     <a href="./index_test.html">← Volver al Player MEGA</a>
     <span class="badge">MOTOR LAB · SIN PRODUCCIÓN</span>
-    <h1>Vidstack vs Shaka · MEGA real</h1>
-    <p>Ahora los dos experimentos usan los mismos enlaces reales de MEGA. No se descarga el archivo completo para preparar la prueba.</p>
+    <h1>Motor real: Vidstack + MEGA</h1>
+    <p>Ahora sí probamos el archivo MEGA real de 5+ GB mediante MEGAJS + MP4Box + MediaSource. Shaka queda preparado como segundo candidato.</p>
   </header>
 
   <section class="panel source-panel">
-    <h2>Vídeo MEGA</h2>
+    <h2>Vídeo MEGA real</h2>
     <select id="mega-source">
-      <option value="video1">Vídeo 1 · MEGA</option>
+      <option value="video1">Vídeo 1 · EL PROXIMO SOLSTICIO.mp4 · 5.29 GB</option>
       <option value="video2">Vídeo 2 · MEGA</option>
     </select>
-    <div class="source-url" id="source-label"></div>
-    <div class="status" id="mega-status">Selecciona un motor para comenzar.</div>
+    <div id="source-label" class="url-label"></div>
+    <div class="actions">
+      <button id="probe-mega">Comprobar MEGA + rango</button>
+      <button id="run-vidstack" class="primary">▶ Iniciar Vidstack + MEGA</button>
+      <button id="stop-vidstack">■ Detener</button>
+    </div>
+    <div id="mega-status" class="status">Listo.</div>
   </section>
 
-  <section class="engine-grid">
-    <article class="engine-card">
-      <div class="engine-head">
-        <div><span class="tag">MOTOR C1</span><h2>Vidstack + MEGA</h2></div>
-        <span id="vidstack-state" class="state">SIN PROBAR</span>
-      </div>
-      <p>Intento experimental: MEGAJS + MP4Box/MSE alimentando un elemento controlado por Vidstack. El objetivo es comprobar el motor con el archivo grande real.</p>
-      <media-player id="vidstack-player" title="Vidstack + MEGA" load="eager" controls>
-        <media-provider></media-provider>
-        <media-video-layout></media-video-layout>
-      </media-player>
-      <button id="run-vidstack">▶ Probar Vidstack con MEGA</button>
-      <pre id="vidstack-log">Esperando prueba…</pre>
-    </article>
+  <section class="engine-card featured">
+    <div class="engine-head">
+      <div><span class="tag">MOTOR C1 · PRINCIPAL</span><h2>Vidstack + MEGAJS + MP4Box + MSE</h2></div>
+      <span id="vidstack-state" class="state">SIN PROBAR</span>
+    </div>
+    <p>Este es el experimento real. No crea un Blob de 5 GB. Lee rangos de MEGA, los entrega a MP4Box y alimenta un MediaSource que controla Vidstack.</p>
+    <media-player id="vidstack-player" title="Microdrama MEGA" load="idle" controls playsinline>
+      <media-provider></media-provider>
+      <media-video-layout></media-video-layout>
+    </media-player>
+    <div class="engine-metrics">
+      <span>Duración: <b id="duration">—</b></span>
+      <span>Descargado: <b id="downloaded">0 MB</b></span>
+      <span>Rangos: <b id="ranges">0</b></span>
+      <span>Buffer: <b id="buffered">0 s</b></span>
+    </div>
+    <pre id="vidstack-log">Esperando prueba…</pre>
+  </section>
 
-    <article class="engine-card">
-      <div class="engine-head">
-        <div><span class="tag">MOTOR C2</span><h2>Shaka + MEGA</h2></div>
-        <span id="shaka-state" class="state">SIN PROBAR</span>
-      </div>
-      <p>Intento experimental: Shaka no consume directamente una URL <code>mega.nz/file</code>. Por eso esta prueba intenta primero descubrir los atributos/rangos disponibles en MEGA y prepara el punto de integración para un adaptador.</p>
-      <div class="shaka-wrap"><video id="shaka-video" playsinline controls></video></div>
-      <button id="run-shaka">▶ Probar Shaka con MEGA</button>
-      <pre id="shaka-log">Esperando prueba…</pre>
-    </article>
+  <section class="engine-card">
+    <div class="engine-head">
+      <div><span class="tag">MOTOR C2 · SEGUNDO CANDIDATO</span><h2>Shaka + MEGA</h2></div>
+      <span id="shaka-state" class="state">PENDIENTE</span>
+    </div>
+    <p>Shaka no puede consumir directamente un enlace mega.nz/file. Lo dejamos preparado para la fase de adaptador cuando terminemos la prueba real de Vidstack.</p>
+    <video id="shaka-video" controls playsinline></video>
+    <button id="run-shaka">▶ Analizar Shaka + MEGA</button>
+    <pre id="shaka-log">Pendiente.</pre>
   </section>
 
   <section class="panel verdict">
-    <h2>Regla de esta prueba</h2>
+    <h2>Objetivo de esta fase</h2>
     <ol>
-      <li>Se utilizan los dos enlaces MEGA proporcionados para las pruebas reales.</li>
-      <li>No se crea un Blob de 5 GB.</li>
-      <li>Si Vidstack consigue reproducir mediante MSE, probaremos SEEK largo y repetido.</li>
-      <li>Shaka será evaluado con el mismo origen MEGA; si necesita un adaptador de manifest/red, lo implementaremos en una segunda iteración.</li>
+      <li>Reproducir el vídeo real sin descargar los 5.29 GB.</li>
+      <li>Confirmar que MP4Box puede generar segmentos compatibles con MSE.</li>
+      <li>Comprobar que Vidstack controla correctamente el elemento de vídeo.</li>
+      <li>Después probar SEEK remoto. Si Vidstack supera esta fase, será nuestro candidato principal.</li>
     </ol>
-    <div class="important"><strong>Importante:</strong> no vamos a declarar ganador a un motor usando un vídeo de demostración distinto. El ganador para MICRO-DRAMAS-ESP tiene que funcionar con nuestros archivos reales de MEGA.</div>
+    <div class="important"><strong>Nota:</strong> el primer arranque puede tardar unos segundos porque el laboratorio necesita obtener la estructura MP4. No se descargará el archivo completo.</div>
   </section>
 </main>
-<script src="./engine-test.js?v=2"></script>
+<script src="./engine-test.js?v=3"></script>
 </body>
 </html>

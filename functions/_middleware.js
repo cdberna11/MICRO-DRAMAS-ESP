@@ -6,11 +6,10 @@ export async function onRequest(context) {
     const pathname = url.pathname;
     const db = context.env.DB;
 
-    /*
-       1) El login administrativo y sus recursos mínimos deben poder abrirse
-          sin autenticación para que un usuario pueda iniciar sesión.
-    */
+    // El acceso oficial sigue siendo /admin. La pantalla de login vive fuera
+    // de /admin para evitar que el middleware pueda redirigirla sobre sí misma.
     const rutasPublicasAdmin = new Set([
+        "/admin-login.html",
         "/admin/login.html",
         "/admin/admin-login.js",
         "/admin/admin-login.css"
@@ -20,12 +19,7 @@ export async function onRequest(context) {
         return context.next();
     }
 
-    /*
-       2) Todo /api/admin/* requiere una cuenta con role=admin.
-          Se conserva temporalmente la cookie legacy microdramas_session=1
-          para no romper el acceso administrativo existente mientras se
-          asigna el primer administrador desde la pantalla de usuarios.
-    */
+    // Toda API administrativa exige una sesión con role=admin.
     if (pathname === "/api/admin" || pathname.startsWith("/api/admin/")) {
         if (!db) {
             return Response.json({ success: false, error: "La base de datos no está disponible." }, { status: 500 });
@@ -51,12 +45,11 @@ export async function onRequest(context) {
         });
     }
 
-    /*
-       3) Todo el portal /admin/* requiere role=admin.
-    */
+    // /admin es la ruta canónica del panel. Un usuario no autenticado va al
+    // login público fuera de /admin; un administrador entra directamente.
     if (pathname === "/admin" || pathname.startsWith("/admin/")) {
         if (!db) {
-            return Response.redirect(new URL("/admin/login.html", request.url), 302);
+            return Response.redirect(new URL("/admin-login.html", request.url), 302);
         }
 
         try {
@@ -67,21 +60,12 @@ export async function onRequest(context) {
             console.error("Error comprobando acceso al panel administrativo:", error);
         }
 
-        return Response.redirect(new URL("/admin/login.html", request.url), 302);
+        return Response.redirect(new URL("/admin-login.html", request.url), 302);
     }
 
-    /*
-       4) La cartelera pública mantiene su comportamiento actual:
-          sesión legacy o cuenta de usuario autenticada.
-    */
-    const rutasProtegidas = [
-        "/",
-        "/index.html"
-    ];
-
-    if (!rutasProtegidas.includes(pathname)) {
-        return context.next();
-    }
+    // La cartelera pública mantiene su comportamiento actual.
+    const rutasProtegidas = ["/", "/index.html"];
+    if (!rutasProtegidas.includes(pathname)) return context.next();
 
     const legacyCookies = request.headers.get("Cookie") || "";
     const legacySession = legacyCookies
@@ -100,8 +84,5 @@ export async function onRequest(context) {
         }
     }
 
-    return Response.redirect(
-        new URL("/portal", request.url),
-        302
-    );
+    return Response.redirect(new URL("/portal", request.url), 302);
 }

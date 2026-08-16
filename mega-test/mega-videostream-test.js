@@ -4,7 +4,7 @@ const MEGA_URLS={
 };
 
 const MEGAJS_URL='https://unpkg.com/megajs/dist/main.browser-es.mjs';
-const VIDEOSTREAM_URL='https://esm.sh/videostream@5.7.0?bundle';
+const VIDEOSTREAM_URL='https://esm.sh/gh/meganz/videostream@master';
 const $=id=>document.getElementById(id);
 
 let VideoStreamClass=null;
@@ -25,11 +25,12 @@ function updateUrl(){$('source-url').textContent=url()}
 
 async function loadVideoStream(){
   if(VideoStreamClass)return VideoStreamClass;
-  log('Cargando MEGA VideoStream 5.7.0 desde npm/ESM…');
+  log('Cargando MEGA VideoStream oficial desde GitHub mediante ESM.sh…');
   const mod=await import(VIDEOSTREAM_URL);
   VideoStreamClass=mod.default||mod.VideoStream||mod;
-  if(typeof VideoStreamClass!=='function')throw new Error('No se pudo obtener la clase VideoStream 5.7.0.');
-  log('VideoStream 5.7.0 cargado correctamente.');
+  log(`Export recibido: ${typeof VideoStreamClass} ${VideoStreamClass?.name||''}`);
+  if(typeof VideoStreamClass!=='function')throw new Error('VideoStream no devolvió una función/clase desde el bundle de GitHub.');
+  log('VideoStream oficial cargado correctamente.');
   return VideoStreamClass;
 }
 
@@ -44,26 +45,26 @@ async function loadMega(){
 }
 
 function makeFileAdapter(file,token){
-  const adapter={
+  return {
     filesize:Number(file.size||0),
     size:Number(file.size||0),
     name:file.name,
     createReadStream(opts={}){
       if(token!==activeRun)throw new Error('Prueba cancelada.');
       const start=Math.max(0,Number.isFinite(opts.start)?opts.start:0);
-      const endInclusive=Number.isFinite(opts.end)?opts.end:null;
+      const end=Number.isFinite(opts.end)?opts.end:null;
       const megaOptions={start};
-      if(endInclusive!==null)megaOptions.end=endInclusive+1;
+      if(end!==null)megaOptions.end=end;
       requestCount++;
-      log(`MEGA RANGE #${requestCount}: ${start.toLocaleString()} → ${(endInclusive===null?'EOF':endInclusive.toLocaleString())} (${endInclusive===null?'abierto':formatBytes(endInclusive-start+1)}).`);
+      const requestId=requestCount;
+      log(`MEGA RANGE #${requestId}: ${start.toLocaleString()} → ${(end===null?'EOF':end.toLocaleString())}.`);
       const stream=file.download(megaOptions);
       stream.on('data',chunk=>{downloadedBytes+=chunk?.byteLength||chunk?.length||0;updateMetrics()});
-      stream.on('end',()=>log(`Rango #${requestCount} finalizado. Total recibido: ${formatBytes(downloadedBytes)}.`));
-      stream.on('error',err=>log(`Rango #${requestCount} ERROR: ${err?.message||err}`));
+      stream.on('end',()=>log(`Rango #${requestId} finalizado. Total recibido: ${formatBytes(downloadedBytes)}.`));
+      stream.on('error',err=>log(`Rango #${requestId} ERROR: ${err?.message||err}`));
       return stream;
     }
   };
-  return adapter;
 }
 
 async function start(){
@@ -78,17 +79,20 @@ async function start(){
     if(token!==activeRun)return;
     megaFile=file;
     const adapter=makeFileAdapter(file,token);
-    const mode=$('stream-mode').value;
     const opts={};
-    if(mode==='video-only')opts.videoOnly=true;
+    log('Creando VideoStream(fileAdapter, HTMLMediaElement)…');
     videoStream=new VS(adapter,v,opts);
     v.preload='auto';
     v.load();
     $('state').textContent='LISTO';
     status('VideoStream conectado. Pulsa PLAY; los rangos aparecerán en el diagnóstico.');
-    log('VideoStream creado sobre un adaptador MEGAJS. No se usa Blob ni se descarga el archivo completo.');
-    try{await v.play();log('Solicitud de reproducción iniciada desde el botón del laboratorio.')}catch(e){log(`Autoplay bloqueado: ${e.message||e}. Pulsa PLAY en el reproductor.`)}
-  }catch(e){$('state').textContent='ERROR';status(`ERROR · ${e?.message||e}`);log(`ERROR: ${e?.stack||e}`)}
+    log('VideoStream creado. No se usa Blob ni iframe.');
+  }catch(e){
+    $('state').textContent='ERROR';
+    status(`ERROR · ${e?.message||e}`);
+    log(`ERROR: ${e?.stack||e}`);
+    if(videoStream?.detailedError)log(`VideoStream detailedError: ${videoStream.detailedError?.stack||videoStream.detailedError?.message||videoStream.detailedError}`);
+  }
 }
 
 async function stop(clear=true){
@@ -109,7 +113,7 @@ async function probe(){
     const stream=file.download({start:0,end});
     await new Promise((resolve,reject)=>{stream.on('data',c=>bytes+=c?.byteLength||c?.length||0);stream.on('error',reject);stream.on('end',resolve)});
     status(`MEGA + rango OK · ${formatBytes(bytes)} recibidos sin descargar el archivo completo.`);
-    log(`Prueba de rango independiente: 0 → ${end-1}; recibidos ${formatBytes(bytes)}.`);
+    log(`Prueba de rango independiente: 0 → ${end}; recibidos ${formatBytes(bytes)}.`);
   }catch(e){status(`MEGA ERROR · ${e.message||e}`);log(`Probe ERROR: ${e?.stack||e}`)}
 }
 
@@ -136,5 +140,5 @@ $('video').addEventListener('waiting',()=>log(`BUFFERING: ${formatTime($('video'
 $('video').addEventListener('playing',()=>log(`▶ PLAYING: ${formatTime($('video').currentTime)}.`));
 $('video').addEventListener('seeking',()=>log(`SEEKING: ${formatTime($('video').currentTime)}.`));
 $('video').addEventListener('seeked',()=>log(`SEEKED: ${formatTime($('video').currentTime)}.`));
-$('video').addEventListener('error',()=>{const e=$('video').error;log(`HTML5 ERROR: code=${e?.code||'?'}, message=${e?.message||'sin detalle'}`)});
-updateUrl();log('Laboratorio Motor E listo. Fuente real: MEGA + VideoStream 5.7.0.');
+$('video').addEventListener('error',()=>{const e=$('video').error;log(`HTML5 ERROR: code=${e?.code||'?'}, message=${e?.message||'sin detalle'}`);if(videoStream?.detailedError)log(`VideoStream detailedError: ${videoStream.detailedError?.stack||videoStream.detailedError?.message||videoStream.detailedError}`)});
+updateUrl();log('Laboratorio Motor E listo. Fuente real: MEGA + VideoStream oficial 5.7.0.');

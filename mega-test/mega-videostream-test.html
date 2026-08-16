@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>MEGA-TEST · VideoStream 5.7 + MEGA</title>
+  <link rel="stylesheet" href="./mega-videostream-test.css?v=1">
+</head>
+<body>
+<main class="lab">
+  <header>
+    <a href="./engine-test.html">← Volver al laboratorio de motores</a>
+    <span class="badge">MOTOR E · MEGA VIDEOSTREAM OFICIAL</span>
+    <h1>MEGA VideoStream + MEGAJS</h1>
+    <p>Prueba directa del motor <b>meganz/videostream 5.7.0</b> sobre nuestros archivos reales de MEGA. Sin Blob de 5 GB y sin iframe.</p>
+  </header>
+
+  <section class="panel">
+    <div class="grid">
+      <label>Vídeo
+        <select id="source">
+          <option value="video1">Vídeo 1 · EL PROXIMO SOLSTICIO.mp4 · 5.29 GB</option>
+          <option value="video2">Vídeo 2 · MEGA</option>
+        </select>
+      </label>
+      <label>Tipo de prueba
+        <select id="stream-mode">
+          <option value="normal">VideoStream normal</option>
+          <option value="video-only">VideoStream sin audio (diagnóstico)</option>
+        </select>
+      </label>
+    </div>
+    <div id="source-url" class="url"></div>
+    <div class="actions">
+      <button id="start" class="primary">▶ Iniciar VideoStream</button>
+      <button id="stop">■ Detener</button>
+      <button id="probe">Comprobar rango MEGA</button>
+    </div>
+    <div id="status" class="status">Listo.</div>
+  </section>
+
+  <section class="player-card">
+    <div class="head">
+      <div><span class="tag">PRUEBA REAL</span><h2>HTML5 + MEGA VideoStream</h2></div>
+      <span id="state" class="state">SIN PROBAR</span>
+    </div>
+    <video id="video" controls playsinline preload="auto"></video>
+    <div class="metrics">
+      <span>Duración: <b id="duration">—</b></span>
+      <span>Posición: <b id="position">0:00</b></span>
+      <span>Buffer: <b id="buffer">—</b></span>
+      <span>Descargado: <b id="downloaded">0 MB</b></span>
+    </div>
+  </section>
+
+  <section class="panel tests">
+    <h2>Prueba de SEEK</h2>
+    <p>Primero deja que el vídeo empiece. Después utiliza la barra nativa para saltar directamente a posiciones lejanas. Estos botones solo ayudan a repetir el ensayo.</p>
+    <div class="seek-buttons">
+      <button data-seek="300">+5 min</button>
+      <button data-seek="600">+10 min</button>
+      <button data-seek="1200">+20 min</button>
+      <button data-seek="2400">+40 min</button>
+      <button data-seek="3600">+60 min</button>
+      <button data-seek="-300">−5 min</button>
+    </div>
+    <div class="important"><b>Objetivo:</b> comprobar que el propio VideoStream pide nuevos rangos cuando hacemos SEEK, igual que el reproductor de MEGA.</div>
+  </section>
+
+  <section class="panel">
+    <h2>Diagnóstico</h2>
+    <pre id="log">Esperando prueba…</pre>
+  </section>
+</main>
+<script type="module" src="./mega-videostream-test.js?v=1"></script>
+</body>
+</html>

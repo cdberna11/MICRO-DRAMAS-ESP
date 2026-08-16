@@ -24,6 +24,7 @@ export async function onRequestPost(context) {
     try {
         await ensureUserSchema(db);
         const body = await context.request.json();
+        const adminOnly = body?.adminOnly === true;
         const { type, value } = normalizeIdentifier(body?.identifier);
         const hasPin = Object.prototype.hasOwnProperty.call(body || {}, "pin");
 
@@ -37,10 +38,15 @@ export async function onRequestPost(context) {
         if (!row) return json({ success: false, error: "No encontramos una cuenta con ese correo o teléfono." }, 404);
         if (row.auth_provider === "google") return json({ success: false, code: "GOOGLE_ACCOUNT", error: "Esta cuenta utiliza Google. Inicia sesión con Google." }, 409);
 
+        if (adminOnly && String(row.role || "user").toLowerCase() !== "admin") {
+            return json({ success: false, code: "ADMIN_REQUIRED", error: "Esta cuenta no tiene permisos de administrador." }, 403);
+        }
+
         if (!hasPin) {
             return json({
                 success: true,
                 requiresPin: true,
+                adminOnly,
                 user: {
                     id: row.id,
                     email: row.email,
@@ -49,7 +55,8 @@ export async function onRequestPost(context) {
                     avatar: row.avatar,
                     profileCompleted: Boolean(row.profile_completed),
                     authMethod: row.auth_method,
-                    authProvider: row.auth_provider || "local"
+                    authProvider: row.auth_provider || "local",
+                    role: row.role || "user"
                 }
             });
         }
@@ -73,7 +80,8 @@ export async function onRequestPost(context) {
                 avatar: row.avatar,
                 profileCompleted: Boolean(row.profile_completed),
                 authMethod: row.auth_method,
-                authProvider: row.auth_provider || "local"
+                authProvider: row.auth_provider || "local",
+                role: row.role || "user"
             }
         }, 200, { "Set-Cookie": buildSessionCookie(session.sessionId) });
     } catch (error) {

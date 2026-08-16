@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/admin/github-status.css">
     <link rel="stylesheet" href="/admin/sticky-layout.css">
     <link rel="stylesheet" href="/admin/users-admin.css">
+    <link rel="stylesheet" href="/admin/users-admin-role.css?v=1">
 </head>
 <body>
 
@@ -186,13 +187,13 @@
                     <header class="users-modal__header">
                         <div>
                             <h3 id="titulo-modal-usuarios">Administrar usuarios</h3>
-                            <p>Consulta las cuentas registradas sin mostrar contraseñas ni PIN.</p>
+                            <p>Consulta las cuentas registradas sin mostrar contraseñas ni PIN. Desde <strong>Rol</strong> puedes conceder o retirar permisos de administrador.</p>
                         </div>
                         <button type="button" id="boton-cerrar-modal-usuarios" class="users-modal__close" aria-label="Cerrar" title="Cerrar">×</button>
                     </header>
 
                     <div class="users-modal__toolbar">
-                        <small>Datos visibles: nombre, correo, teléfono, método de acceso y fechas.</small>
+                        <small>Datos visibles: nombre, correo, teléfono, método de acceso, rol y fechas.</small>
                         <div class="admin-panel__actions">
                             <button id="boton-recargar-usuarios" class="button button--secondary" type="button">Actualizar</button>
                             <button id="boton-eliminar-usuarios" class="button button--danger" type="button" disabled>Eliminar seleccionados</button>
@@ -264,6 +265,7 @@
     <script src="/admin/github-status.js" defer></script>
     <script src="/admin/admin-enhancements.js" defer></script>
     <script src="/admin/users-admin.js" defer></script>
+    <script src="/admin/users-admin-role.js?v=1" defer></script>
 
 </body>
 </html>

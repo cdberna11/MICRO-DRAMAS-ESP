@@ -1,13 +1,6 @@
 "use strict";
 
-/*
- * Login administrativo en dos pasos:
- * 1) correo/teléfono
- * 2) PIN de 4 dígitos
- *
- * Se inicializa después de que el DOM esté disponible para que funcione
- * correctamente también en navegadores móviles y con caché agresiva.
- */
+/* Login administrativo en dos pasos: correo/teléfono + PIN. */
 
 (function inicializarLoginAdmin() {
     function init() {
@@ -49,13 +42,11 @@
         function mostrarPasoPin(user) {
             identifierStep.hidden = true;
             pinStep.hidden = false;
-
             if (userBox) {
                 userBox.textContent = user?.displayName
                     ? `${user.displayName} · ${user.email || user.phone || identifier}`
                     : identifier;
             }
-
             pinInput.value = "";
             window.setTimeout(() => pinInput.focus(), 50);
         }
@@ -71,7 +62,6 @@
         async function fetchLogin(payload) {
             const controller = new AbortController();
             const timeout = window.setTimeout(() => controller.abort(), 15000);
-
             try {
                 const response = await fetch("/api/auth/login", {
                     method: "POST",
@@ -85,24 +75,16 @@
                     },
                     body: JSON.stringify(payload)
                 });
-
                 const raw = await response.text();
                 let data = {};
-
                 try {
                     data = raw ? JSON.parse(raw) : {};
                 } catch {
-                    throw new Error(
-                        `El servidor respondió con un formato inesperado (HTTP ${response.status}).`
-                    );
+                    throw new Error(`El servidor respondió con un formato inesperado (HTTP ${response.status}).`);
                 }
-
                 if (!response.ok || !data.success) {
-                    throw new Error(
-                        data.error || `No se pudo comprobar la cuenta (HTTP ${response.status}).`
-                    );
+                    throw new Error(data.error || `No se pudo comprobar la cuenta (HTTP ${response.status}).`);
                 }
-
                 return data;
             } catch (error) {
                 if (error?.name === "AbortError") {
@@ -115,28 +97,18 @@
         }
 
         async function iniciarPasoIdentificador(event) {
-            if (event) event.preventDefault();
-
+            event?.preventDefault();
             identifier = String(identifierInput.value || "").trim();
             if (!identifier) {
                 mostrarMensaje("Introduce tu correo electrónico o teléfono.");
                 identifierInput.focus();
                 return;
             }
-
             setBusy(continueButton, true, "Comprobando...");
             mostrarMensaje("");
-
             try {
-                const data = await fetchLogin({
-                    identifier,
-                    adminOnly: true
-                });
-
-                if (!data.user) {
-                    throw new Error("No se recibió la información de la cuenta.");
-                }
-
+                const data = await fetchLogin({ identifier, adminOnly: true });
+                if (!data.user) throw new Error("No se recibió la información de la cuenta.");
                 mostrarPasoPin(data.user);
             } catch (error) {
                 console.error("Error en primer paso del login administrativo:", error);
@@ -146,31 +118,36 @@
             }
         }
 
-        async function completarLogin(event) {
-            if (event) event.preventDefault();
+        function esDispositivoMovil() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+                || (window.matchMedia && window.matchMedia("(max-width: 760px)").matches);
+        }
 
+        async function completarLogin(event) {
+            event?.preventDefault();
             const pin = String(pinInput.value || "").trim();
             if (!/^\d{4}$/.test(pin)) {
                 mostrarMensaje("Introduce el PIN de 4 dígitos de tu cuenta.");
                 pinInput.focus();
                 return;
             }
-
             setBusy(submitPinButton, true, "Entrando...");
             mostrarMensaje("");
-
             try {
-                const data = await fetchLogin({
-                    identifier,
-                    pin,
-                    adminOnly: true
-                });
-
+                const data = await fetchLogin({ identifier, pin, adminOnly: true });
                 if (String(data.user?.role || "user").toLowerCase() !== "admin") {
                     throw new Error("La cuenta no tiene permisos de administrador.");
                 }
 
-                window.location.replace("/admin/?login=20260819");
+                // /admin/* está protegido además por Cloudflare Access.
+                // En móvil usamos una ruta paralela protegida por la misma sesión
+                // D1, evitando el segundo login de Cloudflare Access. Escritorio
+                // conserva exactamente la ruta /admin que ya funciona.
+                const destino = esDispositivoMovil()
+                    ? "/admin-movil/?login=20260819"
+                    : "/admin/?login=20260819";
+
+                window.location.replace(destino);
             } catch (error) {
                 console.error("Error en segundo paso del login administrativo:", error);
                 mostrarMensaje(error?.message || "No se pudo iniciar sesión.");
@@ -181,11 +158,8 @@
 
         form.addEventListener("submit", event => {
             event.preventDefault();
-            if (pinStep.hidden) {
-                iniciarPasoIdentificador(event);
-            } else {
-                completarLogin(event);
-            }
+            if (pinStep.hidden) iniciarPasoIdentificador(event);
+            else completarLogin(event);
         });
 
         backButton?.addEventListener("click", event => {
@@ -197,7 +171,6 @@
             pinInput.value = pinInput.value.replace(/\D/g, "").slice(0, 4);
         });
 
-        // Evita el envío nativo del formulario en móviles si se pulsa Enter.
         identifierInput.addEventListener("keydown", event => {
             if (event.key === "Enter") {
                 event.preventDefault();

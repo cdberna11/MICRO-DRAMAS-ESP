@@ -1,13 +1,20 @@
 import { clearSessionCookie, getCookie, SESSION_COOKIE } from "../../lib/user-auth.js";
 
-function json(data, status = 200, extraHeaders = {}) {
-    return Response.json(data, {
+function buildResponse(data, status = 200) {
+    const headers = new Headers({
+        "Cache-Control": "no-store",
+        "Content-Type": "application/json; charset=utf-8"
+    });
+
+    headers.append("Set-Cookie", clearSessionCookie());
+    headers.append(
+        "Set-Cookie",
+        "microdramas_session=; Path=/; Max-Age=0; SameSite=Lax"
+    );
+
+    return new Response(JSON.stringify(data), {
         status,
-        headers: {
-            "Cache-Control": "no-store",
-            "Content-Type": "application/json; charset=utf-8",
-            ...extraHeaders
-        }
+        headers
     });
 }
 
@@ -22,30 +29,18 @@ export async function onRequestPost(context) {
                 .run();
         }
 
-        return json(
-            { success: true },
-            200,
-            {
-                "Set-Cookie": [
-                    clearSessionCookie(),
-                    "microdramas_session=; Path=/; Max-Age=0; SameSite=Lax"
-                ]
-            }
-        );
+        return buildResponse({ success: true });
     } catch (error) {
         console.error("Error al cerrar sesión:", error);
 
         // Aunque la limpieza de la sesión en D1 falle, se elimina la cookie
         // del navegador para impedir que el panel continúe usando la sesión.
-        return json(
-            { success: false, error: "No se pudo cerrar completamente la sesión." },
-            500,
+        return buildResponse(
             {
-                "Set-Cookie": [
-                    clearSessionCookie(),
-                    "microdramas_session=; Path=/; Max-Age=0; SameSite=Lax"
-                ]
-            }
+                success: false,
+                error: "No se pudo cerrar completamente la sesión."
+            },
+            500
         );
     }
 }

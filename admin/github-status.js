@@ -71,11 +71,6 @@
             detalle.textContent =
                 `Repositorio: ${resultado.repository}`;
 
-            const dias =
-                Number.isInteger(resultado.daysRemaining)
-                    ? resultado.daysRemaining
-                    : calcularDiasRestantes(fechaActualPanamaISO(), FECHA_EXPIRACION_POR_DEFECTO);
-
             const fechaISO =
                 /^\d{4}-\d{2}-\d{2}$/.test(String(resultado.expiresAt || ""))
                     ? resultado.expiresAt
@@ -83,6 +78,12 @@
 
             const fecha =
                 formatearFecha(fechaISO);
+
+            const dias =
+                calcularDiasRestantes(
+                    fechaActualPanamaISO(),
+                    fechaISO
+                );
 
             if (Number.isInteger(dias) && fecha) {
                 expiracion.textContent =

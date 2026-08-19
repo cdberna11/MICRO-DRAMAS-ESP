@@ -218,47 +218,24 @@ document.addEventListener("DOMContentLoaded", inicializarMejorasAdmin);
 
 /* =========================================================
    CORRECCIÓN AISLADA — REFRESCAR DESPUÉS DE CREAR
-   =========================================================
-
-   admin.js ya guarda correctamente el microdrama y muestra
-   "Microdrama guardado correctamente.".
-
-   No modificamos el flujo de guardado existente.
-   Solamente observamos ese mensaje de éxito y refrescamos
-   la página cuando se trata de un NUEVO microdrama.
-
-   Las ediciones existentes y las demás acciones del panel
-   permanecen sin cambios.
 ========================================================= */
 
 function inicializarRefrescoDespuesDeGuardar() {
-
-    const mensaje =
-        document.getElementById("mensaje-admin");
-
-    if (!mensaje) {
-        return;
-    }
+    const mensaje = document.getElementById("mensaje-admin");
+    if (!mensaje) return;
 
     const observer = new MutationObserver(() => {
-
-        const texto =
-            String(mensaje.textContent || "").trim();
-
+        const texto = String(mensaje.textContent || "").trim();
         const esExitoNuevo =
             texto === "Microdrama guardado correctamente." &&
             mensaje.hidden === false;
 
-        if (!esExitoNuevo) {
-            return;
-        }
+        if (!esExitoNuevo) return;
 
         observer.disconnect();
-
         setTimeout(() => {
             window.location.reload();
         }, 150);
-
     });
 
     observer.observe(mensaje, {
@@ -273,4 +250,74 @@ function inicializarRefrescoDespuesDeGuardar() {
 document.addEventListener(
     "DOMContentLoaded",
     inicializarRefrescoDespuesDeGuardar
+);
+
+
+/* =========================================================
+   SALIR DEL PANEL ADMINISTRATIVO
+   El botón se agrega junto a las acciones existentes.
+   Cierra la sesión en D1, elimina las cookies y vuelve
+   a la pantalla de acceso administrativo.
+========================================================= */
+
+async function cerrarSesionAdministrativa() {
+    const boton = document.getElementById("boton-salir-admin");
+    if (!boton || boton.disabled) return;
+
+    const confirmar = window.confirm("¿Deseas cerrar la sesión administrativa?");
+    if (!confirmar) return;
+
+    boton.disabled = true;
+    boton.textContent = "Saliendo...";
+
+    try {
+        const respuesta = await fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Accept": "application/json"
+            },
+            cache: "no-store"
+        });
+
+        const resultado = await respuesta.json().catch(() => ({}));
+
+        if (!respuesta.ok || !resultado.success) {
+            throw new Error(
+                resultado.error ||
+                "No se pudo cerrar la sesión."
+            );
+        }
+
+        window.location.replace("/admin-login.html");
+    } catch (error) {
+        console.error("Error al cerrar sesión administrativa:", error);
+        boton.disabled = false;
+        boton.textContent = "Salir";
+        window.alert(
+            error.message ||
+            "No se pudo cerrar la sesión. Inténtalo nuevamente."
+        );
+    }
+}
+
+function inicializarBotonSalirAdmin() {
+    const acciones = document.querySelector(".admin-panel__actions");
+    if (!acciones || document.getElementById("boton-salir-admin")) return;
+
+    const boton = document.createElement("button");
+    boton.id = "boton-salir-admin";
+    boton.type = "button";
+    boton.className = "button button--secondary button--logout";
+    boton.textContent = "Salir";
+    boton.title = "Cerrar sesión administrativa";
+    boton.setAttribute("aria-label", "Cerrar sesión administrativa");
+    boton.addEventListener("click", cerrarSesionAdministrativa);
+
+    acciones.appendChild(boton);
+}
+
+document.addEventListener(
+    "DOMContentLoaded",
+    inicializarBotonSalirAdmin
 );

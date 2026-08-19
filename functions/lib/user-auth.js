@@ -1,7 +1,7 @@
 const SESSION_COOKIE = "md_user_session";
 const SESSION_MAX_AGE = 60 * 60 * 3;
 const PASSWORD_HASH_ITERATIONS = 10000;
-const OWNER_ADMIN_EMAIL = "christopherbernal11@gmail.com";
+const OWNER_ADMIN_EMAIL = "cristopherbernal11@gmail.com";
 
 function bytesToHex(bytes) {
     return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
@@ -114,6 +114,7 @@ export async function ensureUserSchema(db) {
     await db.prepare(`UPDATE user_sessions SET last_activity_at = CURRENT_TIMESTAMP WHERE last_activity_at = ''`).run();
 
     // Cuenta propietaria del proyecto: se eleva automáticamente a administrador.
+    // Debe coincidir exactamente con la cuenta administrativa existente.
     // Esto no crea una cuenta nueva ni modifica contraseña/PIN ni ningún otro dato.
     await db.prepare(`UPDATE users SET role = 'admin', updated_at = CURRENT_TIMESTAMP WHERE lower(email) = ?`).bind(OWNER_ADMIN_EMAIL).run();
 

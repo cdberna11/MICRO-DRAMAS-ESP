@@ -74,7 +74,7 @@
             const dias =
                 Number.isInteger(resultado.daysRemaining)
                     ? resultado.daysRemaining
-                    : calcularDiasRestantes(FECHA_EXPIRACION_POR_DEFECTO);
+                    : calcularDiasRestantes(fechaActualPanamaISO(), FECHA_EXPIRACION_POR_DEFECTO);
 
             const fechaISO =
                 /^\d{4}-\d{2}-\d{2}$/.test(String(resultado.expiresAt || ""))
@@ -112,25 +112,62 @@
         }
     }
 
-    function calcularDiasRestantes(fechaISO) {
+    function calcularDiasRestantes(fechaInicioISO, fechaExpiracionISO) {
 
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fechaISO || ""))) {
+        if (
+            !/^\d{4}-\d{2}-\d{2}$/.test(String(fechaInicioISO || "")) ||
+            !/^\d{4}-\d{2}-\d{2}$/.test(String(fechaExpiracionISO || ""))
+        ) {
             return null;
         }
 
-        const fecha =
-            new Date(`${fechaISO}T23:59:59Z`);
+        const inicio =
+            new Date(`${fechaInicioISO}T00:00:00Z`);
 
-        if (Number.isNaN(fecha.getTime())) {
+        const expiracion =
+            new Date(`${fechaExpiracionISO}T00:00:00Z`);
+
+        if (
+            Number.isNaN(inicio.getTime()) ||
+            Number.isNaN(expiracion.getTime())
+        ) {
             return null;
         }
 
         return Math.max(
             0,
             Math.ceil(
-                (fecha.getTime() - Date.now()) / 86400000
+                (expiracion.getTime() - inicio.getTime()) / 86400000
             )
         );
+    }
+
+    function fechaActualPanamaISO() {
+
+        const partes =
+            new Intl.DateTimeFormat(
+                "en-CA",
+                {
+                    timeZone: "America/Panama",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit"
+                }
+            ).formatToParts(new Date());
+
+        const valores = {};
+
+        partes.forEach(parte => {
+            if (parte.type !== "literal") {
+                valores[parte.type] = parte.value;
+            }
+        });
+
+        if (!valores.year || !valores.month || !valores.day) {
+            return "";
+        }
+
+        return `${valores.year}-${valores.month}-${valores.day}`;
     }
 
     function formatearFecha(valor) {

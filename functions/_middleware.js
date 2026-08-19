@@ -6,8 +6,8 @@ export async function onRequest(context) {
     const pathname = url.pathname;
     const db = context.env.DB;
 
-    // El acceso oficial sigue siendo /admin. La pantalla de login vive fuera
-    // de /admin para evitar que el middleware pueda redirigirla sobre sí misma.
+    // El acceso oficial de escritorio sigue siendo /admin.
+    // El login vive fuera de /admin para evitar el bloqueo de Cloudflare Access.
     const rutasPublicasAdmin = new Set([
         "/admin-login.html",
         "/admin/login.html",
@@ -45,9 +45,16 @@ export async function onRequest(context) {
         });
     }
 
-    // /admin es la ruta canónica del panel. Un usuario no autenticado va al
-    // login público fuera de /admin; un administrador entra directamente.
-    if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    // Escritorio: /admin (sin cambios funcionales).
+    // Móvil: /admin-movil, fuera de la aplicación Cloudflare Access.
+    // Ambos utilizan exactamente la misma sesión administrativa D1.
+    const esPanelAdmin =
+        pathname === "/admin" ||
+        pathname.startsWith("/admin/") ||
+        pathname === "/admin-movil" ||
+        pathname.startsWith("/admin-movil/");
+
+    if (esPanelAdmin) {
         if (!db) {
             return Response.redirect(new URL("/admin-login.html", request.url), 302);
         }

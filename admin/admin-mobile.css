@@ -1,0 +1,224 @@
+/* =========================================================
+   PANEL ADMINISTRATIVO — EXPERIENCIA MÓVIL
+   Adaptación visual/responsive sin modificar la lógica existente.
+========================================================= */
+
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+    touch-action: manipulation;
+}
+
+@media (max-width: 760px) {
+
+    .admin-header__content {
+        min-height: auto;
+        padding: 16px;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .admin-header h1 {
+        font-size: 22px;
+    }
+
+    .admin-header__label {
+        font-size: 11px;
+    }
+
+    .admin-header__content > .button {
+        width: 100%;
+    }
+
+    .admin-main {
+        padding: 12px;
+    }
+
+    .admin-panel {
+        border-radius: 12px;
+    }
+
+    .admin-panel__heading {
+        position: static;
+        padding: 18px 14px;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .admin-panel__heading h2 {
+        font-size: 19px;
+    }
+
+    .admin-panel__heading p {
+        font-size: 13px;
+    }
+
+    .admin-panel__actions {
+        width: 100%;
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-panel__actions .button {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .github-status {
+        margin: 12px 14px 10px;
+    }
+
+    .admin-message,
+    .loading-state,
+    .empty-state,
+    .admin-form-container,
+    .admin-search {
+        margin-left: 14px;
+        margin-right: 14px;
+    }
+
+    .admin-form-container {
+        padding: 16px;
+    }
+
+    .admin-form {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+    }
+
+    .form-group--full-width {
+        grid-column: auto;
+    }
+
+    .form-group--checkbox {
+        padding-top: 0;
+    }
+
+    .admin-form-actions {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+
+    .admin-form-actions .button {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .admin-search {
+        padding: 12px;
+        position: static;
+    }
+
+    .admin-search__input {
+        min-height: 46px;
+        font-size: 16px;
+    }
+
+    .table-container {
+        width: 100%;
+        overflow-x: auto !important;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    .admin-table {
+        min-width: 1050px;
+        table-layout: fixed;
+    }
+
+    .admin-table thead th {
+        position: static;
+    }
+
+    .admin-table th,
+    .admin-table td {
+        padding: 9px 8px;
+        font-size: 12px;
+    }
+
+    .admin-table td:last-child .button--edit,
+    .admin-table td:last-child .button--publish {
+        min-width: 76px;
+        min-height: 38px;
+        padding: 8px 10px;
+    }
+
+    .admin-table input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+
+    .category-modal {
+        padding: 12px;
+    }
+
+    .category-modal__dialog {
+        width: min(100%, 440px);
+        max-height: calc(100vh - 24px);
+        overflow-y: auto;
+    }
+
+    .category-modal__actions {
+        flex-direction: column-reverse;
+    }
+
+    .category-modal__actions .button {
+        width: 100%;
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .admin-main {
+        padding: 8px;
+    }
+
+    .admin-header__content {
+        padding: 14px 12px;
+    }
+
+    .admin-panel__heading {
+        padding: 16px 12px;
+    }
+
+    .admin-panel__heading h2 {
+        font-size: 18px;
+    }
+
+    .github-status,
+    .admin-message,
+    .loading-state,
+    .empty-state,
+    .admin-form-container,
+    .admin-search {
+        margin-left: 12px;
+        margin-right: 12px;
+    }
+
+    .admin-form-container {
+        padding: 14px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+
+    .form-group textarea {
+        min-height: 120px;
+    }
+}

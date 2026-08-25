@@ -5,8 +5,8 @@
  * No depende de /admin/admin.js ni modifica el panel de escritorio.
  */
 (function () {
-    const API_DRAMAS = "/api/admin/dramas";
-    const API_PUBLICAR = "/api/admin/publish";
+    const API_DRAMAS = "/api/admin-movil/dramas";
+    const API_PUBLICAR = "/api/admin-movil/publish";
     const API_LOGOUT = "/api/auth/logout";
 
     let dramas = [];
@@ -47,8 +47,9 @@
 
     function formatearFecha(valor) {
         if (!valor) return "—";
-        const fecha = new Date(String(valor).replace(" ", "T") + (String(valor).includes("Z") ? "" : "Z"));
-        if (Number.isNaN(fecha.getTime())) return String(valor);
+        const texto = String(valor);
+        const fecha = new Date(texto.includes("T") ? texto : texto.replace(" ", "T") + (texto.includes("Z") ? "" : "Z"));
+        if (Number.isNaN(fecha.getTime())) return texto;
         return new Intl.DateTimeFormat("es-PA", {
             dateStyle: "short",
             timeStyle: "short"
@@ -134,7 +135,7 @@
         const contenedorBusqueda = $("contenedor-busqueda");
         const resultado = $("resultado-busqueda");
 
-        if (!lista || !tabla || !vacio || !carga || !contenedorBusqueda) return;
+        if (!lista || !tabla || !vacio || !carga || !contenedorBusqueda || !resultado) return;
 
         const termino = normalizar(busqueda);
         const filtrados = termino
@@ -150,7 +151,7 @@
             : dramas;
 
         carga.hidden = true;
-        contenedorBusqueda.hidden = dramas.length === 0;
+        contenedorBusqueda.hidden = false;
         resultado.textContent = termino
             ? `Mostrando ${filtrados.length} de ${dramas.length} microdramas.`
             : `${dramas.length} microdramas`;
@@ -260,12 +261,6 @@
 
             const datos = await respuesta.json().catch(() => ({}));
 
-            /*
-             * El endpoint elimina la cookie aunque D1 reporte un error.
-             * Por eso, igual que el panel de escritorio, una respuesta HTTP
-             * recibida permite volver al login. Solo un fallo de red real
-             * debe dejar al usuario en el panel móvil.
-             */
             if (!respuesta.ok && datos.success !== false) {
                 throw new Error(datos.error || "No se pudo cerrar la sesión.");
             }

@@ -244,10 +244,12 @@
     async function cerrarSesion() {
         const boton = $("boton-salir-admin");
         if (!boton || boton.disabled) return;
+
         if (!window.confirm("¿Deseas cerrar la sesión administrativa?")) return;
 
         boton.disabled = true;
         boton.textContent = "Saliendo...";
+
         try {
             const respuesta = await fetch(API_LOGOUT, {
                 method: "POST",
@@ -255,15 +257,25 @@
                 headers: { Accept: "application/json" },
                 cache: "no-store"
             });
+
             const datos = await respuesta.json().catch(() => ({}));
-            if (!respuesta.ok || !datos.success) {
+
+            /*
+             * El endpoint elimina la cookie aunque D1 reporte un error.
+             * Por eso, igual que el panel de escritorio, una respuesta HTTP
+             * recibida permite volver al login. Solo un fallo de red real
+             * debe dejar al usuario en el panel móvil.
+             */
+            if (!respuesta.ok && datos.success !== false) {
                 throw new Error(datos.error || "No se pudo cerrar la sesión.");
             }
-            window.location.replace("/admin-login.html");
+
+            window.location.replace("/admin-login.html?logout=20260825-mobile");
         } catch (error) {
+            console.error("Error al cerrar sesión móvil:", error);
             boton.disabled = false;
             boton.textContent = "Salir";
-            window.alert(error.message || "No se pudo cerrar la sesión.");
+            window.alert(error.message || "No se pudo cerrar la sesión. Inténtalo nuevamente.");
         }
     }
 

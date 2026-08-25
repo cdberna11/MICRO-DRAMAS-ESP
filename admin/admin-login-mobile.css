@@ -1,0 +1,4 @@
+/* Capa exclusiva del login móvil. No contiene reglas para escritorio. */
+@media (max-width: 520px) {
+    .admin-mobile-pin { display: block !important; }
+}

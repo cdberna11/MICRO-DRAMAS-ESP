@@ -5,8 +5,8 @@
  * 1) correo/teléfono
  * 2) PIN de 4 dígitos
  *
- * Este archivo vive en la raíz del sitio para quedar fuera de cualquier
- * protección de Cloudflare Access aplicada a /admin/*.
+ * El flujo de autenticación es compartido.
+ * La animación visual del PIN se activa únicamente en dispositivos móviles.
  */
 
 (function inicializarLoginAdmin() {
@@ -32,6 +32,17 @@
 
         let identifier = "";
         let solicitudEnCurso = false;
+        const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+            || Boolean(window.matchMedia && window.matchMedia("(max-width: 760px)").matches);
+
+        const mobilePin = {
+            container: document.getElementById("admin-mobile-pin"),
+            status: document.getElementById("admin-mobile-pin-status"),
+            cards: Array.from(document.querySelectorAll(".admin-mobile-pin-card")),
+            dots: Array.from(document.querySelectorAll("#admin-mobile-pin-dots span")),
+            inputs: Array.from(document.querySelectorAll("[data-pin-mobile]")),
+            enabled: false
+        };
 
         function mostrarMensaje(texto) {
             if (!message) return;
@@ -50,6 +61,133 @@
             }
         }
 
+        function actualizarPinMovil() {
+            if (!mobilePin.enabled) return;
+            const value = String(pinInput.value || "").replace(/\D/g, "").slice(0, 4);
+            pinInput.value = value;
+
+            mobilePin.cards.forEach((card, index) => {
+                card.classList.toggle("is-filled", index < value.length);
+                card.classList.toggle("is-current", index === value.length && value.length < 4);
+                card.classList.remove("is-complete");
+            });
+            mobilePin.dots.forEach((dot, index) => {
+                dot.classList.toggle("is-filled", index < value.length);
+                dot.classList.remove("is-success");
+            });
+
+            mobilePin.container?.classList.remove("is-validating", "is-success", "complete");
+            mobilePin.status?.classList.remove("is-complete", "is-validating", "is-success");
+
+            if (value.length === 4) {
+                mobilePin.cards.forEach(card => card.classList.add("is-complete"));
+                mobilePin.container?.classList.add("complete");
+                mobilePin.status?.classList.add("is-complete");
+                if (mobilePin.status) mobilePin.status.textContent = "PIN completo";
+            } else {
+                if (mobilePin.status) mobilePin.status.textContent = value.length ? "Ingresa tu PIN" : "Ingresa tu PIN";
+            }
+        }
+
+        function inicializarPinMovil() {
+            if (!esMovil || !mobilePin.container || mobilePin.inputs.length !== 4) return;
+            mobilePin.enabled = true;
+            actualizarPinMovil();
+
+            mobilePin.inputs.forEach((input, index) => {
+                input.addEventListener("focus", () => {
+                    if (mobilePin.enabled && index !== Math.min(pinInput.value.length, 3)) {
+                        const target = mobilePin.inputs[Math.min(pinInput.value.length, 3)];
+                        target?.focus();
+                    }
+                });
+
+                input.addEventListener("input", () => {
+                    const digits = String(input.value || "").replace(/\D/g, "");
+                    if (!digits) {
+                        input.value = "";
+                        actualizarPinMovil();
+                        return;
+                    }
+
+                    const before = String(pinInput.value || "").slice(0, index);
+                    const nextValue = (before + digits.charAt(0)).slice(0, 4);
+                    pinInput.value = nextValue;
+                    mobilePin.inputs.forEach((item, itemIndex) => {
+                        item.value = nextValue.charAt(itemIndex) || "";
+                    });
+                    actualizarPinMovil();
+
+                    const nextIndex = Math.min(nextValue.length, 3);
+                    if (nextValue.length < 4) mobilePin.inputs[nextIndex]?.focus();
+                    else input.blur();
+                });
+
+                input.addEventListener("keydown", event => {
+                    if (event.key === "Backspace" && !input.value && index > 0) {
+                        const nextValue = String(pinInput.value || "").slice(0, index - 1);
+                        pinInput.value = nextValue;
+                        mobilePin.inputs.forEach((item, itemIndex) => {
+                            item.value = nextValue.charAt(itemIndex) || "";
+                        });
+                        actualizarPinMovil();
+                        mobilePin.inputs[index - 1]?.focus();
+                        event.preventDefault();
+                    }
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        completarLogin(event);
+                    }
+                });
+
+                input.addEventListener("paste", event => {
+                    event.preventDefault();
+                    const pasted = String(event.clipboardData?.getData("text") || "").replace(/\D/g, "").slice(0, 4);
+                    if (!pasted) return;
+                    pinInput.value = pasted;
+                    mobilePin.inputs.forEach((item, itemIndex) => {
+                        item.value = pasted.charAt(itemIndex) || "";
+                    });
+                    actualizarPinMovil();
+                    if (pasted.length < 4) mobilePin.inputs[pasted.length]?.focus();
+                    else mobilePin.inputs[3]?.blur();
+                });
+            });
+        }
+
+        function prepararPinMovil() {
+            if (!mobilePin.enabled) return;
+            mobilePin.inputs.forEach(input => { input.value = ""; });
+            pinInput.value = "";
+            mobilePin.container?.classList.remove("shake", "complete", "is-validating", "is-success");
+            mobilePin.status?.classList.remove("is-complete", "is-validating", "is-success");
+            if (mobilePin.status) mobilePin.status.textContent = "Ingresa tu PIN";
+            actualizarPinMovil();
+            window.setTimeout(() => mobilePin.inputs[0]?.focus(), 120);
+        }
+
+        function mostrarEstadoPinMovil(estado) {
+            if (!mobilePin.enabled) return;
+            mobilePin.container?.classList.remove("shake", "complete", "is-validating", "is-success");
+            mobilePin.status?.classList.remove("is-complete", "is-validating", "is-success");
+
+            if (estado === "validating") {
+                mobilePin.container?.classList.add("is-validating");
+                mobilePin.status?.classList.add("is-validating");
+                if (mobilePin.status) mobilePin.status.textContent = "Verificando PIN...";
+            } else if (estado === "success") {
+                mobilePin.container?.classList.add("is-success");
+                mobilePin.status?.classList.add("is-success");
+                mobilePin.cards.forEach(card => card.classList.add("is-complete"));
+                mobilePin.dots.forEach(dot => dot.classList.add("is-success"));
+                if (mobilePin.status) mobilePin.status.textContent = "Acceso correcto";
+            } else if (estado === "error") {
+                mobilePin.container?.classList.add("shake");
+                if (mobilePin.status) mobilePin.status.textContent = "PIN incorrecto";
+                window.setTimeout(() => prepararPinMovil(), 500);
+            }
+        }
+
         function mostrarPasoPin(user) {
             identifierStep.hidden = true;
             pinStep.hidden = false;
@@ -62,8 +200,9 @@
 
             pinInput.value = "";
             mostrarMensaje("");
+            prepararPinMovil();
 
-            window.setTimeout(() => pinInput.focus(), 100);
+            if (!mobilePin.enabled) window.setTimeout(() => pinInput.focus(), 100);
         }
 
         function volverIdentificador() {
@@ -71,6 +210,12 @@
             identifierStep.hidden = false;
             pinInput.value = "";
             mostrarMensaje("");
+            if (mobilePin.enabled) {
+                mobilePin.inputs.forEach(input => { input.value = ""; });
+                mobilePin.container?.classList.remove("shake", "complete", "is-validating", "is-success");
+                mobilePin.status?.classList.remove("is-complete", "is-validating", "is-success");
+                if (mobilePin.status) mobilePin.status.textContent = "Ingresa tu PIN";
+            }
             window.setTimeout(() => identifierInput.focus(), 50);
         }
 
@@ -136,18 +281,10 @@
             mostrarMensaje("Comprobando la cuenta...");
 
             try {
-                const data = await fetchLogin({
-                    identifier,
-                    adminOnly: true
-                });
+                const data = await fetchLogin({ identifier, adminOnly: true });
 
-                if (!data.user) {
-                    throw new Error("No se recibió la información de la cuenta.");
-                }
-
-                if (data.requiresPin !== true) {
-                    throw new Error("La cuenta no está disponible para validación con PIN.");
-                }
+                if (!data.user) throw new Error("No se recibió la información de la cuenta.");
+                if (data.requiresPin !== true) throw new Error("La cuenta no está disponible para validación con PIN.");
 
                 mostrarPasoPin(data.user);
             } catch (error) {
@@ -159,11 +296,6 @@
             }
         }
 
-        function esDispositivoMovil() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-                || Boolean(window.matchMedia && window.matchMedia("(max-width: 760px)").matches);
-        }
-
         async function completarLogin(event) {
             event?.preventDefault();
             event?.stopPropagation();
@@ -172,33 +304,38 @@
 
             const pin = String(pinInput.value || "").trim();
             if (!/^\d{4}$/.test(pin)) {
+                if (mobilePin.enabled) mobilePin.container?.classList.add("shake");
                 mostrarMensaje("Introduce el PIN de 4 dígitos de tu cuenta.");
-                pinInput.focus();
+                if (mobilePin.enabled) mobilePin.inputs[Math.min(pin.length, 3)]?.focus();
+                else pinInput.focus();
                 return;
             }
 
             solicitudEnCurso = true;
             setBusy(submitPinButton, true, "Entrando...");
             mostrarMensaje("Validando PIN...");
+            mostrarEstadoPinMovil("validating");
 
             try {
-                const data = await fetchLogin({
-                    identifier,
-                    pin,
-                    adminOnly: true
-                });
+                const data = await fetchLogin({ identifier, pin, adminOnly: true });
 
                 if (String(data.user?.role || "user").toLowerCase() !== "admin") {
                     throw new Error("La cuenta no tiene permisos de administrador.");
                 }
 
-                const destino = esDispositivoMovil()
+                if (mobilePin.enabled) {
+                    mostrarEstadoPinMovil("success");
+                    await new Promise(resolve => window.setTimeout(resolve, 520));
+                }
+
+                const destino = esMovil
                     ? "/admin-movil/?login=20260825"
                     : "/admin/?login=20260825";
 
                 window.location.replace(destino);
             } catch (error) {
                 console.error("Error en segundo paso del login administrativo:", error);
+                mostrarEstadoPinMovil("error");
                 mostrarMensaje(error?.message || "No se pudo iniciar sesión.");
             } finally {
                 solicitudEnCurso = false;
@@ -207,11 +344,8 @@
         }
 
         form.addEventListener("submit", event => {
-            if (pinStep.hidden) {
-                iniciarPasoIdentificador(event);
-            } else {
-                completarLogin(event);
-            }
+            if (pinStep.hidden) iniciarPasoIdentificador(event);
+            else completarLogin(event);
         });
 
         backButton?.addEventListener("click", event => {
@@ -221,6 +355,10 @@
 
         pinInput.addEventListener("input", () => {
             pinInput.value = pinInput.value.replace(/\D/g, "").slice(0, 4);
+            if (mobilePin.enabled) {
+                mobilePin.inputs.forEach((input, index) => { input.value = pinInput.value.charAt(index) || ""; });
+                actualizarPinMovil();
+            }
         });
 
         identifierInput.addEventListener("keydown", event => {
@@ -237,6 +375,7 @@
             }
         });
 
+        inicializarPinMovil();
         identifierInput.focus();
     }
 

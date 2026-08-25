@@ -36,16 +36,9 @@
         .admin-login-catalog { display: block; margin-top: 22px; text-align: center; color: #aeb8c8; text-decoration: none; font-size: 14px; }
         .admin-login-catalog:hover { color: #fff; }
         .admin-mobile-pin { display: none; }
-        @media (max-width: 520px) {
-            .admin-login-page { padding: 14px; }
-            .admin-login-card { width: min(100%, 460px); padding: 24px 20px; border-radius: 16px; }
-            .admin-login-brand { margin-bottom: 20px; }
-            .admin-login-brand img { width: min(220px, 78%); max-height: 64px; }
-            .admin-login-heading h1 { font-size: 26px; }
-            .admin-login-heading p { font-size: 13px; margin-bottom: 22px; }
-            .admin-login-form input, .admin-login-button, .admin-login-secondary { min-height: 50px; }
-        }
+        @media (max-width: 520px) { .admin-login-page { padding: 14px; } .admin-login-card { width: min(100%, 460px); padding: 24px 20px; border-radius: 16px; } .admin-login-brand { margin-bottom: 20px; } .admin-login-brand img { width: min(220px, 78%); max-height: 64px; } .admin-login-heading h1 { font-size: 26px; } .admin-login-heading p { font-size: 13px; margin-bottom: 22px; } .admin-login-form input, .admin-login-button, .admin-login-secondary { min-height: 50px; } }
     </style>
+    <link rel="stylesheet" href="/admin/admin-login-mobile.css?v=20260825-1" media="(max-width: 520px)">
 </head>
 <body>
     <main class="admin-login-page">
@@ -60,7 +53,6 @@
                 </div>
                 <div id="admin-step-pin" hidden>
                     <div class="admin-login-user" id="admin-login-user"></div>
-
                     <div class="admin-mobile-pin" id="admin-mobile-pin" aria-label="PIN de 4 dígitos">
                         <div class="admin-mobile-pin-status" id="admin-mobile-pin-status">Ingresa tu PIN</div>
                         <div class="admin-mobile-pin-orbit" aria-hidden="true">
@@ -75,11 +67,8 @@
                             <input type="text" maxlength="1" inputmode="numeric" tabindex="-1" data-pin-mobile="2" autocomplete="off">
                             <input type="text" maxlength="1" inputmode="numeric" tabindex="-1" data-pin-mobile="3" autocomplete="off">
                         </div>
-                        <div class="admin-mobile-pin-dots" id="admin-mobile-pin-dots" aria-hidden="true">
-                            <span></span><span></span><span></span><span></span>
-                        </div>
+                        <div class="admin-mobile-pin-dots" id="admin-mobile-pin-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
                     </div>
-
                     <label class="admin-mobile-pin-label" for="admin-pin">PIN de acceso</label>
                     <input id="admin-pin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="4" pattern="[0-9]{4}" placeholder="••••">
                     <div class="admin-pin-actions"><button id="admin-back" class="admin-login-secondary" type="button">Volver</button><button id="admin-submit-pin" class="admin-login-button" type="submit">Entrar al administrador</button></div>

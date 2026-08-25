@@ -4,29 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Administración móvil | Micro Dramas ESP</title>
-    <link rel="stylesheet" href="/admin/admin.css">
-    <link rel="stylesheet" href="/admin/cover-uploader.css">
-    <link rel="stylesheet" href="/admin/github-status.css">
-    <link rel="stylesheet" href="/admin/sticky-layout.css">
-    <link rel="stylesheet" href="/admin/users-admin.css">
-    <link rel="stylesheet" href="/admin/users-admin-role.css?v=1">
-    <style>
-        /* Refuerzo específico de móvil. La lógica y las APIs siguen siendo las mismas. */
-        html, body { width:100%; max-width:100%; overflow-x:hidden; }
-        @media (max-width:760px) {
-            .admin-header__content { flex-direction:column; align-items:stretch; gap:12px; padding:16px; }
-            .admin-header__content > .button { width:100%; min-height:44px; }
-            .admin-main { padding:10px; }
-            .admin-panel__heading { flex-direction:column; align-items:stretch; gap:14px; }
-            .admin-panel__actions { flex-direction:column; width:100%; align-items:stretch; }
-            .admin-panel__actions .button { width:100%; min-height:44px; }
-            .table-container { overflow-x:auto !important; -webkit-overflow-scrolling:touch; }
-            .admin-table { min-width:1050px; }
-            .admin-table thead th { position:static; }
-            .users-modal__dialog { width:calc(100vw - 20px); max-height:calc(100vh - 20px); }
-        }
-    </style>
+    <link rel="stylesheet" href="/admin-movil/mobile.css?v=20260825-1">
 </head>
 <body>
 <header class="admin-header">
@@ -112,12 +94,14 @@
 </section>
 </main>
 
-<script src="/admin/admin.js?v=20260819-mobile" defer></script>
-<script src="/admin/cover-uploader.js?v=20260819-mobile" defer></script>
-<script src="/admin/github-status.js?v=20260819-mobile" defer></script>
-<script src="/admin/admin-enhancements.js?v=20260819-mobile" defer></script>
-<script src="/admin/admin-logout.js?v=20260819-mobile" defer></script>
-<script src="/admin/users-admin.js?v=20260819-mobile" defer></script>
-<script src="/admin/users-admin-role.js?v=1-mobile" defer></script>
+<!-- El temporizador solo afecta las peticiones administrativas del panel móvil. -->
+<script src="/admin-movil/mobile-boot.js?v=20260825-1"></script>
+<script src="/admin/admin.js?v=20260825-mobile-1" defer></script>
+<script src="/admin/cover-uploader.js?v=20260825-mobile-1" defer></script>
+<script src="/admin/github-status.js?v=20260825-mobile-1" defer></script>
+<script src="/admin/admin-enhancements.js?v=20260825-mobile-1" defer></script>
+<script src="/admin/admin-logout.js?v=20260825-mobile-1" defer></script>
+<script src="/admin/users-admin.js?v=20260825-mobile-1" defer></script>
+<script src="/admin/users-admin-role.js?v=20260825-mobile-1" defer></script>
 </body>
 </html>

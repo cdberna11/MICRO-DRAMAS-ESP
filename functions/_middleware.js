@@ -28,7 +28,36 @@ export async function onRequest(context) {
         });
     }
 
-    // Toda API administrativa exige una sesión con role=admin.
+    // API administrativa exclusiva del panel móvil.
+    // Usa la misma sesión D1 y los mismos permisos del administrador,
+    // pero evita depender de la ruta /api/admin/ que puede estar detrás
+    // de la protección de Cloudflare Access del panel de escritorio.
+    if (pathname === "/api/admin-movil" || pathname.startsWith("/api/admin-movil/")) {
+        if (!db) {
+            return Response.json({ success: false, error: "La base de datos no está disponible." }, { status: 500 });
+        }
+
+        try {
+            await ensureUserSchema(db);
+            const admin = await getAdminFromRequest(db, request, false);
+            if (admin) return context.next();
+        } catch (error) {
+            console.error("Error comprobando permisos administrativos móviles:", error);
+        }
+
+        return Response.json({
+            success: false,
+            error: "Se requieren permisos de administrador."
+        }, {
+            status: 403,
+            headers: {
+                "Cache-Control": "no-store",
+                "Content-Type": "application/json; charset=utf-8"
+            }
+        });
+    }
+
+    // Toda API administrativa de escritorio exige una sesión con role=admin.
     if (pathname === "/api/admin" || pathname.startsWith("/api/admin/")) {
         if (!db) {
             return Response.json({ success: false, error: "La base de datos no está disponible." }, { status: 500 });

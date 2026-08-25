@@ -5,19 +5,11 @@
  * No modifica el panel de escritorio.
  */
 (function prepararPanelMovil() {
-    const botonSalir = document.getElementById("boton-salir-admin");
-    const encabezado = document.querySelector(".admin-header__content");
-
-    /* El botón Salir se conserva como única acción superior del móvil. */
-    if (botonSalir && encabezado) {
-        botonSalir.classList.add("admin-mobile-exit");
-        encabezado.appendChild(botonSalir);
-    }
-
     /*
-     * Evita que una petición administrativa del móvil quede esperando
-     * indefinidamente. El flujo del escritorio no se toca.
+     * El botón Salir ya es gestionado por mobile-admin.js.
+     * Este archivo solo controla tiempos máximos de las APIs móviles.
      */
+
     const fetchOriginal = window.fetch.bind(window);
     const TIEMPO_MAXIMO = 20000;
 
@@ -26,11 +18,11 @@
             ? input
             : input?.url || "";
 
-        const esApiAdministrativa =
-            url.startsWith("/api/admin/") ||
-            url.includes("/api/admin/");
+        const esApiAdministrativaMovil =
+            url.startsWith("/api/admin-movil/") ||
+            url.includes("/api/admin-movil/");
 
-        if (!esApiAdministrativa || typeof AbortController === "undefined") {
+        if (!esApiAdministrativaMovil || typeof AbortController === "undefined") {
             return fetchOriginal(input, init);
         }
 

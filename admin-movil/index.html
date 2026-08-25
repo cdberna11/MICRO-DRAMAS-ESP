@@ -8,58 +8,96 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Administración móvil | Micro Dramas ESP</title>
-    <link rel="stylesheet" href="/admin-movil/mobile.css?v=20260825-2">
+    <link rel="stylesheet" href="/admin-movil/mobile.css?v=20260825-3">
 </head>
-<body class="admin-mobile-only">
-<header class="admin-mobile-header">
-    <div class="admin-mobile-header__content">
-        <h1>Micro Dramas ESP</h1>
-        <button id="boton-salir-admin" class="mobile-button mobile-button--secondary" type="button">Salir</button>
+<body>
+<header class="admin-header">
+    <div class="admin-header__content">
+        <div>
+            <p class="admin-header__label">Panel administrativo móvil</p>
+            <h1>Micro Dramas ESP</h1>
+        </div>
+        <a href="/" class="button button--secondary">Ver catálogo</a>
     </div>
 </header>
 
-<main class="admin-mobile-main">
-<section class="admin-mobile-panel" aria-label="Administración de microdramas">
-    <div id="mensaje-admin" class="mobile-message" role="status" aria-live="polite" hidden></div>
-
-    <div id="estado-carga" class="mobile-loading" aria-live="polite">Cargando microdramas...</div>
-
-    <div id="contenedor-busqueda" class="mobile-search" hidden>
-        <div class="mobile-search__input-wrapper">
-            <span class="mobile-search__icon" aria-hidden="true">🔎</span>
-            <input type="search" id="buscador-dramas" class="mobile-search__input" placeholder="Buscar por nombre, ID, plataforma, categoría o estado..." autocomplete="off">
-            <button id="boton-limpiar-busqueda" class="mobile-search__clear" type="button" hidden aria-label="Limpiar búsqueda">×</button>
+<main class="admin-main">
+<section class="admin-panel">
+    <div class="admin-panel__heading">
+        <div>
+            <h2>Gestión de microdramas</h2>
+            <p>Administra los registros almacenados en Cloudflare D1.</p>
         </div>
-        <div id="resultado-busqueda" class="mobile-search__result" aria-live="polite"></div>
+        <div class="admin-panel__actions">
+            <button id="boton-eliminar-seleccionados" class="button button--danger" type="button" disabled>Eliminar seleccionados</button>
+            <button id="boton-administrar-usuarios" class="button button--secondary" type="button">Administrar usuarios</button>
+            <button id="boton-nuevo" class="button button--primary" type="button">Nuevo microdrama</button>
+            <button id="boton-salir-admin" class="button button--secondary" type="button">Salir</button>
+        </div>
     </div>
 
-    <div id="contenedor-tabla" class="mobile-table-container" hidden>
-        <table class="mobile-admin-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Microdrama</th>
-                    <th>Plataforma</th>
-                    <th>Categoría</th>
-                    <th>Sin enlace MEGA</th>
-                    <th>Estado</th>
-                    <th>Destacado</th>
-                    <th>Orden</th>
-                    <th>Actualización</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="lista-dramas"></tbody>
-        </table>
+    <div id="estado-github" class="github-status" aria-live="polite">
+        <div class="github-status__main">
+            <span id="github-status-indicator" class="github-status__indicator" aria-hidden="true"></span>
+            <div>
+                <strong id="github-status-title">GitHub: comprobando...</strong>
+                <span id="github-status-detail">Verificando token y permisos...</span>
+            </div>
+        </div>
+        <div id="github-status-expiration" class="github-status__expiration"></div>
     </div>
 
-    <div id="estado-vacio" class="mobile-empty" hidden>No hay microdramas registrados.</div>
+    <div id="mensaje-admin" class="admin-message" role="status" aria-live="polite" hidden></div>
+
+    <div id="formulario-nuevo" class="admin-form-container" hidden>
+        <div class="admin-form-header">
+            <div><h3 id="titulo-formulario">Nuevo microdrama</h3><p id="descripcion-formulario">Completa los datos del microdrama que deseas registrar.</p></div>
+        </div>
+        <form id="form-nuevo-drama" class="admin-form" novalidate>
+            <input type="hidden" id="drama-id" name="drama_id">
+            <div class="form-group"><label for="title">Título</label><input type="text" id="title" name="title" autocomplete="off" maxlength="200" required></div>
+            <div class="form-group"><label for="slug">Slug</label><input type="text" id="slug" name="slug" autocomplete="off" maxlength="200" readonly required><small>Se genera automáticamente a partir del título.</small></div>
+            <div class="form-group"><label for="platform">Plataforma</label><select id="platform" name="platform" required><option value="">Seleccione una plataforma</option><option value="DramaBox">DramaBox</option><option value="DramaWave">DramaWave</option><option value="GoodShort">GoodShort</option><option value="FlickReel">FlickReel</option><option value="Melolo">Melolo</option><option value="NetShort">NetShort</option><option value="ReelShort">ReelShort</option><option disabled>────────────────────────</option><option value="__NUEVA_PLATAFORMA__">+ NUEVA PLATAFORMA</option></select></div>
+            <div class="form-group form-group--full-width"><label for="video_description">Descripción del video</label><textarea id="video_description" name="video_description" rows="4"></textarea></div>
+            <div class="form-group"><label for="cover_url">URL de portada</label><input type="url" id="cover_url" name="cover_url" autocomplete="off"></div>
+            <div class="form-group"><label for="video_url">Enlace del video MEGA</label><input type="url" id="video_url" name="video_url" autocomplete="off"><small>Pega aquí el enlace del archivo compartido de MEGA.</small></div>
+            <div class="form-group"><label for="status">Estado</label><select id="status" name="status" required><option value="draft">Borrador</option><option value="published">Publicado</option></select></div>
+            <div class="form-group"><label for="categorias-selector">Categoría</label><select id="categorias-selector" name="category" required><option value="">Seleccione una categoría</option></select></div>
+            <div class="form-group form-group--checkbox"><label><input type="checkbox" id="featured" name="featured"><span>Marcar como destacado</span></label></div>
+            <div class="admin-form-actions"><button id="boton-cancelar" class="button button--secondary" type="button">Cancelar</button><button id="boton-guardar" class="button button--primary" type="submit">Guardar microdrama</button></div>
+        </form>
+    </div>
+
+    <div id="modal-nueva-categoria" class="category-modal" hidden>
+        <div id="category-modal-backdrop" class="category-modal__backdrop"></div>
+        <div class="category-modal__dialog" role="dialog" aria-modal="true"><div class="category-modal__header"><h3>Nueva categoría</h3><button type="button" id="boton-cerrar-modal-categoria" class="category-modal__close">×</button></div><div class="category-modal__body"><label for="nueva-categoria">Nombre de la categoría</label><input type="text" id="nueva-categoria" maxlength="100"><div id="mensaje-nueva-categoria" class="category-modal__message" hidden></div></div><div class="category-modal__actions"><button type="button" id="boton-cancelar-categoria" class="button button--secondary">Cancelar</button><button type="button" id="boton-crear-categoria" class="button button--primary">Crear categoría</button></div></div>
+    </div>
+
+    <div id="modal-nueva-plataforma" class="category-modal" hidden>
+        <div id="platform-modal-backdrop" class="category-modal__backdrop"></div>
+        <div class="category-modal__dialog" role="dialog" aria-modal="true"><div class="category-modal__header"><h3>Nueva plataforma</h3><button type="button" id="boton-cerrar-modal-plataforma" class="category-modal__close">×</button></div><div class="category-modal__body"><label for="nueva-plataforma-modal">Nombre de la plataforma</label><input type="text" id="nueva-plataforma-modal" maxlength="100"><div id="mensaje-nueva-plataforma" class="category-modal__message" hidden></div></div><div class="category-modal__actions"><button type="button" id="boton-cancelar-categoria-plataforma" class="button button--secondary">Cancelar</button><button type="button" id="boton-crear-plataforma" class="button button--primary">Usar plataforma</button></div></div>
+    </div>
+
+    <div id="modal-administrar-usuarios" class="users-modal" hidden>
+        <div id="usuarios-modal-backdrop" class="users-modal__backdrop"></div>
+        <section class="users-modal__dialog" role="dialog" aria-modal="true">
+            <header class="users-modal__header"><div><h3 id="titulo-modal-usuarios">Administrar usuarios</h3><p>Consulta las cuentas registradas sin mostrar contraseñas ni PIN. Desde <strong>Rol</strong> puedes conceder o retirar permisos.</p></div><button type="button" id="boton-cerrar-modal-usuarios" class="users-modal__close">×</button></header>
+            <div class="users-modal__toolbar"><small>Datos visibles: nombre, correo, teléfono, método, rol y fechas.</small><div class="admin-panel__actions"><button id="boton-recargar-usuarios" class="button button--secondary" type="button">Actualizar</button><button id="boton-eliminar-usuarios" class="button button--danger" type="button" disabled>Eliminar seleccionados</button></div></div>
+            <div id="estado-carga-usuarios" class="users-status" hidden></div><div id="usuarios-vacio" class="users-empty" hidden>No hay usuarios registrados.</div>
+            <div class="users-modal__table-wrap"><table class="users-table"><thead><tr><th><input type="checkbox" id="seleccionar-todos-usuarios"></th><th>ID</th><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Método</th><th>Proveedor</th><th>Registro</th><th>Último acceso</th><th>Acciones</th></tr></thead><tbody id="lista-usuarios"></tbody></table></div>
+        </section>
+    </div>
+
+    <div id="estado-carga" class="loading-state">Cargando microdramas...</div>
+    <div id="contenedor-busqueda" class="admin-search" hidden><div class="admin-search__input-wrapper"><span class="admin-search__icon" aria-hidden="true">🔎</span><input type="search" id="buscador-dramas" class="admin-search__input" placeholder="Buscar por nombre, ID, plataforma, categoría o estado..." autocomplete="off"><button id="boton-limpiar-busqueda" class="admin-search__clear" type="button" hidden>×</button></div><div id="resultado-busqueda" class="admin-search__result" aria-live="polite"></div></div>
+    <div id="contenedor-tabla" class="table-container" hidden><table class="admin-table"><thead><tr><th><input type="checkbox" id="seleccionar-todos"></th><th>ID</th><th>Microdrama</th><th>Plataforma</th><th>Categoría</th><th>Estado</th><th>Destacado</th><th>Orden</th><th>Actualización</th><th>Acciones</th></tr></thead><tbody id="lista-dramas"></tbody></table></div>
+    <div id="estado-vacio" class="empty-state" hidden>No hay microdramas registrados.</div>
 </section>
 </main>
 
-<script src="/admin/admin.js?v=20260825-mobile-list" defer></script>
-<script src="/admin/admin-enhancements.js?v=20260825-mobile-list" defer></script>
-<script src="/admin/admin-logout.js?v=20260825-mobile-list" defer></script>
-<script src="/admin-movil/mobile-boot.js?v=20260825-2" defer></script>
+<script src="/admin-movil/mobile-boot.js?v=20260825-3"></script>
+<script src="/admin/admin.js?v=20260825-mobile-list-3" defer></script>
+<script src="/admin/admin-enhancements.js?v=20260825-mobile-list-3" defer></script>
+<script src="/admin/admin-logout.js?v=20260825-mobile-list-3" defer></script>
 </body>
 </html>

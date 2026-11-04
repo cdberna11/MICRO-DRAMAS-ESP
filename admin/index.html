@@ -11,21 +11,79 @@
     <link rel="stylesheet" href="/admin/sticky-layout.css">
     <link rel="stylesheet" href="/admin/users-admin.css">
     <link rel="stylesheet" href="/admin/users-admin-role.css?v=1">
+    <link rel="stylesheet" href="/admin/admin-dashboard.css?v=1">
 </head>
 <body>
+
+    <div class="admin-shell">
+        <aside class="admin-sidebar" aria-label="Navegación del panel administrativo">
+            <a class="admin-sidebar__brand" href="#dashboard" aria-label="Micro Dramas ESP — Panel administrativo">
+                <span class="admin-sidebar__brand-mark" aria-hidden="true">MD</span>
+                <span class="admin-sidebar__brand-copy">
+                    <strong>Micro Dramas</strong>
+                    <small>Panel administrativo</small>
+                </span>
+            </a>
+
+            <nav class="admin-sidebar__nav" aria-label="Opciones principales">
+                <a class="admin-sidebar__item is-active" href="#dashboard" aria-current="page">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
+                    <span class="admin-sidebar__label">Resumen</span>
+                </a>
+
+                <button id="boton-nuevo" class="admin-sidebar__item" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                    <span class="admin-sidebar__label">Nuevo microdrama</span>
+                </button>
+
+                <button id="boton-administrar-usuarios" class="admin-sidebar__item" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 20v-2a4 4 0 0 0-3-3.87M16 2.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span class="admin-sidebar__label">Administrar usuarios</span>
+                </button>
+
+                <a class="admin-sidebar__item" href="/">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7v9H3zM9 20v-6h6v6"/></svg>
+                    <span class="admin-sidebar__label">Ver catálogo</span>
+                </a>
+
+                <div id="contenedor-busqueda" class="admin-search admin-sidebar__search" hidden>
+                    <div class="admin-search__input-wrapper">
+                        <svg class="admin-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                        <input type="search" id="buscador-dramas" class="admin-search__input" placeholder="Buscar microdramas..." autocomplete="off" aria-label="Buscar microdramas">
+                        <button id="boton-limpiar-busqueda" class="admin-search__clear" type="button" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden>×</button>
+                    </div>
+                    <div id="resultado-busqueda" class="admin-search__result" aria-live="polite"></div>
+                </div>
+            </nav>
+
+            <div class="admin-sidebar__footer">
+                <button id="boton-salir-admin" class="admin-sidebar__item admin-sidebar__item--logout" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg>
+                    <span class="admin-sidebar__label">Cerrar sesión</span>
+                </button>
+            </div>
+        </aside>
+
+        <div class="admin-workspace">
 
     <header class="admin-header">
         <div class="admin-header__content">
             <div>
-                <p class="admin-header__label">Panel administrativo</p>
-                <h1>Micro Dramas ESP</h1>
+                <p class="admin-header__label">Espacio de trabajo</p>
+                <h1>Panel administrativo</h1>
             </div>
-            <a href="/" class="button button--secondary">Ver catálogo</a>
+            <div class="admin-header__status" aria-label="Estado del panel">
+                <span aria-hidden="true"></span>
+                <div>
+                    <strong>Micro Dramas ESP</strong>
+                    <small>Gestión de contenido</small>
+                </div>
+            </div>
         </div>
     </header>
 
     <main class="admin-main">
-        <section class="admin-panel">
+        <section id="dashboard" class="admin-panel">
 
             <div class="admin-panel__heading">
                 <div>
@@ -35,15 +93,6 @@
                 <div class="admin-panel__actions">
                     <button id="boton-eliminar-seleccionados" class="button button--danger" type="button" disabled>
                         Eliminar seleccionados
-                    </button>
-                    <button id="boton-administrar-usuarios" class="button button--secondary" type="button">
-                        Administrar usuarios
-                    </button>
-                    <button id="boton-nuevo" class="button button--primary" type="button">
-                        Nuevo microdrama
-                    </button>
-                    <button id="boton-salir-admin" class="button button--secondary" type="button">
-                        Salir
                     </button>
                 </div>
             </div>
@@ -230,15 +279,6 @@
 
             <div id="estado-carga" class="loading-state">Cargando microdramas...</div>
 
-            <div id="contenedor-busqueda" class="admin-search" hidden>
-                <div class="admin-search__input-wrapper">
-                    <span class="admin-search__icon" aria-hidden="true">🔎</span>
-                    <input type="search" id="buscador-dramas" class="admin-search__input" placeholder="Buscar por nombre, ID, plataforma, categoría o estado..." autocomplete="off" aria-label="Buscar microdramas">
-                    <button id="boton-limpiar-busqueda" class="admin-search__clear" type="button" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden>×</button>
-                </div>
-                <div id="resultado-busqueda" class="admin-search__result" aria-live="polite"></div>
-            </div>
-
             <div id="contenedor-tabla" class="table-container" hidden>
                 <table class="admin-table">
                     <thead>
@@ -262,6 +302,9 @@
             <div id="estado-vacio" class="empty-state" hidden>No hay microdramas registrados.</div>
         </section>
     </main>
+
+        </div>
+    </div>
 
     <script src="/admin/admin.js" defer></script>
     <script src="/admin/cover-uploader.js" defer></script>

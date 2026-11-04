@@ -107,9 +107,18 @@ function crearFilaUsuario(usuario) {
     const acciones = document.createElement("td");
     const botonEliminar = document.createElement("button");
     botonEliminar.type = "button";
-    botonEliminar.className = "button button--user-delete";
-    botonEliminar.textContent = "Eliminar";
-    botonEliminar.addEventListener("click", () => eliminarUsuarios([Number(usuario.id)]));
+    botonEliminar.className = "button button--user-delete delete-action delete-action--compact";
+    botonEliminar.setAttribute("aria-label", `Eliminar usuario ${usuario.display_name || usuario.email || usuario.id}`);
+    botonEliminar.innerHTML = `
+        <span class="delete-action__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+                <path class="delete-action__lid" d="M8 7h8M10 4h4l1 3H9l1-3"></path>
+                <path class="delete-action__bin" d="M7.5 7 9 20h6l1.5-13M11 10v7M13 10v7"></path>
+            </svg>
+        </span>
+        <span class="delete-action__label">Eliminar</span>
+    `;
+    botonEliminar.addEventListener("click", () => eliminarUsuarios([Number(usuario.id)], botonEliminar));
     acciones.appendChild(botonEliminar);
     fila.appendChild(acciones);
 
@@ -146,9 +155,23 @@ function actualizarSeleccionUsuarios() {
 
     if (boton) {
         boton.disabled = seleccionados.length === 0;
-        boton.textContent = seleccionados.length
-            ? `Eliminar seleccionados (${seleccionados.length})`
-            : "Eliminar seleccionados";
+
+        const etiqueta =
+            boton.querySelector(
+                ".delete-action__label"
+            );
+
+        if (etiqueta) {
+            etiqueta.textContent =
+                "Eliminar";
+        }
+
+        boton.setAttribute(
+            "aria-label",
+            seleccionados.length
+                ? `Eliminar ${seleccionados.length} usuario${seleccionados.length === 1 ? "" : "s"} seleccionado${seleccionados.length === 1 ? "" : "s"}`
+                : "Eliminar usuarios seleccionados"
+        );
     }
 
     if (seleccionarTodos) {
@@ -160,18 +183,58 @@ function actualizarSeleccionUsuarios() {
 async function eliminarUsuariosSeleccionados() {
     const ids = obtenerUsuariosSeleccionados();
     if (!ids.length) return;
-    await eliminarUsuarios(ids);
+
+    const boton =
+        document.getElementById(
+            "boton-eliminar-usuarios"
+        );
+
+    await eliminarUsuarios(
+        ids,
+        boton
+    );
 }
 
-async function eliminarUsuarios(ids) {
+async function eliminarUsuarios(
+    ids,
+    botonOrigen = null
+) {
     const mensaje = ids.length === 1
-        ? "¿Seguro que deseas eliminar este usuario?\n\nTambién se cerrarán sus sesiones activas. Esta acción no se puede deshacer."
-        : `¿Seguro que deseas eliminar ${ids.length} usuarios?\n\nTambién se cerrarán sus sesiones activas. Esta acción no se puede deshacer.`;
+        ? "¿Seguro que deseas eliminar este usuario?"
+        : `¿Seguro que deseas eliminar ${ids.length} usuarios?`;
 
-    if (!window.confirm(mensaje)) return;
+    const confirmado =
+        await window.solicitarConfirmacionEliminacion({
+            titulo:
+                ids.length === 1
+                    ? "Eliminar usuario"
+                    : "Eliminar usuarios",
+            mensaje,
+            detalle:
+                "También se cerrarán sus sesiones activas. Esta acción no se puede deshacer."
+        });
 
-    const boton = document.getElementById("boton-eliminar-usuarios");
-    if (boton) boton.disabled = true;
+    if (!confirmado) return;
+
+    const boton =
+        botonOrigen ||
+        document.getElementById(
+            "boton-eliminar-usuarios"
+        );
+
+    if (boton) {
+        boton.disabled = true;
+        boton.classList.add(
+            "is-deleting"
+        );
+        boton.setAttribute(
+            "aria-busy",
+            "true"
+        );
+    }
+
+    const inicioAnimacion =
+        Date.now();
 
     try {
         const respuesta = await fetch(API_ADMIN_USERS, {
@@ -183,6 +246,26 @@ async function eliminarUsuarios(ids) {
             },
             body: JSON.stringify({ ids })
         });
+
+        const tiempoRestante =
+            Math.max(
+                0,
+                900 -
+                (
+                    Date.now() -
+                    inicioAnimacion
+                )
+            );
+
+        if (tiempoRestante > 0) {
+            await new Promise(
+                resolver =>
+                    window.setTimeout(
+                        resolver,
+                        tiempoRestante
+                    )
+            );
+        }
 
         const resultado = await respuesta.json();
         if (!respuesta.ok || !resultado.success) {
@@ -199,6 +282,15 @@ async function eliminarUsuarios(ids) {
             estado.textContent = error.message || "No se pudieron eliminar los usuarios.";
         }
     } finally {
+        if (boton) {
+            boton.classList.remove(
+                "is-deleting"
+            );
+            boton.removeAttribute(
+                "aria-busy"
+            );
+        }
+
         actualizarSeleccionUsuarios();
     }
 }

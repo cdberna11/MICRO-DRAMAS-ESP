@@ -52,6 +52,277 @@ document.addEventListener(
 );
 
 
+
+/* =========================================================
+   CONFIRMACIÓN PERSONALIZADA DE ELIMINACIÓN
+========================================================= */
+
+function solicitarConfirmacionEliminacion({
+    titulo,
+    mensaje,
+    detalle = ""
+}) {
+
+    const modal =
+        document.getElementById(
+            "modal-confirmacion-eliminacion"
+        );
+
+    const panel =
+        modal?.querySelector(
+            ".confirm-dialog__panel"
+        );
+
+    const tituloElemento =
+        document.getElementById(
+            "confirm-dialog-title"
+        );
+
+    const mensajeElemento =
+        document.getElementById(
+            "confirm-dialog-message"
+        );
+
+    const detalleElemento =
+        document.getElementById(
+            "confirm-dialog-detail"
+        );
+
+    const botonCancelar =
+        document.getElementById(
+            "confirm-dialog-cancel"
+        );
+
+    const botonConfirmar =
+        document.getElementById(
+            "confirm-dialog-confirm"
+        );
+
+    const fondo =
+        document.getElementById(
+            "confirm-dialog-backdrop"
+        );
+
+    if (
+        !modal ||
+        !panel ||
+        !tituloElemento ||
+        !mensajeElemento ||
+        !detalleElemento ||
+        !botonCancelar ||
+        !botonConfirmar ||
+        !fondo
+    ) {
+        return Promise.resolve(
+            false
+        );
+    }
+
+    tituloElemento.textContent =
+        titulo;
+
+    mensajeElemento.textContent =
+        mensaje;
+
+    detalleElemento.textContent =
+        detalle;
+
+    const focoAnterior =
+        document.activeElement;
+
+    modal.hidden =
+        false;
+
+    document.body.classList.add(
+        "confirm-dialog-open"
+    );
+
+    return new Promise(
+        resolver => {
+
+            let cerrada =
+                false;
+
+            const elementosFoco = [
+                botonCancelar,
+                botonConfirmar
+            ];
+
+            const limpiarEventos =
+                () => {
+                    botonCancelar.removeEventListener(
+                        "click",
+                        cancelar
+                    );
+
+                    botonConfirmar.removeEventListener(
+                        "click",
+                        confirmar
+                    );
+
+                    fondo.removeEventListener(
+                        "click",
+                        cancelar
+                    );
+
+                    document.removeEventListener(
+                        "keydown",
+                        manejarTeclado
+                    );
+                };
+
+            const cerrar =
+                confirmada => {
+                    if (
+                        cerrada
+                    ) {
+                        return;
+                    }
+
+                    cerrada =
+                        true;
+
+                    limpiarEventos();
+
+                    modal.classList.remove(
+                        "is-open"
+                    );
+
+                    document.body.classList.remove(
+                        "confirm-dialog-open"
+                    );
+
+                    const demora =
+                        window.matchMedia(
+                            "(prefers-reduced-motion: reduce)"
+                        ).matches
+                            ? 0
+                            : 180;
+
+                    window.setTimeout(
+                        () => {
+                            modal.hidden =
+                                true;
+
+                            if (
+                                focoAnterior &&
+                                typeof focoAnterior.focus ===
+                                    "function"
+                            ) {
+                                focoAnterior.focus();
+                            }
+
+                            resolver(
+                                confirmada
+                            );
+                        },
+                        demora
+                    );
+                };
+
+            function cancelar() {
+                cerrar(
+                    false
+                );
+            }
+
+            function confirmar() {
+                cerrar(
+                    true
+                );
+            }
+
+            function manejarTeclado(
+                evento
+            ) {
+                if (
+                    evento.key ===
+                    "Escape"
+                ) {
+                    evento.preventDefault();
+                    cancelar();
+                    return;
+                }
+
+                if (
+                    evento.key !==
+                    "Tab"
+                ) {
+                    return;
+                }
+
+                const indiceActual =
+                    elementosFoco.indexOf(
+                        document.activeElement
+                    );
+
+                if (
+                    evento.shiftKey &&
+                    indiceActual <= 0
+                ) {
+                    evento.preventDefault();
+                    botonConfirmar.focus();
+                    return;
+                }
+
+                if (
+                    !evento.shiftKey &&
+                    indiceActual ===
+                        elementosFoco.length - 1
+                ) {
+                    evento.preventDefault();
+                    botonCancelar.focus();
+                }
+            }
+
+            botonCancelar.addEventListener(
+                "click",
+                cancelar
+            );
+
+            botonConfirmar.addEventListener(
+                "click",
+                confirmar
+            );
+
+            fondo.addEventListener(
+                "click",
+                cancelar
+            );
+
+            document.addEventListener(
+                "keydown",
+                manejarTeclado
+            );
+
+            window.requestAnimationFrame(
+                () => {
+                    modal.classList.add(
+                        "is-open"
+                    );
+
+                    botonCancelar.focus();
+                }
+            );
+        }
+    );
+}
+
+window.solicitarConfirmacionEliminacion =
+    solicitarConfirmacionEliminacion;
+
+function esperarAnimacionInterfaz(
+    milisegundos
+) {
+    return new Promise(
+        resolver =>
+            window.setTimeout(
+                resolver,
+                milisegundos
+            )
+    );
+}
+
 /* =========================================================
    NAVEGACIÓN ENTRE VISTAS
 ========================================================= */
@@ -1342,10 +1613,9 @@ function abrirFormularioNuevo() {
         "Completa los datos del microdrama que deseas registrar.";
 
 
-    document.getElementById(
-        "boton-guardar"
-    ).textContent =
-        "Guardar microdrama";
+    establecerEtiquetaBotonGuardar(
+        "Guardar microdrama"
+    );
 
 
     document.getElementById(
@@ -1404,10 +1674,9 @@ function abrirFormularioEdicion(
         "Modifica los datos que deseas actualizar.";
 
 
-    document.getElementById(
-        "boton-guardar"
-    ).textContent =
-        "Guardar cambios";
+    establecerEtiquetaBotonGuardar(
+        "Guardar cambios"
+    );
 
 
     document.getElementById(
@@ -2156,6 +2425,39 @@ function establecerDescripcionAutomatica() {
 }
 
 
+
+function establecerEtiquetaBotonGuardar(
+    texto
+) {
+
+    const boton =
+        document.getElementById(
+            "boton-guardar"
+        );
+
+    const etiqueta =
+        boton?.querySelector(
+            ".save-action__label"
+        );
+
+    if (
+        etiqueta
+    ) {
+        etiqueta.textContent =
+            texto;
+    }
+
+    if (
+        boton
+    ) {
+        boton.setAttribute(
+            "aria-label",
+            texto
+        );
+    }
+}
+
+
 /* =========================================================
    GUARDAR
 ========================================================= */
@@ -2171,6 +2473,15 @@ async function guardarFormulario(
         document.getElementById(
             "boton-guardar"
         );
+
+    const editando =
+        modoFormulario ===
+        "editar";
+
+    const etiquetaNormal =
+        editando
+            ? "Guardar cambios"
+            : "Guardar microdrama";
 
 
     const plataforma =
@@ -2319,12 +2630,21 @@ async function guardarFormulario(
     boton.disabled =
         true;
 
+    boton.classList.remove(
+        "is-success"
+    );
 
-    boton.textContent =
-        modoFormulario ===
-            "editar"
-            ? "Guardando cambios..."
-            : "Guardando...";
+    boton.classList.add(
+        "is-saving"
+    );
+
+    boton.setAttribute(
+        "aria-busy",
+        "true"
+    );
+
+    const inicioAnimacion =
+        Date.now();
 
 
     try {
@@ -2362,6 +2682,25 @@ async function guardarFormulario(
             );
 
 
+        const tiempoRestante =
+            Math.max(
+                0,
+                850 -
+                (
+                    Date.now() -
+                    inicioAnimacion
+                )
+            );
+
+        if (
+            tiempoRestante > 0
+        ) {
+            await esperarAnimacionInterfaz(
+                tiempoRestante
+            );
+        }
+
+
         let resultado;
 
 
@@ -2392,6 +2731,23 @@ async function guardarFormulario(
         }
 
 
+        boton.classList.remove(
+            "is-saving"
+        );
+
+        boton.classList.add(
+            "is-success"
+        );
+
+        boton.removeAttribute(
+            "aria-busy"
+        );
+
+        await esperarAnimacionInterfaz(
+            720
+        );
+
+
         cerrarFormulario();
 
 
@@ -2399,8 +2755,7 @@ async function guardarFormulario(
 
 
         mostrarMensajeAdmin(
-            modoFormulario ===
-                "editar"
+            editando
                 ? "Microdrama actualizado correctamente."
                 : "Microdrama guardado correctamente.",
             "success"
@@ -2410,6 +2765,15 @@ async function guardarFormulario(
     } catch (
         error
     ) {
+
+        boton.classList.remove(
+            "is-saving",
+            "is-success"
+        );
+
+        boton.removeAttribute(
+            "aria-busy"
+        );
 
         console.error(
             "Error al guardar microdrama:",
@@ -2429,12 +2793,18 @@ async function guardarFormulario(
         boton.disabled =
             false;
 
+        boton.classList.remove(
+            "is-saving",
+            "is-success"
+        );
 
-        boton.textContent =
-            modoFormulario ===
-                "editar"
-                ? "Guardar cambios"
-                : "Guardar microdrama";
+        boton.removeAttribute(
+            "aria-busy"
+        );
+
+        establecerEtiquetaBotonGuardar(
+            etiquetaNormal
+        );
 
     }
 
@@ -2752,9 +3122,15 @@ async function eliminarSeleccionados() {
 
 
     const confirmado =
-        window.confirm(
-            `${mensaje}\n\nEsta acción no se puede deshacer.`
-        );
+        await solicitarConfirmacionEliminacion({
+            titulo:
+                ids.length === 1
+                    ? "Eliminar microdrama"
+                    : "Eliminar microdramas",
+            mensaje,
+            detalle:
+                "Esta acción no se puede deshacer."
+        });
 
 
     if (
@@ -2797,6 +3173,9 @@ async function eliminarSeleccionados() {
         "true"
     );
 
+    const inicioAnimacion =
+        Date.now();
+
 
     try {
 
@@ -2828,6 +3207,25 @@ async function eliminarSeleccionados() {
 
                 }
             );
+
+
+        const tiempoRestante =
+            Math.max(
+                0,
+                900 -
+                (
+                    Date.now() -
+                    inicioAnimacion
+                )
+            );
+
+        if (
+            tiempoRestante > 0
+        ) {
+            await esperarAnimacionInterfaz(
+                tiempoRestante
+            );
+        }
 
 
         const resultado =

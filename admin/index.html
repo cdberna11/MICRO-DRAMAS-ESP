@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="/admin/sticky-layout.css?v=20261103-redesign">
     <link rel="stylesheet" href="/admin/users-admin.css?v=20261103-inline">
     <link rel="stylesheet" href="/admin/users-admin-role.css?v=20261103-inline">
-    <link rel="stylesheet" href="/admin/admin-dashboard.css?v=20261104-ui-polish">
+    <link rel="stylesheet" href="/admin/admin-dashboard.css?v=20261104-action-dialogs">
 </head>
 <body>
 
@@ -181,7 +181,13 @@
 
                     <div class="admin-form-actions">
                         <button id="boton-cancelar" class="button button--secondary" type="button">Cancelar</button>
-                        <button id="boton-guardar" class="button button--primary" type="submit">Guardar microdrama</button>
+                        <button id="boton-guardar" class="button button--primary save-action" type="submit" aria-label="Guardar microdrama">
+                            <span class="save-action__label">Guardar microdrama</span>
+                            <span class="save-action__spinner" aria-hidden="true"></span>
+                            <svg class="save-action__check" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="m6 12 4 4 8-9"/>
+                            </svg>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -224,6 +230,29 @@
                 </div>
             </div>
 
+
+            <div id="modal-confirmacion-eliminacion" class="confirm-dialog" hidden>
+                <div id="confirm-dialog-backdrop" class="confirm-dialog__backdrop"></div>
+                <section class="confirm-dialog__panel" role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message">
+                    <div class="confirm-dialog__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3 2.8 19h18.4L12 3Z"/>
+                            <path d="M12 8v5M12 16.5v.1"/>
+                        </svg>
+                    </div>
+                    <div class="confirm-dialog__content">
+                        <span>Acción irreversible</span>
+                        <h3 id="confirm-dialog-title">Confirmar eliminación</h3>
+                        <p id="confirm-dialog-message"></p>
+                        <p id="confirm-dialog-detail" class="confirm-dialog__detail"></p>
+                    </div>
+                    <div class="confirm-dialog__actions">
+                        <button id="confirm-dialog-cancel" class="button button--secondary" type="button">Cancelar</button>
+                        <button id="confirm-dialog-confirm" class="button button--danger" type="button">Confirmar eliminación</button>
+                    </div>
+                </section>
+            </div>
+
             <div id="vista-usuarios" class="admin-users-view" hidden>
                 <section class="users-panel" aria-labelledby="titulo-vista-usuarios">
                     <header class="users-panel__header">
@@ -237,7 +266,15 @@
                         <small>Datos visibles: nombre, correo, teléfono, método de acceso, rol y fechas.</small>
                         <div class="admin-panel__actions">
                             <button id="boton-recargar-usuarios" class="button button--secondary" type="button">Actualizar</button>
-                            <button id="boton-eliminar-usuarios" class="button button--danger" type="button" disabled>Eliminar seleccionados</button>
+                            <button id="boton-eliminar-usuarios" class="button button--danger delete-action" type="button" aria-label="Eliminar usuarios seleccionados" disabled>
+                                <span class="delete-action__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24">
+                                        <path class="delete-action__lid" d="M8 7h8M10 4h4l1 3H9l1-3"/>
+                                        <path class="delete-action__bin" d="M7.5 7 9 20h6l1.5-13M11 10v7M13 10v7"/>
+                                    </svg>
+                                </span>
+                                <span class="delete-action__label">Eliminar</span>
+                            </button>
                         </div>
                     </div>
 
@@ -332,12 +369,12 @@
         </div>
     </div>
 
-    <script src="/admin/admin.js?v=20261104-ui-polish" defer></script>
+    <script src="/admin/admin.js?v=20261104-action-dialogs" defer></script>
     <script src="/admin/cover-uploader.js" defer></script>
     <script src="/admin/github-status.js?v=20261103-redesign" defer></script>
     <script src="/admin/admin-enhancements.js?v=20261103-redesign" defer></script>
     <script src="/admin/admin-logout.js?v=20260819-logout" defer></script>
-    <script src="/admin/users-admin.js?v=20261103-inline" defer></script>
+    <script src="/admin/users-admin.js?v=20261104-action-dialogs" defer></script>
     <script src="/admin/users-admin-role.js?v=20261103-inline" defer></script>
 
 </body>

@@ -474,10 +474,11 @@ body::before {
     color: #5f626d;
 }
 
-#boton-eliminar-seleccionados.delete-action {
+.delete-action {
     position: relative;
     isolation: isolate;
     display: inline-flex;
+    width: 136px;
     min-width: 136px;
     min-height: 44px;
     overflow: hidden;
@@ -494,13 +495,17 @@ body::before {
     letter-spacing: 0.01em;
     transform: translateZ(0);
     transition:
+        width 360ms cubic-bezier(0.22, 1, 0.36, 1),
+        min-width 360ms cubic-bezier(0.22, 1, 0.36, 1),
+        padding 260ms ease,
         border-color 180ms ease,
+        border-radius 260ms ease,
         box-shadow 220ms ease,
         color 180ms ease,
         transform 180ms ease;
 }
 
-#boton-eliminar-seleccionados.delete-action::before {
+.delete-action::before {
     position: absolute;
     inset: 0;
     z-index: 0;
@@ -510,17 +515,30 @@ body::before {
     transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-#boton-eliminar-seleccionados.delete-action:hover:not(:disabled),
-#boton-eliminar-seleccionados.delete-action:focus-visible:not(:disabled) {
+.delete-action::after {
+    position: absolute;
+    inset: 3px;
+    z-index: 2;
+    border: 2px solid transparent;
+    border-right-color: rgba(255, 255, 255, 0.92);
+    border-bottom-color: rgba(255, 255, 255, 0.42);
+    border-radius: 50%;
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+}
+
+.delete-action:hover:not(:disabled),
+.delete-action:focus-visible:not(:disabled) {
     border-color: rgba(255, 255, 255, 0.28);
     color: #fff;
     box-shadow: 0 12px 30px rgba(133, 35, 211, 0.32), 0 0 0 3px rgba(174, 50, 224, 0.1);
     transform: translateY(-1px);
 }
 
-#boton-eliminar-seleccionados.delete-action:hover:not(:disabled)::before,
-#boton-eliminar-seleccionados.delete-action:focus-visible:not(:disabled)::before,
-#boton-eliminar-seleccionados.delete-action.is-deleting::before {
+.delete-action:hover:not(:disabled)::before,
+.delete-action:focus-visible:not(:disabled)::before,
+.delete-action.is-deleting::before {
     transform: translateX(0) skewX(0);
 }
 
@@ -528,6 +546,17 @@ body::before {
 .delete-action__label {
     position: relative;
     z-index: 1;
+}
+
+.delete-action__label {
+    max-width: 110px;
+    overflow: hidden;
+    opacity: 1;
+    transition:
+        max-width 240ms ease,
+        opacity 150ms ease,
+        transform 220ms ease;
+    white-space: nowrap;
 }
 
 .delete-action__icon {
@@ -555,24 +584,24 @@ body::before {
     transform-origin: center;
 }
 
-#boton-eliminar-seleccionados.delete-action:hover:not(:disabled) .delete-action__lid,
-#boton-eliminar-seleccionados.delete-action:focus-visible:not(:disabled) .delete-action__lid,
-#boton-eliminar-seleccionados.delete-action.is-deleting .delete-action__lid {
+.delete-action:hover:not(:disabled) .delete-action__lid,
+.delete-action:focus-visible:not(:disabled) .delete-action__lid,
+.delete-action.is-deleting .delete-action__lid {
     animation: delete-action-lid 580ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-#boton-eliminar-seleccionados.delete-action:hover:not(:disabled) .delete-action__bin,
-#boton-eliminar-seleccionados.delete-action:focus-visible:not(:disabled) .delete-action__bin,
-#boton-eliminar-seleccionados.delete-action.is-deleting .delete-action__bin {
+.delete-action:hover:not(:disabled) .delete-action__bin,
+.delete-action:focus-visible:not(:disabled) .delete-action__bin,
+.delete-action.is-deleting .delete-action__bin {
     animation: delete-action-bin 520ms ease both;
 }
 
-#boton-eliminar-seleccionados.delete-action:active:not(:disabled) {
+.delete-action:active:not(:disabled) {
     box-shadow: 0 6px 16px rgba(97, 26, 159, 0.28);
     transform: translateY(1px) scale(0.98);
 }
 
-#boton-eliminar-seleccionados.delete-action:disabled {
+.delete-action:disabled:not(.is-deleting) {
     border-color: rgba(255, 255, 255, 0.06);
     background: rgba(255, 255, 255, 0.035);
     color: #5f626d;
@@ -581,14 +610,46 @@ body::before {
     transform: none;
 }
 
-#boton-eliminar-seleccionados.delete-action:disabled::before {
+.delete-action:disabled:not(.is-deleting)::before {
     display: none;
 }
 
-#boton-eliminar-seleccionados.delete-action.is-deleting {
-    border-color: rgba(255, 255, 255, 0.2);
+.delete-action.is-deleting {
+    width: 48px;
+    min-width: 48px;
+    padding: 0;
+    border-color: rgba(255, 255, 255, 0.22);
+    border-radius: 50%;
     background: #7b2ee8;
-    color: #fff;
+    color: #fff !important;
+    box-shadow: 0 10px 28px rgba(132, 37, 211, 0.38);
+    cursor: wait;
+    opacity: 1;
+}
+
+.delete-action.is-deleting::after {
+    opacity: 1;
+    animation: delete-action-spin 760ms linear infinite;
+}
+
+.delete-action.is-deleting .delete-action__label {
+    max-width: 0;
+    opacity: 0;
+    transform: translateX(8px);
+}
+
+.delete-action--compact {
+    width: 104px;
+    min-width: 104px;
+    min-height: 38px;
+    padding: 0 15px;
+}
+
+.delete-action--compact .delete-action__icon,
+.delete-action--compact .delete-action__icon svg {
+    width: 19px;
+    min-width: 19px;
+    height: 19px;
 }
 
 @keyframes delete-action-lid {
@@ -618,6 +679,240 @@ body::before {
     70% {
         transform: translateX(1px) rotate(4deg);
     }
+}
+
+@keyframes delete-action-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.save-action {
+    position: relative;
+    isolation: isolate;
+    display: inline-grid;
+    width: 190px;
+    min-width: 190px;
+    min-height: 46px;
+    overflow: hidden;
+    padding: 0 22px;
+    place-items: center;
+    border-radius: 999px;
+    background: linear-gradient(110deg, #ff3d4f 0%, #db1d59 48%, #8f2ce8 100%);
+    box-shadow: 0 10px 26px rgba(229, 9, 60, 0.28);
+    transition:
+        width 380ms cubic-bezier(0.22, 1, 0.36, 1),
+        min-width 380ms cubic-bezier(0.22, 1, 0.36, 1),
+        padding 260ms ease,
+        border-radius 300ms ease,
+        box-shadow 220ms ease,
+        transform 180ms ease;
+}
+
+.save-action:hover:not(:disabled),
+.save-action:focus-visible:not(:disabled) {
+    box-shadow: 0 13px 32px rgba(214, 31, 111, 0.36), 0 0 0 3px rgba(255, 61, 79, 0.1);
+    transform: translateY(-1px);
+}
+
+.save-action__label {
+    grid-area: 1 / 1;
+    opacity: 1;
+    transition: opacity 140ms ease, transform 220ms ease;
+    white-space: nowrap;
+}
+
+.save-action__spinner {
+    grid-area: 1 / 1;
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.22);
+    border-top-color: #fff;
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(0.72);
+}
+
+.save-action__check {
+    grid-area: 1 / 1;
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: #fff;
+    stroke-dasharray: 26;
+    stroke-dashoffset: 26;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.7;
+    opacity: 0;
+}
+
+.save-action.is-saving,
+.save-action.is-success {
+    width: 48px;
+    min-width: 48px;
+    padding: 0;
+    border-radius: 50%;
+    box-shadow: 0 10px 30px rgba(145, 44, 232, 0.36);
+    cursor: wait;
+    opacity: 1;
+}
+
+.save-action.is-saving .save-action__label,
+.save-action.is-success .save-action__label {
+    opacity: 0;
+    transform: scale(0.78);
+}
+
+.save-action.is-saving .save-action__spinner {
+    opacity: 1;
+    animation: save-action-spin 760ms linear infinite;
+    transform: scale(1);
+}
+
+.save-action.is-success {
+    background: linear-gradient(135deg, #7540eb, #17b9ed);
+    cursor: default;
+}
+
+.save-action.is-success .save-action__spinner {
+    opacity: 0;
+    animation: none;
+}
+
+.save-action.is-success .save-action__check {
+    opacity: 1;
+    animation: save-action-check 420ms ease forwards;
+}
+
+@keyframes save-action-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes save-action-check {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+body.confirm-dialog-open {
+    overflow: hidden;
+}
+
+.confirm-dialog[hidden] {
+    display: none;
+}
+
+.confirm-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    display: grid;
+    padding: 20px;
+    place-items: center;
+}
+
+.confirm-dialog__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(3, 4, 8, 0.76);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    transition: opacity 180ms ease;
+}
+
+.confirm-dialog__panel {
+    position: relative;
+    width: min(460px, 100%);
+    padding: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 20px;
+    background: linear-gradient(145deg, #181a23, #101118);
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.64);
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+    transition: opacity 180ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.confirm-dialog.is-open .confirm-dialog__backdrop,
+.confirm-dialog.is-open .confirm-dialog__panel {
+    opacity: 1;
+}
+
+.confirm-dialog.is-open .confirm-dialog__panel {
+    transform: translateY(0) scale(1);
+}
+
+.confirm-dialog__icon {
+    display: grid;
+    width: 50px;
+    height: 50px;
+    margin-bottom: 18px;
+    place-items: center;
+    border: 1px solid rgba(255, 86, 99, 0.2);
+    border-radius: 15px;
+    background: rgba(255, 61, 79, 0.12);
+    color: #ff6573;
+}
+
+.confirm-dialog__icon svg {
+    width: 27px;
+    height: 27px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.confirm-dialog__content > span {
+    color: #ff6573;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.confirm-dialog__content h3 {
+    margin: 7px 0 9px;
+    font-size: 21px;
+    letter-spacing: -0.025em;
+}
+
+.confirm-dialog__content p {
+    margin: 0;
+    color: #c6c8d0;
+    line-height: 1.55;
+}
+
+.confirm-dialog__detail {
+    margin-top: 10px !important;
+    color: #8f939f !important;
+    font-size: 12px;
+}
+
+.confirm-dialog__detail:empty {
+    display: none;
+}
+
+.confirm-dialog__actions {
+    display: flex;
+    margin-top: 24px;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.confirm-dialog__actions .button {
+    min-height: 42px;
+    border-radius: 12px;
+}
+
+#confirm-dialog-confirm {
+    border-color: rgba(255, 70, 86, 0.24);
+    background: linear-gradient(135deg, #d31d3c, #8f2ce8);
+    color: #fff;
 }
 
 .admin-summary-view[hidden],
@@ -697,12 +992,13 @@ body::before {
 .admin-summary-search.admin-search {
     position: static;
     display: grid;
-    margin: 18px 24px 22px;
-    padding: 16px;
-    gap: 10px;
-    border-color: var(--dashboard-border);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.025);
+    margin: 12px 24px 6px;
+    padding: 0;
+    gap: 4px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 .admin-summary-search.admin-search[hidden] {
@@ -807,7 +1103,7 @@ body::before {
 
 .admin-summary-search .admin-search__result {
     min-height: 16px;
-    margin: 0;
+    margin: 0 4px;
     color: #858995;
 }
 
@@ -998,12 +1294,18 @@ body::before {
     .admin-sidebar,
     .admin-sidebar *,
     .admin-workspace,
-    .delete-action {
+    .delete-action,
+    .save-action,
+    .confirm-dialog__backdrop,
+    .confirm-dialog__panel {
         transition-duration: 0.01ms !important;
     }
 
     .delete-action *,
-    .delete-action::before {
+    .delete-action::before,
+    .delete-action::after,
+    .save-action *,
+    .confirm-dialog * {
         animation: none !important;
         transition-duration: 0.01ms !important;
     }

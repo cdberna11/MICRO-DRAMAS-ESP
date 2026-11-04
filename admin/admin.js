@@ -3122,6 +3122,7 @@ function aplicarFiltroDramas() {
                 const documentoBusqueda =
                     normalizarTextoBusqueda(
                         [
+                            "id",
                             drama.id,
                             drama.title,
                             drama.slug,
@@ -3146,11 +3147,23 @@ function aplicarFiltroDramas() {
                         ].join(" ")
                     );
 
+                const palabrasBusqueda =
+                    documentoBusqueda
+                        .split(" ")
+                        .filter(Boolean);
+
                 return terminos.every(
                     termino =>
-                        documentoBusqueda.includes(
-                            termino
-                        )
+                        termino.length <= 2
+                            ? palabrasBusqueda.includes(
+                                termino
+                            )
+                            : palabrasBusqueda.some(
+                                palabra =>
+                                    palabra.includes(
+                                        termino
+                                    )
+                            )
                 );
 
             }

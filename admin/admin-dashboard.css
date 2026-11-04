@@ -647,6 +647,17 @@ body::before {
     box-shadow: none;
 }
 
+.admin-summary-search .admin-search__input::-webkit-search-cancel-button,
+.admin-summary-search .admin-search__input::-webkit-search-decoration {
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.admin-summary-search .admin-search__input::-ms-clear {
+    display: none;
+}
+
 .admin-summary-search .admin-search__clear {
     opacity: 0;
     pointer-events: none;

@@ -91,60 +91,137 @@ button, input, select, textarea { font: inherit; }
     display: none !important;
 }
 
-/* Búsqueda: único control de contenido antes de la lista. */
+/* Buscador retractable compartido con el panel de escritorio. */
 .admin-search {
-    display: block !important;
-    margin: 0;
-    padding: 10px 12px 12px;
+    display: grid !important;
+    margin: 12px 14px 6px;
+    padding: 0;
+    gap: 4px;
     border: 0;
-    border-bottom: 1px solid var(--border);
     border-radius: 0;
-    background: var(--surface);
+    background: transparent;
+    box-shadow: none;
+}
+
+.admin-search__bar-row {
+    display: flex;
+    min-height: 48px;
+    justify-content: flex-end;
 }
 
 .admin-search__input-wrapper {
     position: relative;
-    display: flex;
-    align-items: center;
-    width: 100%;
+    width: 48px;
+    max-width: 100%;
+    min-height: 48px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 999px;
+    background: #0d0f15;
+    cursor: text;
+    transition:
+        width 300ms cubic-bezier(0.22, 1, 0.36, 1),
+        border-color 180ms ease,
+        background-color 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.admin-search__input-wrapper:hover,
+.admin-search__input-wrapper:focus-within {
+    width: min(780px, 100%);
+    border-color: rgba(255, 91, 106, 0.62);
+    background: #101219;
+    box-shadow:
+        0 0 0 3px rgba(255, 61, 79, 0.08),
+        0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.admin-search__input-wrapper.has-query {
+    border-color: rgba(255, 91, 106, 0.45);
 }
 
 .admin-search__icon {
     position: absolute;
-    left: 13px;
+    left: 14px;
+    z-index: 2;
+    width: 19px;
+    height: 19px;
+    color: #a8abb5;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
     pointer-events: none;
+    transition: color 180ms ease;
+}
+
+.admin-search__input-wrapper:hover .admin-search__icon,
+.admin-search__input-wrapper:focus-within .admin-search__icon,
+.admin-search__input-wrapper.has-query .admin-search__icon {
+    color: #ff7380;
 }
 
 .admin-search__input {
     width: 100%;
-    min-height: 44px;
-    padding: 10px 42px;
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    outline: none;
-    background: #101016;
+    min-width: 260px;
+    min-height: 46px;
+    padding: 10px 44px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    box-shadow: none;
     color: var(--text);
     font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease 40ms;
+}
+
+.admin-search__input-wrapper:hover .admin-search__input,
+.admin-search__input-wrapper:focus-within .admin-search__input {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .admin-search__input:focus {
-    border-color: #555562;
+    border: 0;
+    box-shadow: none;
 }
 
 .admin-search__clear {
     position: absolute;
-    right: 7px;
+    top: 50%;
+    right: 8px;
+    z-index: 3;
     width: 30px;
     height: 30px;
     border: 0;
+    border-radius: 50%;
     background: transparent;
     color: var(--text-secondary);
     font-size: 22px;
+    line-height: 1;
     cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%);
+    transition: opacity 140ms ease, background 140ms ease;
+}
+
+.admin-search__input-wrapper:hover .admin-search__clear:not([hidden]),
+.admin-search__input-wrapper:focus-within .admin-search__clear:not([hidden]) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.admin-search__clear:hover,
+.admin-search__clear:focus-visible {
+    background: rgba(255, 255, 255, 0.07);
 }
 
 .admin-search__result {
-    margin-top: 8px;
+    min-height: 16px;
+    margin: 0 4px;
     color: var(--text-secondary);
     font-size: 12px;
 }
@@ -177,7 +254,7 @@ button, input, select, textarea { font: inherit; }
 
 .admin-table {
     width: 100%;
-    min-width: 980px;
+    min-width: 620px;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 12px;
@@ -209,12 +286,6 @@ button, input, select, textarea { font: inherit; }
 
 .admin-table tbody tr:active {
     background: #1b1b22;
-}
-
-/* La selección masiva pertenece al escritorio; no se muestra en móvil. */
-.admin-table th:first-child,
-.admin-table td:first-child {
-    display: none !important;
 }
 
 .drama-info {
@@ -298,7 +369,7 @@ button, input, select, textarea { font: inherit; }
     }
 
     .admin-table {
-        min-width: 920px;
+        min-width: 580px;
     }
 }
 

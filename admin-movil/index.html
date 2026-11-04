@@ -8,8 +8,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Administración móvil | Micro Dramas ESP</title>
-    <link rel="stylesheet" href="/admin-movil/mobile.css?v=20260825-4">
-    <link rel="stylesheet" href="/admin-movil/mobile-list.css?v=20260825-1">
+    <link rel="stylesheet" href="/admin-movil/mobile.css?v=20261104-compact-search">
+    <link rel="stylesheet" href="/admin-movil/mobile-list.css?v=20261104-compact-search">
 </head>
 <body>
 <header class="admin-header">
@@ -23,34 +23,37 @@
     <section class="admin-panel" aria-label="Lista administrativa de microdramas">
         <div id="estado-carga" class="loading-state" aria-live="polite">Cargando microdramas...</div>
 
-        <div id="contenedor-busqueda" class="admin-search" hidden>
-            <div class="admin-search__input-wrapper">
-                <span class="admin-search__icon" aria-hidden="true">🔎</span>
-                <input
-                    type="search"
-                    id="buscador-dramas"
-                    class="admin-search__input"
-                    placeholder="Buscar por nombre, ID, plataforma, categoría o estado..."
-                    autocomplete="off"
-                >
-                <button id="boton-limpiar-busqueda" class="admin-search__clear" type="button" hidden aria-label="Limpiar búsqueda">×</button>
+        <section id="contenedor-busqueda" class="admin-search admin-mobile-search" hidden aria-label="Búsqueda combinada">
+            <div class="admin-search__bar-row">
+                <div class="admin-search__input-wrapper">
+                    <svg class="admin-search__icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="m20 20-4-4"/>
+                    </svg>
+                    <input
+                        type="text"
+                        id="buscador-dramas"
+                        class="admin-search__input"
+                        placeholder="Combina título, ID, plataforma, categoría, estado u otras palabras..."
+                        autocomplete="off"
+                        inputmode="search"
+                        enterkeyhint="search"
+                        role="searchbox"
+                        aria-label="Buscar microdramas"
+                    >
+                    <button id="boton-limpiar-busqueda" class="admin-search__clear" type="button" hidden aria-label="Limpiar búsqueda" title="Limpiar búsqueda">×</button>
+                </div>
             </div>
             <div id="resultado-busqueda" class="admin-search__result" aria-live="polite"></div>
-        </div>
+        </section>
 
         <div id="contenedor-tabla" class="table-container" hidden>
             <table class="admin-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Microdrama</th>
-                        <th>Plataforma</th>
-                        <th>Categoría</th>
-                        <th>Sin enlace MEGA</th>
+                        <th>Enlace MEGA</th>
                         <th>Estado</th>
-                        <th>Destacado</th>
-                        <th>Orden</th>
-                        <th>Actualización</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -63,6 +66,6 @@
 </main>
 
 <script src="/admin-movil/mobile-boot.js?v=20260825-4"></script>
-<script src="/admin-movil/mobile-admin.js?v=20260825-1"></script>
+<script src="/admin-movil/mobile-admin.js?v=20261104-compact-search"></script>
 </body>
 </html>

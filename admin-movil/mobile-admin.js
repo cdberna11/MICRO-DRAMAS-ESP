@@ -35,6 +35,8 @@
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
             .toLowerCase()
+            .replace(/[^a-z0-9]+/g, " ")
+            .replace(/\s+/g, " ")
             .trim();
     }
 
@@ -66,8 +68,6 @@
     function crearFila(drama) {
         const fila = document.createElement("tr");
 
-        fila.appendChild(crearCelda(drama.id ?? "—"));
-
         const celdaDrama = document.createElement("td");
         const info = document.createElement("div");
         info.className = "drama-info";
@@ -83,17 +83,31 @@
         const titulo = document.createElement("p");
         titulo.className = "drama-title";
         titulo.textContent = drama.title || "Sin título";
+
         const slug = document.createElement("p");
         slug.className = "drama-slug";
         slug.textContent = drama.slug || "";
+
         textos.append(titulo, slug);
         info.append(portada, textos);
         celdaDrama.appendChild(info);
         fila.appendChild(celdaDrama);
 
-        fila.appendChild(crearCelda(drama.platform || "—"));
-        fila.appendChild(crearCelda(obtenerCategoria(drama)));
-        fila.appendChild(crearCelda(String(drama.video_url || "").trim() ? "No" : "Sí", "mega-status-cell"));
+        const tieneMega =
+            String(
+                drama.video_url || ""
+            ).trim() !== "";
+
+        fila.appendChild(
+            crearCelda(
+                tieneMega
+                    ? "Disponible"
+                    : "Sin enlace",
+                tieneMega
+                    ? "mega-status-cell mega-status-cell--available"
+                    : "mega-status-cell mega-status-cell--missing"
+            )
+        );
 
         const celdaEstado = document.createElement("td");
         const estado = String(drama.status || "draft").toLowerCase();
@@ -102,10 +116,6 @@
         badge.textContent = estado === "published" ? "Publicado" : "Borrador";
         celdaEstado.appendChild(badge);
         fila.appendChild(celdaEstado);
-
-        fila.appendChild(crearCelda(drama.featured === true || drama.featured === 1 || drama.featured === "1" ? "Sí" : "No"));
-        fila.appendChild(crearCelda(drama.sort_order ?? "—"));
-        fila.appendChild(crearCelda(formatearFecha(drama.updated_at)));
 
         const acciones = document.createElement("td");
         acciones.className = "mobile-row-actions";
@@ -137,31 +147,100 @@
 
         if (!lista || !tabla || !vacio || !carga || !contenedorBusqueda || !resultado) return;
 
-        const termino = normalizar(busqueda);
-        const filtrados = termino
-            ? dramas.filter(drama => [
-                drama.id,
-                drama.title,
-                drama.slug,
-                drama.platform,
-                obtenerCategoria(drama),
-                drama.status === "published" ? "publicado" : "borrador",
-                drama.video_url ? "no" : "si"
-            ].some(valor => normalizar(valor).includes(termino)))
-            : dramas;
+        const terminos =
+            normalizar(
+                busqueda
+            )
+                .split(" ")
+                .filter(Boolean);
+
+        const filtrados =
+            terminos.length
+                ? dramas.filter(
+                    drama => {
+                        const estado =
+                            String(
+                                drama.status ||
+                                "draft"
+                            ).toLowerCase();
+
+                        const publicado =
+                            estado ===
+                            "published";
+
+                        const destacado =
+                            drama.featured === true ||
+                            drama.featured === 1 ||
+                            drama.featured === "1";
+
+                        const tieneMega =
+                            String(
+                                drama.video_url || ""
+                            ).trim() !== "";
+
+                        const documentoBusqueda =
+                            normalizar(
+                                [
+                                    "id",
+                                    drama.id,
+                                    drama.title,
+                                    drama.slug,
+                                    drama.platform,
+                                    obtenerCategoria(
+                                        drama
+                                    ),
+                                    drama.video_description,
+                                    publicado
+                                        ? "publicado published"
+                                        : "borrador draft",
+                                    destacado
+                                        ? "destacado si"
+                                        : "no destacado",
+                                    tieneMega
+                                        ? "mega enlace disponible"
+                                        : "mega sin enlace faltante",
+                                    drama.sort_order,
+                                    formatearFecha(
+                                        drama.updated_at
+                                    )
+                                ].join(" ")
+                            );
+
+                        const palabras =
+                            documentoBusqueda
+                                .split(" ")
+                                .filter(Boolean);
+
+                        return terminos.every(
+                            termino =>
+                                termino.length <= 2
+                                    ? palabras.includes(
+                                        termino
+                                    )
+                                    : palabras.some(
+                                        palabra =>
+                                            palabra.includes(
+                                                termino
+                                            )
+                                    )
+                        );
+                    }
+                )
+                : dramas;
 
         carga.hidden = true;
         contenedorBusqueda.hidden = false;
-        resultado.textContent = termino
-            ? `Mostrando ${filtrados.length} de ${dramas.length} microdramas.`
-            : `${dramas.length} microdramas`;
+        resultado.textContent =
+            terminos.length
+                ? `Mostrando ${filtrados.length} de ${dramas.length} microdrama${dramas.length === 1 ? "" : "s"}.`
+                : `Mostrando los ${dramas.length} microdramas.`;
 
         lista.replaceChildren();
 
         if (!filtrados.length) {
             tabla.hidden = true;
             vacio.hidden = false;
-            vacio.textContent = termino
+            vacio.textContent = terminos.length
                 ? "No se encontraron microdramas que coincidan con la búsqueda."
                 : "No hay microdramas registrados.";
             return;
@@ -278,24 +357,73 @@
         const buscador = $("buscador-dramas");
         const limpiar = $("boton-limpiar-busqueda");
         const salir = $("boton-salir-admin");
+        const envoltura =
+            buscador?.closest(
+                ".admin-search__input-wrapper"
+            );
+
+        const actualizarEstadoVisual =
+            () => {
+                const activa =
+                    busqueda.trim() !== "";
+
+                if (limpiar) {
+                    limpiar.hidden =
+                        !activa;
+                }
+
+                if (envoltura) {
+                    envoltura.classList.toggle(
+                        "has-query",
+                        activa
+                    );
+                }
+            };
 
         if (buscador) {
             buscador.addEventListener("input", () => {
                 busqueda = buscador.value;
-                if (limpiar) limpiar.hidden = !busqueda;
+                actualizarEstadoVisual();
                 renderizar();
+            });
+
+            buscador.addEventListener("keydown", evento => {
+                if (
+                    evento.key === "Escape" &&
+                    busqueda
+                ) {
+                    evento.preventDefault();
+                    buscador.value = "";
+                    busqueda = "";
+                    actualizarEstadoVisual();
+                    renderizar();
+                }
             });
         }
 
         if (limpiar) {
-            limpiar.addEventListener("click", () => {
+            limpiar.addEventListener("click", evento => {
+                evento.stopPropagation();
                 if (buscador) buscador.value = "";
                 busqueda = "";
-                limpiar.hidden = true;
+                actualizarEstadoVisual();
                 if (buscador) buscador.focus();
                 renderizar();
             });
         }
+
+        if (envoltura) {
+            envoltura.addEventListener("click", evento => {
+                if (
+                    evento.target !==
+                    limpiar
+                ) {
+                    buscador.focus();
+                }
+            });
+        }
+
+        actualizarEstadoVisual();
 
         if (salir) salir.addEventListener("click", cerrarSesion);
         cargarDramas();

@@ -24,13 +24,6 @@ let textoBusqueda = "";
 let modoFormulario =
     "nuevo";
 
-let filtrosDramas = {
-    plataforma: "",
-    categoria: "",
-    estado: ""
-};
-
-
 /* =========================================================
    INICIO
 ========================================================= */
@@ -46,8 +39,6 @@ document.addEventListener(
         inicializarSeleccionMultiple();
 
         inicializarBuscador();
-
-        inicializarFiltros();
 
         inicializarNuevaCategoria();
 
@@ -110,6 +101,11 @@ function mostrarVistaResumen() {
             "formulario-nuevo"
         );
 
+    const usuarios =
+        document.getElementById(
+            "vista-usuarios"
+        );
+
     const acciones =
         document.getElementById(
             "acciones-resumen"
@@ -117,6 +113,7 @@ function mostrarVistaResumen() {
 
     if (resumen) resumen.hidden = false;
     if (formulario) formulario.hidden = true;
+    if (usuarios) usuarios.hidden = true;
     if (acciones) acciones.hidden = false;
 
     actualizarEncabezadoVista(
@@ -149,6 +146,11 @@ function mostrarVistaFormulario(
             "formulario-nuevo"
         );
 
+    const usuarios =
+        document.getElementById(
+            "vista-usuarios"
+        );
+
     const acciones =
         document.getElementById(
             "acciones-resumen"
@@ -161,6 +163,7 @@ function mostrarVistaFormulario(
 
     if (resumen) resumen.hidden = true;
     if (formulario) formulario.hidden = false;
+    if (usuarios) usuarios.hidden = true;
     if (acciones) acciones.hidden = true;
     if (mensaje) mensaje.hidden = true;
 
@@ -175,6 +178,55 @@ function mostrarVistaFormulario(
 
     actualizarNavegacionActiva(
         "formulario"
+    );
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+
+function mostrarVistaUsuarios() {
+
+    const resumen =
+        document.getElementById(
+            "vista-resumen"
+        );
+
+    const formulario =
+        document.getElementById(
+            "formulario-nuevo"
+        );
+
+    const usuarios =
+        document.getElementById(
+            "vista-usuarios"
+        );
+
+    const acciones =
+        document.getElementById(
+            "acciones-resumen"
+        );
+
+    const mensaje =
+        document.getElementById(
+            "mensaje-admin"
+        );
+
+    if (resumen) resumen.hidden = true;
+    if (formulario) formulario.hidden = true;
+    if (usuarios) usuarios.hidden = false;
+    if (acciones) acciones.hidden = true;
+    if (mensaje) mensaje.hidden = true;
+
+    actualizarEncabezadoVista(
+        "Administrar usuarios",
+        "Gestiona las cuentas registradas, sus permisos y sus accesos."
+    );
+
+    actualizarNavegacionActiva(
+        "usuarios"
     );
 
     window.scrollTo({
@@ -213,54 +265,45 @@ function actualizarNavegacionActiva(
     vista
 ) {
 
-    const botonResumen =
-        document.getElementById(
-            "boton-resumen"
-        );
+    const botones = {
+        resumen:
+            document.getElementById(
+                "boton-resumen"
+            ),
+        formulario:
+            document.getElementById(
+                "boton-nuevo"
+            ),
+        usuarios:
+            document.getElementById(
+                "boton-administrar-usuarios"
+            )
+    };
 
-    const botonNuevo =
-        document.getElementById(
-            "boton-nuevo"
-        );
+    Object.entries(botones).forEach(
+        ([nombre, boton]) => {
+            if (!boton) return;
 
-    const resumenActivo =
-        vista === "resumen";
+            const activo =
+                nombre === vista;
 
-    if (botonResumen) {
-        botonResumen.classList.toggle(
-            "is-active",
-            resumenActivo
-        );
-
-        if (resumenActivo) {
-            botonResumen.setAttribute(
-                "aria-current",
-                "page"
+            boton.classList.toggle(
+                "is-active",
+                activo
             );
-        } else {
-            botonResumen.removeAttribute(
-                "aria-current"
-            );
+
+            if (activo) {
+                boton.setAttribute(
+                    "aria-current",
+                    "page"
+                );
+            } else {
+                boton.removeAttribute(
+                    "aria-current"
+                );
+            }
         }
-    }
-
-    if (botonNuevo) {
-        botonNuevo.classList.toggle(
-            "is-active",
-            !resumenActivo
-        );
-
-        if (!resumenActivo) {
-            botonNuevo.setAttribute(
-                "aria-current",
-                "page"
-            );
-        } else {
-            botonNuevo.removeAttribute(
-                "aria-current"
-            );
-        }
-    }
+    );
 }
 
 
@@ -2794,12 +2837,15 @@ function inicializarBuscador() {
             "buscador-dramas"
         );
 
-
     const botonLimpiar =
         document.getElementById(
             "boton-limpiar-busqueda"
         );
 
+    const contenedor =
+        buscador?.closest(
+            ".admin-search__input-wrapper"
+        );
 
     if (
         !buscador ||
@@ -2810,49 +2856,90 @@ function inicializarBuscador() {
 
     }
 
+    const actualizarEstadoVisual =
+        () => {
+            const activa =
+                textoBusqueda !== "";
+
+            botonLimpiar.hidden =
+                !activa;
+
+            if (contenedor) {
+                contenedor.classList.toggle(
+                    "has-query",
+                    activa
+                );
+            }
+        };
 
     buscador.addEventListener(
         "input",
         () => {
 
             textoBusqueda =
-                buscador.value.trim();
+                buscador.value;
 
-
-            botonLimpiar.hidden =
-                textoBusqueda ===
-                "";
-
+            actualizarEstadoVisual();
 
             aplicarFiltroDramas();
 
         }
     );
 
-
     botonLimpiar.addEventListener(
         "click",
-        () => {
+        evento => {
+
+            evento.stopPropagation();
 
             buscador.value =
                 "";
 
-
             textoBusqueda =
                 "";
 
-
-            botonLimpiar.hidden =
-                true;
-
+            actualizarEstadoVisual();
 
             buscador.focus();
-
 
             aplicarFiltroDramas();
 
         }
     );
+
+    if (contenedor) {
+        contenedor.addEventListener(
+            "click",
+            evento => {
+                if (
+                    evento.target !==
+                    botonLimpiar
+                ) {
+                    buscador.focus();
+                }
+            }
+        );
+    }
+
+    buscador.addEventListener(
+        "keydown",
+        evento => {
+            if (evento.key !== "Escape") {
+                return;
+            }
+
+            if (buscador.value !== "") {
+                buscador.value = "";
+                textoBusqueda = "";
+                actualizarEstadoVisual();
+                aplicarFiltroDramas();
+            } else {
+                buscador.blur();
+            }
+        }
+    );
+
+    actualizarEstadoVisual();
 
 }
 
@@ -2860,160 +2947,6 @@ function inicializarBuscador() {
 /* =========================================================
    FILTROS DEL RESUMEN
 ========================================================= */
-
-function inicializarFiltros() {
-
-    const controles = [
-        ["filtro-plataforma", "plataforma"],
-        ["filtro-categoria", "categoria"],
-        ["filtro-estado", "estado"]
-    ];
-
-    controles.forEach(
-        ([id, propiedad]) => {
-            const control =
-                document.getElementById(id);
-
-            if (!control) return;
-
-            control.addEventListener(
-                "change",
-                () => {
-                    filtrosDramas[propiedad] =
-                        control.value;
-
-                    aplicarFiltroDramas();
-                }
-            );
-        }
-    );
-
-    const botonRestablecer =
-        document.getElementById(
-            "boton-restablecer-filtros"
-        );
-
-    if (botonRestablecer) {
-        botonRestablecer.addEventListener(
-            "click",
-            restablecerFiltros
-        );
-    }
-}
-
-
-function restablecerFiltros() {
-
-    const buscador =
-        document.getElementById(
-            "buscador-dramas"
-        );
-
-    const botonLimpiar =
-        document.getElementById(
-            "boton-limpiar-busqueda"
-        );
-
-    if (buscador) buscador.value = "";
-    if (botonLimpiar) botonLimpiar.hidden = true;
-
-    textoBusqueda = "";
-    filtrosDramas = {
-        plataforma: "",
-        categoria: "",
-        estado: ""
-    };
-
-    [
-        "filtro-plataforma",
-        "filtro-categoria",
-        "filtro-estado"
-    ].forEach(
-        id => {
-            const control =
-                document.getElementById(id);
-
-            if (control) control.value = "";
-        }
-    );
-
-    aplicarFiltroDramas();
-}
-
-
-function actualizarOpcionesFiltros() {
-
-    actualizarSelectorFiltro(
-        "filtro-plataforma",
-        dramasActuales.map(
-            drama =>
-                String(drama.platform || "").trim()
-        ),
-        "Todas",
-        filtrosDramas.plataforma
-    );
-
-    actualizarSelectorFiltro(
-        "filtro-categoria",
-        dramasActuales.map(
-            obtenerCategoriaDramaAdmin
-        ),
-        "Todas",
-        filtrosDramas.categoria
-    );
-}
-
-
-function actualizarSelectorFiltro(
-    id,
-    valores,
-    etiquetaInicial,
-    seleccion
-) {
-
-    const selector =
-        document.getElementById(id);
-
-    if (!selector) return;
-
-    const opciones =
-        [...new Set(
-            valores.filter(Boolean)
-        )].sort(
-            (a, b) =>
-                a.localeCompare(
-                    b,
-                    "es",
-                    { sensitivity: "base" }
-                )
-        );
-
-    selector.replaceChildren();
-
-    const opcionInicial =
-        document.createElement("option");
-
-    opcionInicial.value = "";
-    opcionInicial.textContent = etiquetaInicial;
-    selector.appendChild(opcionInicial);
-
-    opciones.forEach(
-        valor => {
-            const opcion =
-                document.createElement("option");
-
-            opcion.value = valor;
-            opcion.textContent = valor;
-            selector.appendChild(opcion);
-        }
-    );
-
-    selector.value =
-        opciones.includes(seleccion)
-            ? seleccion
-            : "";
-}
-
 
 function actualizarEstadisticasDramas() {
 
@@ -3144,7 +3077,6 @@ function aplicarFiltroDramas() {
     const elementos =
         obtenerElementos();
 
-
     if (
         !elementos
     ) {
@@ -3153,117 +3085,92 @@ function aplicarFiltroDramas() {
 
     }
 
-
     const resultadoBusqueda =
         document.getElementById(
             "resultado-busqueda"
         );
 
-
-    const busqueda =
+    const terminos =
         normalizarTextoBusqueda(
             textoBusqueda
-        );
-
+        )
+            .split(" ")
+            .filter(Boolean);
 
     const dramasFiltrados =
         dramasActuales.filter(
             drama => {
-
-                const id =
-                    normalizarTextoBusqueda(
-                        drama.id
-                    );
-
-
-                const titulo =
-                    normalizarTextoBusqueda(
-                        drama.title
-                    );
-
-
-                const plataforma =
-                    normalizarTextoBusqueda(
-                        drama.platform
-                    );
-
-
-                const categoria =
-                    normalizarTextoBusqueda(
-                        obtenerCategoriaDramaAdmin(
-                            drama
-                        )
-                    );
-
 
                 const estado =
                     String(
                         drama.status || "draft"
                     ).toLowerCase();
 
+                const publicado =
+                    estado === "published";
 
-                const estadoVisible =
-                    estado === "published"
-                        ? "publicado published"
-                        : "borrador draft";
+                const destacado =
+                    drama.featured === true ||
+                    drama.featured === 1 ||
+                    drama.featured === "1";
 
+                const tieneMega =
+                    String(
+                        drama.video_url || ""
+                    ).trim() !== "";
 
-                const coincideTexto =
-                    busqueda === "" ||
-                    id.includes(busqueda) ||
-                    titulo.includes(busqueda) ||
-                    plataforma.includes(busqueda) ||
-                    categoria.includes(busqueda) ||
-                    estadoVisible.includes(busqueda);
+                const documentoBusqueda =
+                    normalizarTextoBusqueda(
+                        [
+                            drama.id,
+                            drama.title,
+                            drama.slug,
+                            drama.platform,
+                            obtenerCategoriaDramaAdmin(
+                                drama
+                            ),
+                            drama.video_description,
+                            publicado
+                                ? "publicado published"
+                                : "borrador draft",
+                            destacado
+                                ? "destacado si"
+                                : "no destacado",
+                            tieneMega
+                                ? "mega enlace disponible"
+                                : "mega sin enlace faltante",
+                            drama.sort_order,
+                            formatearFecha(
+                                drama.updated_at
+                            )
+                        ].join(" ")
+                    );
 
-
-                const coincidePlataforma =
-                    filtrosDramas.plataforma === "" ||
-                    String(drama.platform || "") ===
-                        filtrosDramas.plataforma;
-
-
-                const coincideCategoria =
-                    filtrosDramas.categoria === "" ||
-                    obtenerCategoriaDramaAdmin(drama) ===
-                        filtrosDramas.categoria;
-
-
-                const coincideEstado =
-                    filtrosDramas.estado === "" ||
-                    estado === filtrosDramas.estado;
-
-
-                return (
-                    coincideTexto &&
-                    coincidePlataforma &&
-                    coincideCategoria &&
-                    coincideEstado
+                return terminos.every(
+                    termino =>
+                        documentoBusqueda.includes(
+                            termino
+                        )
                 );
 
             }
         );
-
 
     renderizarDramas(
         dramasFiltrados,
         elementos
     );
 
-
     if (
         resultadoBusqueda
     ) {
 
         resultadoBusqueda.textContent =
-            `Mostrando ${dramasFiltrados.length} de ${dramasActuales.length} microdrama${
-                dramasActuales.length === 1
-                    ? ""
-                    : "s"
-            }.`;
+            terminos.length === 0
+                ? `Mostrando los ${dramasActuales.length} microdramas.`
+                : `Mostrando ${dramasFiltrados.length} de ${dramasActuales.length} microdrama${dramasActuales.length === 1 ? "" : "s"}.`;
 
     }
-
 
     actualizarEstadoSeleccion();
 
@@ -3289,6 +3196,14 @@ function normalizarTextoBusqueda(
             ""
         )
         .toLowerCase()
+        .replace(
+            /[^a-z0-9]+/g,
+            " "
+        )
+        .replace(
+            /\s+/g,
+            " "
+        )
         .trim();
 
 }
@@ -3377,9 +3292,6 @@ async function cargarDramasAdministrativos() {
 
 
         actualizarEstadisticasDramas();
-
-
-        actualizarOpcionesFiltros();
 
 
         aplicarFiltroDramas();
@@ -3561,12 +3473,11 @@ function renderizarDramas(
 
 
         elementos.estadoVacio.textContent =
-            textoBusqueda === "" &&
-            filtrosDramas.plataforma === "" &&
-            filtrosDramas.categoria === "" &&
-            filtrosDramas.estado === ""
+            normalizarTextoBusqueda(
+                textoBusqueda
+            ) === ""
                 ? "No hay microdramas registrados."
-                : "No se encontraron microdramas con la búsqueda y filtros seleccionados.";
+                : "No se encontraron microdramas relacionados con la búsqueda.";
 
 
         return;

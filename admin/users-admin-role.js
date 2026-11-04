@@ -6,7 +6,7 @@
     let tbody = null;
 
     function ensureHeader() {
-        const header = document.querySelector("#modal-administrar-usuarios .users-table thead tr");
+        const header = document.querySelector("#vista-usuarios .users-table thead tr");
         if (!header || header.querySelector(".usuario-role-header")) return;
         const headers = Array.from(header.children);
         const reference = headers.find(cell => cell.textContent.trim() === "Registro");

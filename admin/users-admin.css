@@ -1,43 +1,23 @@
 /* =========================================================
-   ADMINISTRACIÓN DE USUARIOS
+   ADMINISTRACIÓN DE USUARIOS — VISTA INTEGRADA
 ========================================================= */
 
-.users-modal[hidden] {
+.admin-users-view[hidden] {
     display: none !important;
 }
 
-.users-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: flex;
-    padding: 24px;
-    align-items: center;
-    justify-content: center;
+.admin-users-view {
+    margin: 24px;
 }
 
-.users-modal__backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.72);
-    backdrop-filter: blur(3px);
-}
-
-.users-modal__dialog {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    width: min(1180px, 100%);
-    max-height: min(820px, calc(100vh - 48px));
-    flex-direction: column;
+.users-panel {
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 14px;
-    background: var(--surface);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    background: rgba(255, 255, 255, 0.025);
 }
 
-.users-modal__header {
+.users-panel__header {
     display: flex;
     padding: 20px 24px;
     align-items: center;
@@ -47,28 +27,19 @@
     background: var(--surface-secondary);
 }
 
-.users-modal__header h3 {
+.users-panel__header h3 {
     font-size: 20px;
 }
 
-.users-modal__header p {
+.users-panel__header p {
+    max-width: 880px;
     margin-top: 5px;
     color: var(--text-secondary);
     font-size: 13px;
+    line-height: 1.5;
 }
 
-.users-modal__close {
-    width: 38px;
-    height: 38px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 24px;
-    cursor: pointer;
-}
-
-.users-modal__toolbar {
+.users-panel__toolbar {
     display: flex;
     padding: 14px 24px;
     align-items: center;
@@ -77,13 +48,13 @@
     border-bottom: 1px solid var(--border);
 }
 
-.users-modal__toolbar small {
+.users-panel__toolbar small {
     color: var(--text-secondary);
 }
 
-.users-modal__table-wrap {
-    overflow: auto;
+.users-panel__table-wrap {
     min-height: 180px;
+    overflow: auto;
 }
 
 .users-table {
@@ -114,6 +85,14 @@
     text-transform: uppercase;
 }
 
+.users-table tbody tr {
+    transition: background-color 150ms ease;
+}
+
+.users-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.025);
+}
+
 .users-table input[type="checkbox"] {
     width: 17px;
     height: 17px;
@@ -122,13 +101,18 @@
 }
 
 .users-status {
-    padding: 18px 24px;
+    margin: 14px 24px 0;
+    padding: 14px 18px;
+    border: 1px solid transparent;
+    border-radius: 10px;
     color: var(--text-secondary);
     font-size: 13px;
     text-align: center;
 }
 
 .users-status--error {
+    border-color: rgba(255, 83, 100, 0.28);
+    background: rgba(255, 83, 100, 0.08);
     color: #ffd8dc;
 }
 
@@ -178,27 +162,38 @@
     color: var(--success);
 }
 
-body.users-modal-open {
-    overflow: hidden;
-}
-
 @media (max-width: 760px) {
-    .users-modal {
-        padding: 10px;
+    .admin-users-view {
+        margin: 14px;
     }
 
-    .users-modal__dialog {
-        max-height: calc(100vh - 20px);
-    }
-
-    .users-modal__header,
-    .users-modal__toolbar {
+    .users-panel__header,
+    .users-panel__toolbar {
         padding-left: 16px;
         padding-right: 16px;
     }
 
-    .users-modal__toolbar {
+    .users-panel__toolbar {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .users-panel__toolbar .admin-panel__actions,
+    .users-panel__toolbar .button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-users-view {
+        margin: 10px 8px 14px;
+    }
+
+    .users-panel__header {
+        padding: 16px 14px;
+    }
+
+    .users-panel__toolbar {
+        padding: 12px 14px;
     }
 }

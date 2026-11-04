@@ -4,22 +4,23 @@ const API_ADMIN_USERS = "/api/admin/users";
 
 function inicializarAdministracionUsuarios() {
     const boton = document.getElementById("boton-administrar-usuarios");
-    const modal = document.getElementById("modal-administrar-usuarios");
-    const cerrar = document.getElementById("boton-cerrar-modal-usuarios");
-    const backdrop = document.getElementById("usuarios-modal-backdrop");
+    const vista = document.getElementById("vista-usuarios");
     const recargar = document.getElementById("boton-recargar-usuarios");
     const eliminar = document.getElementById("boton-eliminar-usuarios");
     const seleccionarTodos = document.getElementById("seleccionar-todos-usuarios");
 
-    if (!boton || !modal) return;
+    if (!boton || !vista) return;
 
     boton.addEventListener("click", async () => {
-        abrirModalUsuarios();
+        if (typeof mostrarVistaUsuarios === "function") {
+            mostrarVistaUsuarios();
+        } else {
+            vista.hidden = false;
+        }
+
         await cargarUsuariosAdministrativos();
     });
 
-    if (cerrar) cerrar.addEventListener("click", cerrarModalUsuarios);
-    if (backdrop) backdrop.addEventListener("click", cerrarModalUsuarios);
     if (recargar) recargar.addEventListener("click", cargarUsuariosAdministrativos);
     if (eliminar) eliminar.addEventListener("click", eliminarUsuariosSeleccionados);
 
@@ -31,25 +32,8 @@ function inicializarAdministracionUsuarios() {
             actualizarSeleccionUsuarios();
         });
     }
-
-    document.addEventListener("keydown", evento => {
-        if (evento.key === "Escape" && !modal.hidden) cerrarModalUsuarios();
-    });
 }
 
-function abrirModalUsuarios() {
-    const modal = document.getElementById("modal-administrar-usuarios");
-    if (!modal) return;
-    modal.hidden = false;
-    document.body.classList.add("users-modal-open");
-}
-
-function cerrarModalUsuarios() {
-    const modal = document.getElementById("modal-administrar-usuarios");
-    if (!modal) return;
-    modal.hidden = true;
-    document.body.classList.remove("users-modal-open");
-}
 
 async function cargarUsuariosAdministrativos() {
     const estado = document.getElementById("estado-carga-usuarios");

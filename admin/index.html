@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="/admin/cover-uploader.css">
     <link rel="stylesheet" href="/admin/github-status.css?v=20261103-redesign">
     <link rel="stylesheet" href="/admin/sticky-layout.css?v=20261103-redesign">
-    <link rel="stylesheet" href="/admin/users-admin.css">
-    <link rel="stylesheet" href="/admin/users-admin-role.css?v=1">
-    <link rel="stylesheet" href="/admin/admin-dashboard.css?v=20261103-redesign">
+    <link rel="stylesheet" href="/admin/users-admin.css?v=20261103-inline">
+    <link rel="stylesheet" href="/admin/users-admin-role.css?v=20261103-inline">
+    <link rel="stylesheet" href="/admin/admin-dashboard.css?v=20261103-search">
 </head>
 <body>
 
@@ -41,10 +41,6 @@
                     <span class="admin-sidebar__label">Administrar usuarios</span>
                 </button>
 
-                <a class="admin-sidebar__item" href="/">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7v9H3zM9 20v-6h6v6"/></svg>
-                    <span class="admin-sidebar__label">Ver catálogo</span>
-                </a>
             </nav>
 
             <div class="admin-sidebar__footer">
@@ -222,18 +218,16 @@
                 </div>
             </div>
 
-            <div id="modal-administrar-usuarios" class="users-modal" hidden>
-                <div id="usuarios-modal-backdrop" class="users-modal__backdrop"></div>
-                <section class="users-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-usuarios">
-                    <header class="users-modal__header">
+            <div id="vista-usuarios" class="admin-users-view" hidden>
+                <section class="users-panel" aria-labelledby="titulo-vista-usuarios">
+                    <header class="users-panel__header">
                         <div>
-                            <h3 id="titulo-modal-usuarios">Administrar usuarios</h3>
+                            <h3 id="titulo-vista-usuarios">Administrar usuarios</h3>
                             <p>Consulta las cuentas registradas sin mostrar contraseñas ni PIN. Desde <strong>Rol</strong> puedes conceder o retirar permisos de administrador.</p>
                         </div>
-                        <button type="button" id="boton-cerrar-modal-usuarios" class="users-modal__close" aria-label="Cerrar" title="Cerrar">×</button>
                     </header>
 
-                    <div class="users-modal__toolbar">
+                    <div class="users-panel__toolbar">
                         <small>Datos visibles: nombre, correo, teléfono, método de acceso, rol y fechas.</small>
                         <div class="admin-panel__actions">
                             <button id="boton-recargar-usuarios" class="button button--secondary" type="button">Actualizar</button>
@@ -244,7 +238,7 @@
                     <div id="estado-carga-usuarios" class="users-status" hidden></div>
                     <div id="usuarios-vacio" class="users-empty" hidden>No hay usuarios registrados.</div>
 
-                    <div class="users-modal__table-wrap">
+                    <div class="users-panel__table-wrap">
                         <table class="users-table">
                             <thead>
                                 <tr>
@@ -291,35 +285,12 @@
                 </section>
 
                 <section id="contenedor-busqueda" class="admin-search admin-summary-search" hidden aria-label="Búsqueda y filtros">
-                    <div class="admin-search__input-wrapper">
-                        <svg class="admin-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-                        <input type="search" id="buscador-dramas" class="admin-search__input" placeholder="Buscar por nombre, ID, plataforma, categoría o estado..." autocomplete="off" aria-label="Buscar microdramas">
-                        <button id="boton-limpiar-busqueda" class="admin-search__clear" type="button" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden>×</button>
-                    </div>
-                    <div class="admin-filters">
-                        <label>
-                            <span>Plataforma</span>
-                            <select id="filtro-plataforma" aria-label="Filtrar por plataforma">
-                                <option value="">Todas</option>
-                            </select>
-                        </label>
-                        <label>
-                            <span>Categoría</span>
-                            <select id="filtro-categoria" aria-label="Filtrar por categoría">
-                                <option value="">Todas</option>
-                            </select>
-                        </label>
-                        <label>
-                            <span>Estado</span>
-                            <select id="filtro-estado" aria-label="Filtrar por estado">
-                                <option value="">Todos</option>
-                                <option value="published">Publicado</option>
-                                <option value="draft">Borrador</option>
-                            </select>
-                        </label>
-                        <button id="boton-restablecer-filtros" class="button button--secondary admin-filters__reset" type="button">
-                            Restablecer
-                        </button>
+                    <div class="admin-search__bar-row">
+                        <div class="admin-search__input-wrapper">
+                            <svg class="admin-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                            <input type="search" id="buscador-dramas" class="admin-search__input" placeholder="Combina título, ID, plataforma, categoría, estado u otras palabras..." autocomplete="off" aria-label="Buscar microdramas">
+                            <button id="boton-limpiar-busqueda" class="admin-search__clear" type="button" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden>×</button>
+                        </div>
                     </div>
                     <div id="resultado-busqueda" class="admin-search__result" aria-live="polite"></div>
                 </section>
@@ -355,13 +326,13 @@
         </div>
     </div>
 
-    <script src="/admin/admin.js?v=20261103-redesign" defer></script>
+    <script src="/admin/admin.js?v=20261103-search" defer></script>
     <script src="/admin/cover-uploader.js" defer></script>
     <script src="/admin/github-status.js?v=20261103-redesign" defer></script>
     <script src="/admin/admin-enhancements.js?v=20261103-redesign" defer></script>
     <script src="/admin/admin-logout.js?v=20260819-logout" defer></script>
-    <script src="/admin/users-admin.js" defer></script>
-    <script src="/admin/users-admin-role.js?v=1" defer></script>
+    <script src="/admin/users-admin.js?v=20261103-inline" defer></script>
+    <script src="/admin/users-admin-role.js?v=20261103-inline" defer></script>
 
 </body>
 </html>

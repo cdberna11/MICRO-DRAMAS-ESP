@@ -68,6 +68,31 @@ function inicializarNavegacionAdministrativa() {
             ".admin-sidebar__brand"
         );
 
+    const opcionesLateral =
+        document.querySelectorAll(
+            ".admin-sidebar__nav .admin-sidebar__item"
+        );
+
+    opcionesLateral.forEach(
+        opcion => {
+            opcion.addEventListener(
+                "click",
+                evento => {
+                    if (
+                        evento.detail ===
+                        0
+                    ) {
+                        return;
+                    }
+
+                    window.requestAnimationFrame(
+                        () => opcion.blur()
+                    );
+                }
+            );
+        }
+    );
+
     if (botonResumen) {
         botonResumen.addEventListener(
             "click",
@@ -2623,10 +2648,24 @@ function actualizarEstadoSeleccion() {
             0;
 
 
-        botonEliminar.textContent =
+        const etiquetaEliminar =
+            botonEliminar.querySelector(
+                ".delete-action__label"
+            );
+
+        if (
+            etiquetaEliminar
+        ) {
+            etiquetaEliminar.textContent =
+                "Eliminar";
+        }
+
+        botonEliminar.setAttribute(
+            "aria-label",
             seleccionadas.length > 0
-                ? `Eliminar seleccionados (${seleccionadas.length})`
-                : "Eliminar seleccionados";
+                ? `Eliminar ${seleccionadas.length} microdrama${seleccionadas.length === 1 ? "" : "s"} seleccionado${seleccionadas.length === 1 ? "" : "s"}`
+                : "Eliminar microdramas seleccionados"
+        );
 
     }
 
@@ -2737,8 +2776,26 @@ async function eliminarSeleccionados() {
         true;
 
 
-    boton.textContent =
-        "Eliminando...";
+    const etiquetaBoton =
+        boton.querySelector(
+            ".delete-action__label"
+        );
+
+    if (
+        etiquetaBoton
+    ) {
+        etiquetaBoton.textContent =
+            "Eliminando...";
+    }
+
+    boton.classList.add(
+        "is-deleting"
+    );
+
+    boton.setAttribute(
+        "aria-busy",
+        "true"
+    );
 
 
     try {
@@ -2818,6 +2875,14 @@ async function eliminarSeleccionados() {
 
 
     } finally {
+
+        boton.classList.remove(
+            "is-deleting"
+        );
+
+        boton.removeAttribute(
+            "aria-busy"
+        );
 
         actualizarEstadoSeleccion();
 

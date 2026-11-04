@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="/admin/sticky-layout.css?v=20261103-redesign">
     <link rel="stylesheet" href="/admin/users-admin.css?v=20261103-inline">
     <link rel="stylesheet" href="/admin/users-admin-role.css?v=20261103-inline">
-    <link rel="stylesheet" href="/admin/admin-dashboard.css?v=20261104-search-fix">
+    <link rel="stylesheet" href="/admin/admin-dashboard.css?v=20261104-ui-polish">
 </head>
 <body>
 
@@ -87,8 +87,14 @@
                     <p id="admin-view-description">Administra los registros almacenados en Cloudflare D1.</p>
                 </div>
                 <div id="acciones-resumen" class="admin-panel__actions">
-                    <button id="boton-eliminar-seleccionados" class="button button--danger" type="button" disabled>
-                        Eliminar seleccionados
+                    <button id="boton-eliminar-seleccionados" class="button button--danger delete-action" type="button" aria-label="Eliminar microdramas seleccionados" disabled>
+                        <span class="delete-action__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path class="delete-action__lid" d="M8 7h8M10 4h4l1 3H9l1-3"/>
+                                <path class="delete-action__bin" d="M7.5 7 9 20h6l1.5-13M11 10v7M13 10v7"/>
+                            </svg>
+                        </span>
+                        <span class="delete-action__label">Eliminar</span>
                     </button>
                 </div>
             </div>
@@ -288,7 +294,7 @@
                     <div class="admin-search__bar-row">
                         <div class="admin-search__input-wrapper">
                             <svg class="admin-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-                            <input type="search" id="buscador-dramas" class="admin-search__input" placeholder="Combina título, ID, plataforma, categoría, estado u otras palabras..." autocomplete="off" aria-label="Buscar microdramas">
+                            <input type="text" id="buscador-dramas" class="admin-search__input" placeholder="Combina título, ID, plataforma, categoría, estado u otras palabras..." autocomplete="off" inputmode="search" enterkeyhint="search" role="searchbox" aria-label="Buscar microdramas">
                             <button id="boton-limpiar-busqueda" class="admin-search__clear" type="button" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden>×</button>
                         </div>
                     </div>
@@ -326,7 +332,7 @@
         </div>
     </div>
 
-    <script src="/admin/admin.js?v=20261104-search-fix" defer></script>
+    <script src="/admin/admin.js?v=20261104-ui-polish" defer></script>
     <script src="/admin/cover-uploader.js" defer></script>
     <script src="/admin/github-status.js?v=20261103-redesign" defer></script>
     <script src="/admin/admin-enhancements.js?v=20261103-redesign" defer></script>

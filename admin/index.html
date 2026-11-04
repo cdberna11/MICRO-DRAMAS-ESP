@@ -7,11 +7,11 @@
     <title>Administración | Micro Dramas ESP</title>
     <link rel="stylesheet" href="/admin/admin.css">
     <link rel="stylesheet" href="/admin/cover-uploader.css">
-    <link rel="stylesheet" href="/admin/github-status.css">
-    <link rel="stylesheet" href="/admin/sticky-layout.css">
+    <link rel="stylesheet" href="/admin/github-status.css?v=20261103-redesign">
+    <link rel="stylesheet" href="/admin/sticky-layout.css?v=20261103-redesign">
     <link rel="stylesheet" href="/admin/users-admin.css">
     <link rel="stylesheet" href="/admin/users-admin-role.css?v=1">
-    <link rel="stylesheet" href="/admin/admin-dashboard.css?v=1">
+    <link rel="stylesheet" href="/admin/admin-dashboard.css?v=20261103-redesign">
 </head>
 <body>
 
@@ -26,10 +26,10 @@
             </a>
 
             <nav class="admin-sidebar__nav" aria-label="Opciones principales">
-                <a class="admin-sidebar__item is-active" href="#dashboard" aria-current="page">
+                <button id="boton-resumen" class="admin-sidebar__item is-active" type="button" aria-current="page">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
                     <span class="admin-sidebar__label">Resumen</span>
-                </a>
+                </button>
 
                 <button id="boton-nuevo" class="admin-sidebar__item" type="button">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -45,15 +45,6 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7v9H3zM9 20v-6h6v6"/></svg>
                     <span class="admin-sidebar__label">Ver catálogo</span>
                 </a>
-
-                <div id="contenedor-busqueda" class="admin-search admin-sidebar__search" hidden>
-                    <div class="admin-search__input-wrapper">
-                        <svg class="admin-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-                        <input type="search" id="buscador-dramas" class="admin-search__input" placeholder="Buscar microdramas..." autocomplete="off" aria-label="Buscar microdramas">
-                        <button id="boton-limpiar-busqueda" class="admin-search__clear" type="button" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden>×</button>
-                    </div>
-                    <div id="resultado-busqueda" class="admin-search__result" aria-live="polite"></div>
-                </div>
             </nav>
 
             <div class="admin-sidebar__footer">
@@ -72,12 +63,21 @@
                 <p class="admin-header__label">Espacio de trabajo</p>
                 <h1>Panel administrativo</h1>
             </div>
-            <div class="admin-header__status" aria-label="Estado del panel">
-                <span aria-hidden="true"></span>
-                <div>
-                    <strong>Micro Dramas ESP</strong>
-                    <small>Gestión de contenido</small>
-                </div>
+            <div id="estado-github" class="github-status github-status--header" aria-live="polite">
+                <article class="github-status__card github-status__card--connection">
+                    <span id="github-status-indicator" class="github-status__indicator" aria-hidden="true"></span>
+                    <div>
+                        <strong id="github-status-title">GitHub: comprobando...</strong>
+                        <span id="github-status-detail">Verificando repositorio...</span>
+                    </div>
+                </article>
+                <article class="github-status__card github-status__card--token">
+                    <span class="github-status__token-icon" aria-hidden="true">◆</span>
+                    <div>
+                        <strong id="github-token-title">Token: comprobando...</strong>
+                        <span id="github-status-expiration">Verificando vigencia...</span>
+                    </div>
+                </article>
             </div>
         </div>
     </header>
@@ -87,25 +87,14 @@
 
             <div class="admin-panel__heading">
                 <div>
-                    <h2>Gestión de microdramas</h2>
-                    <p>Administra los registros almacenados en Cloudflare D1.</p>
+                    <h2 id="admin-view-title">Gestión de microdramas</h2>
+                    <p id="admin-view-description">Administra los registros almacenados en Cloudflare D1.</p>
                 </div>
-                <div class="admin-panel__actions">
+                <div id="acciones-resumen" class="admin-panel__actions">
                     <button id="boton-eliminar-seleccionados" class="button button--danger" type="button" disabled>
                         Eliminar seleccionados
                     </button>
                 </div>
-            </div>
-
-            <div id="estado-github" class="github-status" aria-live="polite">
-                <div class="github-status__main">
-                    <span id="github-status-indicator" class="github-status__indicator" aria-hidden="true"></span>
-                    <div>
-                        <strong id="github-status-title">GitHub: comprobando...</strong>
-                        <span id="github-status-detail">Verificando token y permisos...</span>
-                    </div>
-                </div>
-                <div id="github-status-expiration" class="github-status__expiration"></div>
             </div>
 
             <div id="mensaje-admin" class="admin-message" role="status" aria-live="polite" hidden></div>
@@ -277,39 +266,99 @@
                 </section>
             </div>
 
-            <div id="estado-carga" class="loading-state">Cargando microdramas...</div>
+            <div id="vista-resumen" class="admin-summary-view">
+                <section class="admin-stats" aria-label="Estadísticas de microdramas">
+                    <article class="admin-stat-card">
+                        <span>Total</span>
+                        <strong id="estadistica-total">0</strong>
+                        <small>Microdramas registrados</small>
+                    </article>
+                    <article class="admin-stat-card admin-stat-card--success">
+                        <span>Publicados</span>
+                        <strong id="estadistica-publicados">0</strong>
+                        <small>Visibles en el catálogo</small>
+                    </article>
+                    <article class="admin-stat-card admin-stat-card--warning">
+                        <span>Borradores</span>
+                        <strong id="estadistica-borradores">0</strong>
+                        <small>Pendientes de publicación</small>
+                    </article>
+                    <article class="admin-stat-card admin-stat-card--accent">
+                        <span>Destacados</span>
+                        <strong id="estadistica-destacados">0</strong>
+                        <small>Marcados como principales</small>
+                    </article>
+                </section>
 
-            <div id="contenedor-tabla" class="table-container" hidden>
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th scope="col"><input type="checkbox" id="seleccionar-todos" title="Seleccionar todos"></th>
-                            <th scope="col">ID</th>
-                            <th scope="col">Microdrama</th>
-                            <th scope="col">Plataforma</th>
-                            <th scope="col">Categoría</th>
-                            <th scope="col">Estado</th>
-                            <th scope="col">Destacado</th>
-                            <th scope="col">Orden</th>
-                            <th scope="col">Actualización</th>
-                            <th scope="col">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-dramas"></tbody>
-                </table>
+                <section id="contenedor-busqueda" class="admin-search admin-summary-search" hidden aria-label="Búsqueda y filtros">
+                    <div class="admin-search__input-wrapper">
+                        <svg class="admin-search__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                        <input type="search" id="buscador-dramas" class="admin-search__input" placeholder="Buscar por nombre, ID, plataforma, categoría o estado..." autocomplete="off" aria-label="Buscar microdramas">
+                        <button id="boton-limpiar-busqueda" class="admin-search__clear" type="button" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden>×</button>
+                    </div>
+                    <div class="admin-filters">
+                        <label>
+                            <span>Plataforma</span>
+                            <select id="filtro-plataforma" aria-label="Filtrar por plataforma">
+                                <option value="">Todas</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Categoría</span>
+                            <select id="filtro-categoria" aria-label="Filtrar por categoría">
+                                <option value="">Todas</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Estado</span>
+                            <select id="filtro-estado" aria-label="Filtrar por estado">
+                                <option value="">Todos</option>
+                                <option value="published">Publicado</option>
+                                <option value="draft">Borrador</option>
+                            </select>
+                        </label>
+                        <button id="boton-restablecer-filtros" class="button button--secondary admin-filters__reset" type="button">
+                            Restablecer
+                        </button>
+                    </div>
+                    <div id="resultado-busqueda" class="admin-search__result" aria-live="polite"></div>
+                </section>
+
+                <div id="estado-carga" class="loading-state">Cargando microdramas...</div>
+
+                <div id="contenedor-tabla" class="table-container" hidden>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th scope="col"><input type="checkbox" id="seleccionar-todos" title="Seleccionar todos"></th>
+                                <th scope="col">ID</th>
+                                <th scope="col">Microdrama</th>
+                                <th scope="col">Plataforma</th>
+                                <th scope="col">Categoría</th>
+                                <th scope="col" class="th-mega-status">Enlace MEGA</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col">Destacado</th>
+                                <th scope="col">Orden</th>
+                                <th scope="col">Actualización</th>
+                                <th scope="col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-dramas"></tbody>
+                    </table>
+                </div>
+
+                <div id="estado-vacio" class="empty-state" hidden>No hay microdramas registrados.</div>
             </div>
-
-            <div id="estado-vacio" class="empty-state" hidden>No hay microdramas registrados.</div>
         </section>
     </main>
 
         </div>
     </div>
 
-    <script src="/admin/admin.js" defer></script>
+    <script src="/admin/admin.js?v=20261103-redesign" defer></script>
     <script src="/admin/cover-uploader.js" defer></script>
-    <script src="/admin/github-status.js" defer></script>
-    <script src="/admin/admin-enhancements.js?v=20260819-logout" defer></script>
+    <script src="/admin/github-status.js?v=20261103-redesign" defer></script>
+    <script src="/admin/admin-enhancements.js?v=20261103-redesign" defer></script>
     <script src="/admin/admin-logout.js?v=20260819-logout" defer></script>
     <script src="/admin/users-admin.js" defer></script>
     <script src="/admin/users-admin-role.js?v=1" defer></script>

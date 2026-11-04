@@ -5,9 +5,6 @@
     const API_GITHUB_STATUS =
         "/api/admin/github-status";
 
-    const FECHA_EXPIRACION_POR_DEFECTO =
-        "2027-08-14";
-
     document.addEventListener(
         "DOMContentLoaded",
         comprobarEstadoGitHub
@@ -27,7 +24,10 @@
         const expiracion =
             document.getElementById("github-status-expiration");
 
-        if (!contenedor || !titulo || !detalle || !expiracion) {
+        const tituloToken =
+            document.getElementById("github-token-title");
+
+        if (!contenedor || !titulo || !detalle || !expiracion || !tituloToken) {
             return;
         }
 
@@ -62,7 +62,10 @@
                 );
             }
 
-            contenedor.classList.remove("github-status--error");
+            contenedor.classList.remove(
+                "github-status--error",
+                "github-status--warning"
+            );
             contenedor.classList.add("github-status--connected");
 
             titulo.textContent =
@@ -74,16 +77,33 @@
             const fechaISO =
                 /^\d{4}-\d{2}-\d{2}$/.test(String(resultado.expiresAt || ""))
                     ? resultado.expiresAt
-                    : FECHA_EXPIRACION_POR_DEFECTO;
+                    : "";
 
             const fecha =
                 formatearFecha(fechaISO);
 
             const dias =
-                calcularDiasRestantes(
-                    fechaActualPanamaISO(),
-                    fechaISO
+                Number.isInteger(resultado.daysRemaining)
+                    ? resultado.daysRemaining
+                    : calcularDiasRestantes(
+                        fechaActualPanamaISO(),
+                        fechaISO
+                    );
+
+            const proximoAExpirar =
+                Number.isInteger(dias) &&
+                dias <= 30;
+
+            tituloToken.textContent =
+                proximoAExpirar
+                    ? "Token: Próximo a expirar"
+                    : "Token: Válido";
+
+            if (proximoAExpirar) {
+                contenedor.classList.add(
+                    "github-status--warning"
                 );
+            }
 
             if (Number.isInteger(dias) && fecha) {
                 expiracion.textContent =
@@ -99,6 +119,7 @@
         } catch (error) {
 
             contenedor.classList.remove("github-status--connected");
+            contenedor.classList.remove("github-status--warning");
             contenedor.classList.add("github-status--error");
 
             titulo.textContent =
@@ -107,6 +128,9 @@
             detalle.textContent =
                 error?.message ||
                 "No se pudo comprobar la conexión con GitHub.";
+
+            tituloToken.textContent =
+                "Token: No disponible";
 
             expiracion.textContent =
                 "Las portadas no podrán subirse hasta corregir el acceso.";

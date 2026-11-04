@@ -10,36 +10,12 @@ function adminNormalizar(valor) {
         .trim();
 }
 
-function adminEstadoBusqueda(valor) {
-    const texto = adminNormalizar(valor);
-    if (["publicado", "publicados", "published"].includes(texto)) return "published";
-    if (["borrador", "borradores", "draft"].includes(texto)) return "draft";
-    return null;
-}
-
 function mejorarTablaAdmin() {
     const tabla = document.querySelector(".admin-table");
     const lista = document.getElementById("lista-dramas");
     if (!tabla || !lista) return;
 
-    const encabezado = tabla.querySelector("thead tr");
-    if (encabezado && !encabezado.querySelector(".th-mega-status")) {
-        const th = document.createElement("th");
-        th.scope = "col";
-        th.className = "th-mega-status";
-        th.textContent = "Sin enlace MEGA";
-        encabezado.insertBefore(th, encabezado.children[5] || null);
-    }
-
     Array.from(lista.querySelectorAll("tr")).forEach(fila => {
-        if (!fila.querySelector(".mega-status-cell")) {
-            const celda = document.createElement("td");
-            celda.className = "mega-status-cell";
-            celda.textContent = "—";
-            celda.title = "Comprobando enlace MEGA...";
-            fila.insertBefore(celda, fila.children[5] || null);
-        }
-
         const celdaAcciones = fila.lastElementChild;
         if (!celdaAcciones || celdaAcciones.querySelector(".button--publish")) return;
 
@@ -112,145 +88,19 @@ function mejorarTablaAdmin() {
     });
 }
 
-async function completarEstadoMega() {
-    const filas = Array.from(document.querySelectorAll("#lista-dramas tr"));
-    if (!filas.length) return;
-
-    try {
-        const respuesta = await fetch("/api/admin/dramas", {
-            method: "GET",
-            credentials: "same-origin",
-            headers: { "Accept": "application/json" },
-            cache: "no-store"
-        });
-        if (!respuesta.ok) return;
-        const datos = await respuesta.json();
-        if (!datos.success || !Array.isArray(datos.dramas)) return;
-
-        const porId = new Map(datos.dramas.map(drama => [String(drama.id), drama]));
-        filas.forEach(fila => {
-            const id = String(fila.children[1]?.textContent || "").trim();
-            const drama = porId.get(id);
-            const celda = fila.querySelector(".mega-status-cell");
-            if (!celda || !drama) return;
-
-            const sinEnlace = !String(drama.video_url || "").trim();
-            celda.textContent = sinEnlace ? "Sí" : "No";
-            celda.classList.toggle("mega-status--missing", sinEnlace);
-            celda.classList.toggle("mega-status--ok", !sinEnlace);
-            celda.title = sinEnlace
-                ? "Este microdrama no tiene enlace de MEGA."
-                : "Este microdrama tiene enlace de MEGA.";
-        });
-    } catch (error) {
-        console.error("Error comprobando enlaces MEGA:", error);
-    }
-}
-
-function aplicarFiltroEstadoDesdeTabla(estado) {
-    const filas = Array.from(document.querySelectorAll("#lista-dramas tr"));
-    let visibles = 0;
-
-    filas.forEach(fila => {
-        const indiceEstado = fila.querySelector(".mega-status-cell") ? 6 : 5;
-        const texto = fila.children[indiceEstado]?.querySelector(".status-badge")?.textContent || "";
-        const coincide = adminNormalizar(texto) === (estado === "published" ? "publicado" : "borrador");
-        fila.hidden = !coincide;
-        if (coincide) visibles += 1;
-    });
-
-    const resultado = document.getElementById("resultado-busqueda");
-    if (resultado) {
-        resultado.textContent = visibles === 0
-            ? "No se encontraron microdramas con ese estado."
-            : `Mostrando ${visibles} microdrama${visibles === 1 ? "" : "s"} con estado ${estado === "published" ? "publicado" : "borrador"}.`;
-    }
-}
-
 function inicializarMejorasAdmin() {
-    const buscador = document.getElementById("buscador-dramas");
-    if (buscador) {
-        let procesandoEstado = false;
-
-        buscador.addEventListener("input", evento => {
-            if (procesandoEstado) return;
-
-            const estado = adminEstadoBusqueda(buscador.value);
-            if (!estado) {
-                setTimeout(() => {
-                    mejorarTablaAdmin();
-                    completarEstadoMega();
-                }, 0);
-                return;
-            }
-
-            evento.stopImmediatePropagation();
-            procesandoEstado = true;
-            const valorOriginal = buscador.value;
-            buscador.value = "";
-            buscador.dispatchEvent(new Event("input", { bubbles: true }));
-            buscador.value = valorOriginal;
-
-            setTimeout(() => {
-                aplicarFiltroEstadoDesdeTabla(estado);
-                const botonLimpiar = document.getElementById("boton-limpiar-busqueda");
-                if (botonLimpiar) botonLimpiar.hidden = false;
-                procesandoEstado = false;
-            }, 0);
-        }, true);
-    }
-
     const lista = document.getElementById("lista-dramas");
     if (lista) {
         const observer = new MutationObserver(() => {
             mejorarTablaAdmin();
-            completarEstadoMega();
         });
         observer.observe(lista, { childList: true });
     }
 
     mejorarTablaAdmin();
-    completarEstadoMega();
 }
 
 document.addEventListener("DOMContentLoaded", inicializarMejorasAdmin);
-
-
-/* =========================================================
-   CORRECCIÓN AISLADA — REFRESCAR DESPUÉS DE CREAR
-========================================================= */
-
-function inicializarRefrescoDespuesDeGuardar() {
-    const mensaje = document.getElementById("mensaje-admin");
-    if (!mensaje) return;
-
-    const observer = new MutationObserver(() => {
-        const texto = String(mensaje.textContent || "").trim();
-        const esExitoNuevo =
-            texto === "Microdrama guardado correctamente." &&
-            mensaje.hidden === false;
-
-        if (!esExitoNuevo) return;
-
-        observer.disconnect();
-        setTimeout(() => {
-            window.location.reload();
-        }, 150);
-    });
-
-    observer.observe(mensaje, {
-        childList: true,
-        characterData: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ["hidden"]
-    });
-}
-
-document.addEventListener(
-    "DOMContentLoaded",
-    inicializarRefrescoDespuesDeGuardar
-);
 
 
 /* =========================================================

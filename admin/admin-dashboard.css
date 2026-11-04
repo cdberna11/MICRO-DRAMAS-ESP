@@ -342,6 +342,17 @@ body::before {
     color: #aeb1bb;
     font-size: 11px;
     line-height: 1.45;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 150ms ease, transform 180ms ease, visibility 150ms ease;
+}
+
+.admin-sidebar:hover .admin-search__result,
+.admin-sidebar:focus-within .admin-search__result {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 .admin-sidebar__search .admin-search__result:empty {

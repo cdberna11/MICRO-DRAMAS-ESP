@@ -139,6 +139,78 @@
         }
     }
 
+    /* Android usa el historial del navegador para el botón Atrás.
+     * Una entrada interna permite regresar al inicio sin abandonar el catálogo.
+     */
+    function instalarRetrocesoMovil() {
+        if (!esMovil()) return;
+
+        const clave = "microDramasMobileBack";
+        const estadoBase = { ...(history.state || {}), [clave]: "base" };
+        history.replaceState(estadoBase, "", window.location.href);
+        history.pushState({ ...estadoBase, [clave]: "catalogo" }, "", window.location.href);
+
+        window.addEventListener("popstate", () => {
+            if (history.state?.[clave] !== "base") return;
+
+            const reproductorMega = document.querySelector(
+                "#mega-videostream-portal-player.is-open"
+            );
+            if (reproductorMega && typeof window.detenerReproductor === "function") {
+                window.detenerReproductor();
+            }
+
+            const reproductorAnterior = document.querySelector("#md-player.is-open");
+            if (reproductorAnterior && typeof window.cerrarReproductor === "function") {
+                window.cerrarReproductor();
+            }
+
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+
+            cerrarMenuUsuario();
+            cerrarMenuCategoriasSeguro();
+            mostrarTodosLosDramas();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+
+            // Mantener una sola entrada interna: cada pulsación vuelve a Inicio.
+            history.pushState({ ...estadoBase, [clave]: "catalogo" }, "", window.location.href);
+        });
+    }
+
+    function mantenerSesionMovilActiva() {
+        if (!esMovil()) return;
+
+        const intervalo = 20 * 60 * 1000;
+        let ultimaRenovacion = Date.now();
+        let renovando = false;
+
+        async function renovarSiCorresponde() {
+            if (document.visibilityState !== "visible" || renovando ||
+                Date.now() - ultimaRenovacion < intervalo) return;
+
+            renovando = true;
+            try {
+                const respuesta = await fetch("/api/auth/me", {
+                    method: "GET",
+                    credentials: "same-origin",
+                    cache: "no-store",
+                    headers: { Accept: "application/json" }
+                });
+                if (respuesta.ok) ultimaRenovacion = Date.now();
+            } catch (error) {
+                console.warn("[NAVEGACIÓN MÓVIL] No se pudo renovar la sesión:", error);
+            } finally {
+                renovando = false;
+            }
+        }
+
+        window.setInterval(renovarSiCorresponde, intervalo);
+        document.addEventListener("visibilitychange", renovarSiCorresponde);
+        window.addEventListener("pageshow", renovarSiCorresponde);
+    }
+
     function crearBarra() {
         if (!esMovil()) {
             return;
@@ -319,6 +391,8 @@
     function iniciar() {
         crearBarra();
         controlarResponsive();
+        instalarRetrocesoMovil();
+        mantenerSesionMovilActiva();
 
         window.addEventListener(
             "resize",

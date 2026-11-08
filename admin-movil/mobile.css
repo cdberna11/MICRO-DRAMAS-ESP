@@ -103,6 +103,8 @@ button, input, select, textarea { font: inherit; }
     box-shadow: none;
 }
 
+.admin-search[hidden] { display: none !important; }
+
 .admin-search__bar-row {
     display: flex;
     min-height: 48px;
@@ -126,9 +128,9 @@ button, input, select, textarea { font: inherit; }
         box-shadow 180ms ease;
 }
 
-.admin-search__input-wrapper:hover,
-.admin-search__input-wrapper:focus-within {
-    width: min(780px, 100%);
+.admin-search__input-wrapper:focus-within,
+.admin-search__input-wrapper.has-query {
+    width: 100%;
     border-color: rgba(255, 91, 106, 0.62);
     background: #101219;
     box-shadow:
@@ -142,7 +144,8 @@ button, input, select, textarea { font: inherit; }
 
 .admin-search__icon {
     position: absolute;
-    left: 14px;
+    top: 50%;
+    left: 50%;
     z-index: 2;
     width: 19px;
     height: 19px;
@@ -152,10 +155,16 @@ button, input, select, textarea { font: inherit; }
     stroke-width: 1.8;
     stroke-linecap: round;
     pointer-events: none;
+    transform: translate(-50%, -50%);
     transition: color 180ms ease;
 }
 
-.admin-search__input-wrapper:hover .admin-search__icon,
+.admin-search__input-wrapper:focus-within .admin-search__icon,
+.admin-search__input-wrapper.has-query .admin-search__icon {
+    left: 16px;
+    transform: translateY(-50%);
+}
+
 .admin-search__input-wrapper:focus-within .admin-search__icon,
 .admin-search__input-wrapper.has-query .admin-search__icon {
     color: #ff7380;
@@ -163,7 +172,7 @@ button, input, select, textarea { font: inherit; }
 
 .admin-search__input {
     width: 100%;
-    min-width: 260px;
+    min-width: 0;
     min-height: 46px;
     padding: 10px 44px;
     border: 0;
@@ -177,8 +186,8 @@ button, input, select, textarea { font: inherit; }
     transition: opacity 150ms ease 40ms;
 }
 
-.admin-search__input-wrapper:hover .admin-search__input,
-.admin-search__input-wrapper:focus-within .admin-search__input {
+.admin-search__input-wrapper:focus-within .admin-search__input,
+.admin-search__input-wrapper.has-query .admin-search__input {
     opacity: 1;
     pointer-events: auto;
 }
@@ -208,8 +217,8 @@ button, input, select, textarea { font: inherit; }
     transition: opacity 140ms ease, background 140ms ease;
 }
 
-.admin-search__input-wrapper:hover .admin-search__clear:not([hidden]),
-.admin-search__input-wrapper:focus-within .admin-search__clear:not([hidden]) {
+.admin-search__input-wrapper:focus-within .admin-search__clear:not([hidden]),
+.admin-search__input-wrapper.has-query .admin-search__clear:not([hidden]) {
     opacity: 1;
     pointer-events: auto;
 }
@@ -221,7 +230,7 @@ button, input, select, textarea { font: inherit; }
 
 .admin-search__result {
     min-height: 16px;
-    margin: 0 4px;
+    margin: 2px 4px 0;
     color: var(--text-secondary);
     font-size: 12px;
 }
@@ -240,137 +249,11 @@ button, input, select, textarea { font: inherit; }
     text-align: center;
 }
 
-/* Lista de microdramas. Se conserva la tabla existente y se permite desplazamiento táctil horizontal. */
-.table-container {
-    display: block !important;
-    width: 100%;
-    margin: 0;
-    overflow-x: auto !important;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    border: 0;
-    background: var(--surface);
-}
-
-.admin-table {
-    width: 100%;
-    min-width: 620px;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 12px;
-}
-
-.admin-table th,
-.admin-table td {
-    padding: 11px 10px;
-    border-bottom: 1px solid var(--border);
-    text-align: left;
-    vertical-align: middle;
-    white-space: nowrap;
-}
-
-.admin-table th {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: #191920;
-    color: #dedee4;
-    font-size: 10px;
-    letter-spacing: .03em;
-    text-transform: uppercase;
-}
-
-.admin-table tbody tr {
-    background: var(--surface);
-}
-
-.admin-table tbody tr:active {
-    background: #1b1b22;
-}
-
-.drama-info {
-    display: flex;
-    min-width: 240px;
-    align-items: center;
-    gap: 10px;
-}
-
-.drama-cover {
-    width: 42px;
-    height: 62px;
-    flex: 0 0 42px;
-    object-fit: cover;
-    border-radius: 5px;
-    background: #22222a;
-}
-
-.drama-title {
-    margin: 0;
-    max-width: 260px;
-    overflow: hidden;
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1.3;
-    text-overflow: ellipsis;
-    white-space: normal;
-}
-
-.drama-slug {
-    margin: 3px 0 0;
-    max-width: 260px;
-    overflow: hidden;
-    color: var(--text-secondary);
-    font-size: 10px;
-    text-overflow: ellipsis;
-}
-
-.status-badge {
-    display: inline-flex;
-    padding: 5px 9px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.status-badge--published {
-    background: rgba(53, 196, 106, .15);
-    color: #70e69a;
-}
-
-.status-badge--draft {
-    background: rgba(255, 166, 0, .14);
-    color: #ffbf55;
-}
-
-.button--edit,
-.button--publish {
-    min-height: 34px;
-    padding: 7px 11px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface-secondary);
-    color: var(--text);
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.button--publish {
-    margin-left: 5px;
-    border-color: rgba(53,196,106,.35);
-    background: rgba(53,196,106,.13);
-    color: #75e69d;
-}
-
 @media (max-width: 760px) {
     .admin-header__content {
         padding-top: max(10px, env(safe-area-inset-top));
     }
 
-    .admin-table {
-        min-width: 580px;
-    }
 }
 
 @media (max-width: 380px) {

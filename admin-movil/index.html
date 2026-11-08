@@ -8,8 +8,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Administración móvil | Micro Dramas ESP</title>
-    <link rel="stylesheet" href="/admin-movil/mobile.css?v=20261104-compact-search">
-    <link rel="stylesheet" href="/admin-movil/mobile-list.css?v=20261104-compact-search">
+    <link rel="stylesheet" href="/admin-movil/mobile.css?v=20261108-mobile-cards">
+    <link rel="stylesheet" href="/admin-movil/mobile-list.css?v=20261108-mobile-cards">
 </head>
 <body>
 <header class="admin-header">
@@ -47,18 +47,8 @@
             <div id="resultado-busqueda" class="admin-search__result" aria-live="polite"></div>
         </section>
 
-        <div id="contenedor-tabla" class="table-container" hidden>
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Microdrama</th>
-                        <th>Enlace MEGA</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="lista-dramas"></tbody>
-            </table>
+        <div id="contenedor-tabla" class="mobile-list" hidden>
+            <div id="lista-dramas" class="mobile-list__items"></div>
         </div>
 
         <div id="estado-vacio" class="empty-state" hidden>No hay microdramas registrados.</div>
@@ -66,6 +56,6 @@
 </main>
 
 <script src="/admin-movil/mobile-boot.js?v=20260825-4"></script>
-<script src="/admin-movil/mobile-admin.js?v=20261104-compact-search"></script>
+<script src="/admin-movil/mobile-admin.js?v=20261108-mobile-cards"></script>
 </body>
 </html>

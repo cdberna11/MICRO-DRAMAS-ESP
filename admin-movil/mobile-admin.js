@@ -7,6 +7,7 @@
 (function () {
     const API_DRAMAS = "/api/admin-movil/dramas";
     const API_PUBLICAR = "/api/admin-movil/publish";
+    const API_BORRADOR = "/api/admin-movil/draft";
     const API_LOGOUT = "/api/auth/logout";
 
     let dramas = [];
@@ -58,17 +59,11 @@
         }).format(fecha);
     }
 
-    function crearCelda(texto, clase = "") {
-        const td = document.createElement("td");
-        td.textContent = texto;
-        if (clase) td.className = clase;
-        return td;
-    }
-
     function crearFila(drama) {
-        const fila = document.createElement("tr");
-
-        const celdaDrama = document.createElement("td");
+        const fila = document.createElement("article");
+        fila.className = "mobile-drama-card";
+        const cabecera = document.createElement("div");
+        cabecera.className = "mobile-drama-card__header";
         const info = document.createElement("div");
         info.className = "drama-info";
 
@@ -90,50 +85,40 @@
 
         textos.append(titulo, slug);
         info.append(portada, textos);
-        celdaDrama.appendChild(info);
-        fila.appendChild(celdaDrama);
 
-        const tieneMega =
-            String(
-                drama.video_url || ""
-            ).trim() !== "";
-
-        fila.appendChild(
-            crearCelda(
-                tieneMega
-                    ? "Disponible"
-                    : "Sin enlace",
-                tieneMega
-                    ? "mega-status-cell mega-status-cell--available"
-                    : "mega-status-cell mega-status-cell--missing"
-            )
-        );
-
-        const celdaEstado = document.createElement("td");
         const estado = String(drama.status || "draft").toLowerCase();
         const badge = document.createElement("span");
         badge.className = `status-badge ${estado === "published" ? "status-badge--published" : "status-badge--draft"}`;
         badge.textContent = estado === "published" ? "Publicado" : "Borrador";
-        celdaEstado.appendChild(badge);
-        fila.appendChild(celdaEstado);
+        cabecera.append(info, badge);
 
-        const acciones = document.createElement("td");
-        acciones.className = "mobile-row-actions";
-        const boton = document.createElement("button");
-        boton.type = "button";
-        boton.className = "button button--edit mobile-publish-button";
+        const detalle = document.createElement("div");
+        detalle.className = "mobile-drama-card__detail";
+        const etiqueta = document.createElement("span");
+        etiqueta.textContent = "Enlace MEGA";
+        const mega = document.createElement("strong");
+        const tieneMega = String(drama.video_url || "").trim() !== "";
+        mega.className = tieneMega ? "mega-status-cell--available" : "mega-status-cell--missing";
+        mega.textContent = tieneMega ? "Disponible" : "Sin enlace";
+        detalle.append(etiqueta, mega);
 
-        if (estado === "published") {
-            boton.textContent = "Publicado";
-            boton.disabled = true;
-            boton.classList.add("mobile-publish-button--done");
-        } else {
-            boton.textContent = "Publicar";
-            boton.addEventListener("click", () => publicarDrama(drama.id, boton));
-        }
+        const acciones = document.createElement("div");
+        acciones.className = "mobile-drama-card__actions";
+        const publicar = document.createElement("button");
+        publicar.type = "button";
+        publicar.className = "mobile-action mobile-action--publish";
+        publicar.textContent = estado === "published" ? "Publicado" : "Publicar";
+        publicar.disabled = estado === "published";
+        publicar.addEventListener("click", () => cambiarEstado(drama.id, "published", publicar));
 
-        acciones.appendChild(boton);
-        fila.appendChild(acciones);
+        const borrador = document.createElement("button");
+        borrador.type = "button";
+        borrador.className = "mobile-action mobile-action--draft";
+        borrador.textContent = "Borrador";
+        borrador.disabled = estado !== "published";
+        borrador.addEventListener("click", () => cambiarEstado(drama.id, "draft", borrador));
+        acciones.append(publicar, borrador);
+        fila.append(cabecera, detalle, acciones);
         return fila;
     }
 
@@ -283,15 +268,19 @@
         }
     }
 
-    async function publicarDrama(id, boton) {
+    async function cambiarEstado(id, nuevoEstado, boton) {
         if (!Number.isInteger(Number(id)) || boton.disabled) return;
-        if (!window.confirm("¿Publicar este microdrama ahora?")) return;
+        const publicar = nuevoEstado === "published";
+        const pregunta = publicar
+            ? "¿Publicar este microdrama ahora?"
+            : "¿Volver este microdrama a borrador? Dejará de aparecer en el catálogo.";
+        if (!window.confirm(pregunta)) return;
 
         boton.disabled = true;
-        boton.textContent = "Publicando...";
+        boton.textContent = publicar ? "Publicando..." : "Guardando...";
 
         try {
-            const respuesta = await fetch(API_PUBLICAR, {
+            const respuesta = await fetch(publicar ? API_PUBLICAR : API_BORRADOR, {
                 method: "POST",
                 credentials: "same-origin",
                 headers: {
@@ -308,16 +297,16 @@
 
             const drama = dramas.find(item => Number(item.id) === Number(id));
             if (drama) {
-                drama.status = "published";
-                drama.published_at = new Date().toISOString();
+                drama.status = nuevoEstado;
+                drama.published_at = publicar ? new Date().toISOString() : null;
                 drama.updated_at = new Date().toISOString();
             }
             renderizar();
         } catch (error) {
-            console.error("Error al publicar microdrama móvil:", error);
+            console.error("Error al cambiar estado móvil:", error);
             boton.disabled = false;
-            boton.textContent = "Publicar";
-            window.alert(error.message || "No se pudo publicar el microdrama.");
+            boton.textContent = publicar ? "Publicar" : "Borrador";
+            window.alert(error.message || "No se pudo cambiar el estado del microdrama.");
         }
     }
 

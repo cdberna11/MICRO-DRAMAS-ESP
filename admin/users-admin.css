@@ -136,6 +136,17 @@
     background: rgba(53, 196, 106, 0.22);
 }
 
+.button--draft {
+    min-height: 34px;
+    padding: 7px 12px;
+    border-color: rgba(255, 190, 90, 0.35);
+    background: rgba(255, 190, 90, 0.12);
+    color: #ffd08a;
+    font-size: 12px;
+}
+
+.button--draft:hover:not(:disabled) { background: rgba(255, 190, 90, 0.22); }
+
 .button--user-delete {
     min-height: 34px;
     padding: 7px 12px;

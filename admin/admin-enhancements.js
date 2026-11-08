@@ -1,6 +1,7 @@
 "use strict";
 
 const API_ADMIN_PUBLISH = "/api/admin/publish";
+const API_ADMIN_DRAFT = "/api/admin/draft";
 
 function adminNormalizar(valor) {
     return String(valor ?? "")
@@ -84,7 +85,52 @@ function mejorarTablaAdmin() {
             }
         });
 
-        celdaAcciones.appendChild(botonPublicar);
+        const botonBorrador = document.createElement("button");
+        botonBorrador.type = "button";
+        botonBorrador.className = "button button--draft";
+        botonBorrador.textContent = "Borrador";
+        botonBorrador.disabled = !publicado;
+        botonBorrador.title = publicado
+            ? "Retirar del catálogo y guardar como borrador"
+            : "Este microdrama ya está en borrador";
+
+        botonBorrador.addEventListener("click", async evento => {
+            evento.stopPropagation();
+            const id = Number(fila.children[1]?.textContent);
+            if (!Number.isInteger(id) || id <= 0 || botonBorrador.disabled) return;
+            if (!window.confirm("¿Volver este microdrama a borrador? Dejará de aparecer en el catálogo.")) return;
+
+            botonBorrador.disabled = true;
+            botonBorrador.textContent = "Guardando...";
+
+            try {
+                const respuesta = await fetch(API_ADMIN_DRAFT, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                    body: JSON.stringify({ id })
+                });
+                const resultado = await respuesta.json();
+                if (!respuesta.ok || !resultado.success) {
+                    throw new Error(resultado.error || "No se pudo cambiar a borrador.");
+                }
+                if (typeof window.cargarDramasAdministrativos === "function") {
+                    await window.cargarDramasAdministrativos();
+                }
+                if (typeof window.mostrarMensajeAdmin === "function") {
+                    window.mostrarMensajeAdmin(resultado.message || "Microdrama guardado como borrador.", "success");
+                }
+            } catch (error) {
+                console.error("Error al cambiar a borrador:", error);
+                botonBorrador.disabled = false;
+                botonBorrador.textContent = "Borrador";
+                if (typeof window.mostrarMensajeAdmin === "function") {
+                    window.mostrarMensajeAdmin(error.message || "No se pudo cambiar a borrador.", "error");
+                }
+            }
+        });
+
+        celdaAcciones.append(botonPublicar, botonBorrador);
     });
 }
 

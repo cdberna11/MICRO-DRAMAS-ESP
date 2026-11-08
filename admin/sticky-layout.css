@@ -129,7 +129,8 @@ textarea {
 }
 
 .admin-table td:last-child .button--edit,
-.admin-table td:last-child .button--publish {
+.admin-table td:last-child .button--publish,
+.admin-table td:last-child .button--draft {
     display: flex;
     width: 100%;
     min-width: 0;
@@ -138,7 +139,8 @@ textarea {
     justify-content: center;
 }
 
-.admin-table td:last-child .button--publish {
+.admin-table td:last-child .button--publish,
+.admin-table td:last-child .button--draft {
     margin-top: 5px;
 }
 

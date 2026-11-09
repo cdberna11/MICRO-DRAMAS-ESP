@@ -338,4 +338,126 @@
     .md-desktop-menu__panel,.md-desktop-home .drama-card { transition:none!important; }
     .md-desktop-row { scroll-behavior:auto; }
   }
+  /* Ajustes de la segunda revisión: únicamente navegador de escritorio. */
+
+  /* El archivo de logo tiene fondo claro incorporado. Invertir y aplicar SCREEN
+     conserva el dibujo original y lo integra con la cabecera sin editar el JPG. */
+  .md-desktop-brand img {
+    filter:grayscale(1) invert(1) contrast(1.55);
+    mix-blend-mode:screen;
+    -webkit-mix-blend-mode:screen;
+    max-height:63px;
+  }
+  .md-desktop-header { min-height:76px; }
+  .catalog-user-menu { display:none !important; }
+
+  /* Dock vertical glossy con avatar real, búsqueda expandible y cierre de sesión. */
+  .md-desktop-dock {
+    gap:5px;
+    border-radius:19px;
+    overflow:visible;
+  }
+  .md-desktop-dock__avatar {
+    flex:0 0 46px;
+    display:flex; align-items:center; justify-content:center;
+    width:40px; height:46px; border-radius:11px;
+    border:1px solid rgba(255,255,255,.13);
+    background:linear-gradient(140deg,#34363d,#15161b);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+  }
+  .md-desktop-dock__avatar img {
+    width:32px; height:32px; border-radius:9px;
+    object-fit:cover; display:block;
+  }
+  .md-desktop-dock__separator {
+    flex:0 0 1px; height:1px; width:31px; margin:3px auto;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.23),transparent);
+  }
+  .md-desktop-dock__search {
+    position:relative; flex:0 0 40px;
+    width:40px; height:40px; overflow:visible;
+  }
+  .md-desktop-dock__search .md-desktop-dock__item {
+    position:relative; z-index:2;
+  }
+  .md-desktop-dock__search-input {
+    position:absolute; top:0; left:calc(100% - 6px);
+    z-index:1; box-sizing:border-box;
+    display:block; width:0; height:40px; padding:0;
+    border:0; border-radius:0 14px 14px 0; outline:0;
+    opacity:0; pointer-events:none; color:#fff; font-size:13px;
+    background:linear-gradient(100deg,rgba(33,33,42,.99),rgba(12,12,18,.99));
+    box-shadow:8px 10px 28px rgba(0,0,0,.55);
+    -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    transition:width .24s ease, opacity .18s ease, padding .24s ease;
+  }
+  .md-desktop-dock__search:hover .md-desktop-dock__search-input,
+  .md-desktop-dock__search:focus-within .md-desktop-dock__search-input {
+    width:min(285px,calc(100vw - 105px));
+    padding:0 14px;
+    border:1px solid rgba(255,255,255,.21);
+    border-left:0;
+    opacity:1; pointer-events:auto;
+  }
+  .md-desktop-dock__search-input::placeholder { color:#a2a4ad; }
+  .md-desktop-dock__search-input:focus { border-color:rgba(255,65,78,.63); }
+  .md-desktop-dock__item:focus-visible,
+  .md-desktop-item__save:focus-visible {
+    outline:2px solid rgba(255,83,96,.94);
+    outline-offset:2px;
+  }
+
+  /* Marcador Mi lista encima de todas las portadas, incluidos borradores y Top 10. */
+  .md-desktop-item__save {
+    position:absolute; z-index:30;
+    top:13px; right:9px; width:34px; height:34px;
+    display:grid; place-items:center; padding:0;
+    border:1px solid rgba(255,255,255,.45); border-radius:11px;
+    background:rgba(12,12,16,.85); color:#fff;
+    box-shadow:0 3px 12px rgba(0,0,0,.52);
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    cursor:pointer; transition:background .2s,border-color .2s,transform .2s;
+  }
+  .md-desktop-item__save svg {
+    width:19px; height:19px; pointer-events:none;
+  }
+  .md-desktop-item__save:not(:disabled):hover {
+    transform:scale(1.08); border-color:rgba(255,104,114,.85);
+    background:rgba(136,13,27,.93);
+  }
+  .md-desktop-item__save.is-saved {
+    border-color:rgba(255,122,132,.7);
+    background:rgba(120,9,24,.96); color:#fff;
+  }
+  .md-desktop-item__save.is-saved svg { fill:#e50914; }
+  .md-desktop-item__save:disabled { opacity:.5; cursor:wait; }
+  .md-desktop-hero__save.is-saved {
+    color:#fff;
+    border-color:rgba(255,81,94,.60);
+    background:rgba(120,9,24,.79);
+  }
+  .md-desktop-hero__save:disabled { opacity:.65; cursor:wait; }
+
+  /* El desplazamiento de todas las filas se realiza arrastrando con el mouse. */
+  .md-desktop-row { cursor:grab; }
+  .md-desktop-row .drama-card,
+  .md-desktop-row .drama-card__cover { cursor:grab; -webkit-user-drag:none; }
+  .md-desktop-row.is-dragging,
+  .md-desktop-row.is-dragging * {
+    cursor:grabbing !important;
+    user-select:none !important;
+    -webkit-user-select:none !important;
+  }
+  .md-desktop-row.is-dragging {
+    scroll-snap-type:none;
+    scroll-behavior:auto;
+  }
+  /* Ya no quedan botones de avance/retroceso en ninguna sección. */
+  .md-desktop-section__arrows { display:none!important; }
+
+  @media (min-width:601px) and (max-width:980px) {
+    .md-desktop-header { padding-right:24px; }
+    .md-desktop-brand img { max-height:58px; }
+  }
+
 }

@@ -1,0 +1,293 @@
+/* WEB MÓVIL — Adaptación directa del lenguaje visual de la APK nativa.
+   Sólo <= 600px: la portada desktop y el reproductor oficial no se alteran. */
+@media (max-width:600px) {
+  :root { --m-red:#e50914; --m-bg:#050505; }
+  html,body { max-width:100%; background:var(--m-bg); }
+  .site-header {display:none!important;}
+  #boton-menu-categorias,.menu-categorias-portal{display:none!important;}
+  .site-main {
+    max-width:none; margin:0; padding:0 0 125px!important;
+  }
+  .catalog-section { width:100%; }
+  .catalog-carousel.md-mobile-app {
+    display:flex!important;flex-direction:column;align-items:stretch;
+    gap:0!important; width:100%; max-width:100%;
+    margin:0!important;padding:0 0 42px!important;
+    background:var(--m-bg);overflow:visible;
+  }
+  .md-mobile-app .md-mobile-header {
+    display:flex;align-items:center;justify-content:space-between;
+    min-height:72px;padding:12px 17px;
+    background:linear-gradient(180deg,#080808 0%,rgba(5,5,5,.94) 66%,rgba(5,5,5,.30) 100%);
+    position:relative;z-index:4;
+  }
+  .md-mobile-header__brand {
+    display:flex;align-items:center;gap:12px;min-width:0;
+  }
+  .md-mobile-header__logo {
+    display:block;flex:0 0 38px;width:38px;height:38px;
+    object-fit:contain;border-radius:10px;
+  }
+  .md-mobile-header__brand strong {
+    display:block;min-width:0;max-width:55vw;
+    color:white;font-size:24px;font-weight:900;letter-spacing:-.5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .md-mobile-bell {
+    position:relative; flex:0 0 43px;display:grid;place-items:center;
+    width:43px;height:43px;border:0;background:transparent;color:#fff;
+    padding:0;cursor:pointer;
+  }
+  .md-mobile-bell svg {width:27px;height:27px;}
+  .md-mobile-bell__count {
+    position:absolute;top:0;right:0;min-width:18px;height:18px;
+    display:grid;place-items:center;padding:0 4px;border-radius:10px;
+    color:#fff;background:#e50914;font-size:10px;font-weight:900;
+  }
+
+  /* Portada de la APK: poster vertical con degradado y controles inferiores. */
+  .md-mobile-hero {
+    position:relative;isolation:isolate;overflow:hidden;
+    width:calc(100% - 28px);height:clamp(390px,122vw,500px);
+    margin:2px 14px 0;border-radius:22px;
+    background:#151515;box-shadow:0 15px 33px rgba(0,0,0,.5);
+  }
+  .md-mobile-hero__cover {
+    position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;object-position:center 20%;z-index:-2;
+  }
+  .md-mobile-hero__shade {
+    position:absolute;inset:0;z-index:-1;
+    background:linear-gradient(180deg,rgba(0,0,0,.06) 0%,rgba(0,0,0,.13) 40%,rgba(0,0,0,.82) 75%,#050505 100%);
+  }
+  .md-mobile-hero__content {
+    position:absolute;bottom:0;left:0;right:0;
+    padding:18px 19px 22px;display:flex;flex-direction:column;gap:9px;
+  }
+  .md-mobile-hero__label {
+    color:#ff354a;font-weight:900;letter-spacing:1.5px;font-size:11px;
+    text-shadow:0 0 13px rgba(0,0,0,.7);
+  }
+  .md-mobile-hero__title {
+    color:#fff;font-size:clamp(24px,7.2vw,33px);
+    line-height:1.08;font-weight:900;letter-spacing:-.5px;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+    margin:0;text-shadow:0 2px 15px #000;
+  }
+  .md-mobile-hero__categories {
+    font-size:12px;color:#e5e5e5;line-height:1.35;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .md-mobile-hero__actions {
+    display:flex;gap:10px;margin-top:10px;
+  }
+  .md-mobile-hero__actions button {
+    flex:1;min-width:0;min-height:45px;display:flex;align-items:center;justify-content:center;
+    gap:6px;border-radius:10px;padding:10px 8px;font-size:13px;font-weight:900;cursor:pointer;
+  }
+  .md-mobile-hero__play {
+    color:#050505;background:white;border:1px solid white;
+  }
+  .md-mobile-hero__play svg {width:19px;height:19px;fill:currentColor;}
+  .md-mobile-hero__list {
+    color:#fff;background:rgba(35,35,35,.85);border:1px solid rgba(255,255,255,.22);
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  }
+  .md-mobile-hero__list:disabled {opacity:.6;}
+
+  /* Filas desplazables, equivalentes a las LazyRows de Compose. */
+  .md-mobile-app .md-mobile-section {
+    width:100%;min-width:0;padding:0;margin:25px 0 0;
+    scroll-margin-top:12px;
+  }
+  .md-mobile-section__title {
+    color:#fff;font-size:20px;line-height:24px;font-weight:900;
+    padding:0 18px;margin:0 0 12px;letter-spacing:-.25px;
+  }
+  .md-mobile-rail {
+    display:flex;align-items:flex-start;width:100%;gap:11px;
+    padding:0 18px 12px;overflow-x:auto;overflow-y:hidden;
+    scroll-snap-type:x proximity;overscroll-behavior-inline:contain;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+  }
+  .md-mobile-rail::-webkit-scrollbar {display:none;}
+  .md-mobile-item {
+    position:relative;display:block;flex:0 0 136px;width:136px;
+    min-width:136px;scroll-snap-align:start;min-height:238px;
+  }
+  .md-mobile-app .md-mobile-item .drama-card {
+    display:block!important;position:relative;
+    width:136px!important;height:202px!important;aspect-ratio:unset!important;
+    border-radius:12px;box-shadow:none;background:#17171b;
+    overflow:hidden;transform:none!important;
+  }
+  .md-mobile-app .md-mobile-item .drama-card__cover {
+    width:100%;height:100%;object-fit:cover;object-position:center;
+    display:block;pointer-events:auto;
+  }
+  .md-mobile-app .md-mobile-item .drama-card__overlay {
+    display:none!important;
+  }
+  .md-mobile-app .md-mobile-item .drama-card__new,
+  .md-mobile-app .md-mobile-item .drama-card__upcoming {
+    top:7px;left:7px;right:auto;bottom:auto;transform:none;
+    width:auto;max-width:calc(100% - 14px);height:auto;
+    padding:5px 7px;border-radius:5px;line-height:1.1;
+    font-size:9px;font-weight:900;letter-spacing:0;
+    background:#e50914;color:#fff;z-index:3;
+  }
+  .md-mobile-app .md-mobile-item .drama-card__upcoming {background:#7a1017;}
+  .md-mobile-app .md-mobile-item .drama-card__top {
+    top:auto;left:auto;right:7px;bottom:7px;z-index:2;
+    padding:4px 6px;border-radius:5px;font-size:9px;
+    background:rgba(0,0,0,.85);
+  }
+  .md-mobile-item__title {
+    margin:8px 0 0;color:white;font-size:13px;line-height:16px;
+    font-weight:650;display:-webkit-box;-webkit-box-orient:vertical;
+    -webkit-line-clamp:2;overflow:hidden;
+  }
+  .md-mobile-progress {
+    width:100%;height:4px;margin-top:2px;background:#3a3a3a;overflow:hidden;
+  }
+  .md-mobile-progress__fill {display:block;height:100%;background:#e50914;}
+  .md-mobile-rail--ranked {gap:4px;}
+  .md-mobile-item--ranked {
+    flex:0 0 178px;width:178px;min-width:178px;padding-left:42px;
+  }
+  .md-mobile-item--ranked .drama-card {
+    position:relative;z-index:2;
+  }
+  .md-mobile-rank {
+    position:absolute;z-index:1;bottom:38px;left:0;
+    font-family:Arial,sans-serif;font-weight:900;font-size:108px;
+    line-height:1;letter-spacing:-4px;color:#090909;
+    -webkit-text-stroke:1.5px #f2f2f2;
+    text-shadow:0 0 2px rgba(255,255,255,.1);
+    pointer-events:none;user-select:none;white-space:nowrap;
+  }
+  .md-mobile-item--ten {
+    flex-basis:208px;width:208px;min-width:208px;padding-left:72px;
+  }
+  .md-mobile-item--ten .md-mobile-rank {font-size:94px;}
+  .md-mobile-item--ranked .md-mobile-item__title {margin-left:0;}
+
+  /* Pantallas Buscar / Mi lista / Perfil: mismas cuatro pestañas que APK. */
+  .md-mobile-search-page {padding:8px 18px 25px;}
+  .md-mobile-search-page__input {
+    display:block;width:100%;height:48px;padding:0 15px;
+    border:1px solid #484851;border-radius:12px;outline:none;
+    background:#1b1b20;color:#fff;font-size:15px;
+  }
+  .md-mobile-search-page__input:focus {border-color:#ef4657;}
+  .md-mobile-search-page__results {
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:19px 12px;margin-top:22px;
+  }
+  .md-mobile-search-page__results .md-mobile-item {
+    width:100%;min-width:0;flex:auto;
+  }
+  .md-mobile-search-page__results .md-mobile-item .drama-card {
+    width:100%!important;height:auto!important;aspect-ratio:2/3!important;
+  }
+  .md-mobile-empty {
+    padding:25px 20px;color:#c7c7cc;font-size:14px;
+    line-height:1.5;
+  }
+  .md-mobile-profile {
+    padding:32px 24px;display:flex;flex-direction:column;align-items:center;
+    text-align:center;gap:14px;
+  }
+  .md-mobile-profile__avatar {
+    width:90px;height:90px;border-radius:22px;object-fit:cover;
+    border:2px solid rgba(255,255,255,.3);
+    background:#2a2a30;
+  }
+  .md-mobile-profile h2 {font-size:23px;color:white;}
+  .md-mobile-profile p {font-size:13px;line-height:1.5;color:#aaaab4;}
+  .md-mobile-profile__logout {
+    width:100%;max-width:280px;height:46px;margin-top:18px;
+    border:1px solid rgba(255,255,255,.25);border-radius:12px;
+    background:#24242b;color:white;font-weight:800;font-size:14px;
+  }
+
+  /* Barra de navegación nativa Adaptada: vidrio + foco rojo móvil. */
+  .md-mobile-bottom-bar {
+    --active-index:0;
+    position:fixed;z-index:99980;bottom:calc(9px + env(safe-area-inset-bottom));
+    left:16px;right:16px;max-width:430px;
+    margin:0 auto;height:74px;padding:6px 5px;
+    box-sizing:border-box;
+    display:flex;align-items:stretch;gap:0;
+    border-radius:28px;border:1px solid rgba(255,255,255,.28);
+    background:linear-gradient(180deg,rgba(58,59,70,.96),rgba(26,27,35,.97) 45%,rgba(9,9,15,.98));
+    -webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);
+    box-shadow:inset 0 1px rgba(255,255,255,.19),0 12px 30px rgba(0,0,0,.62);
+    overflow:hidden;
+  }
+  .md-mobile-bottom-bar__button {
+    position:relative;z-index:2;flex:1 1 0;min-width:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    padding:4px 0;border:0;border-radius:18px;background:none;
+    color:#93939b;font-size:10px;font-weight:650;
+    cursor:pointer;-webkit-tap-highlight-color:transparent;
+    transition:color .23s;
+  }
+  .md-mobile-bottom-bar__button svg {width:24px;height:24px;transition:transform .25s; }
+  .md-mobile-bottom-bar__button.is-active {color:#ff4456;font-weight:850;}
+  .md-mobile-bottom-bar__button.is-active svg {
+    transform:scale(1.11);filter:drop-shadow(0 0 6px rgba(255,51,70,.75));
+  }
+  .md-mobile-bottom-bar__button:active {transform:scale(.96);}
+  .md-mobile-bottom-bar__light {
+    position:absolute;left:calc((100% / 4) * (var(--active-index) + .5) - 11px);
+    top:0;width:22px;height:3px;border-radius:50%;
+    background:#ff5161;box-shadow:0 0 10px 3px rgba(255,41,63,.6);
+    transition:left .32s cubic-bezier(.22,1,.36,1);
+    pointer-events:none;
+  }
+  .md-mobile-bottom-bar__light::after {
+    content:"";position:absolute;left:-25px;top:0;width:72px;height:70px;
+    background:linear-gradient(180deg,rgba(255,51,70,.24),transparent 85%);
+    clip-path:polygon(33% 0,67% 0,100% 100%,0 100%);
+    pointer-events:none;
+  }
+
+  /* Avisos de la cuenta sincronizados por D1. */
+  .md-mobile-notices {
+    position:fixed;z-index:99995;top:70px;right:12px;left:12px;
+    max-width:440px;margin:0 auto;max-height:min(65vh,540px);
+    overflow-y:auto;padding:10px 13px 15px;
+    border:1px solid rgba(255,255,255,.22);border-radius:18px;
+    background:linear-gradient(150deg,#282934,#101017 36%,#08080d);
+    box-shadow:0 20px 60px rgba(0,0,0,.8);
+    -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+  }
+  .md-mobile-notices__head {
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 3px;border-bottom:1px solid rgba(255,255,255,.12);
+    font-size:16px;
+  }
+  .md-mobile-notices__head button,
+  .md-mobile-notice__actions button {
+    color:#fff;background:#27272e;border:1px solid #53535a;
+    border-radius:9px;padding:7px 11px;font-size:12px;cursor:pointer;
+  }
+  .md-mobile-notice {
+    display:flex;flex-direction:column;gap:5px;
+    padding:13px 4px;border-bottom:1px solid rgba(255,255,255,.11);
+  }
+  .md-mobile-notice small {color:#ff4558;font-size:10px;font-weight:800;}
+  .md-mobile-notice strong {font-size:13px;line-height:1.35;}
+  .md-mobile-notice__actions {display:flex;gap:8px;padding-top:4px;}
+  .md-mobile-notices__empty {padding:20px 5px;color:#c1c1c8;font-size:13px;}
+  @media (max-width:350px) {
+    .md-mobile-header__brand strong {font-size:21px;}
+    .md-mobile-hero {height:410px;}
+    .md-mobile-bottom-bar {left:9px;right:9px;}
+    .md-mobile-bottom-bar__button {font-size:9px;}
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .md-mobile-bottom-bar__button,.md-mobile-bottom-bar__light {transition:none;}
+  }
+}

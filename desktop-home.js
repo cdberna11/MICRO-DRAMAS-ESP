@@ -387,10 +387,75 @@
   }
 
 
+  function prepareTransparentBrand(image) {
+    // JPG no admite píxeles transparentes. Extraemos únicamente el logotipo
+    // original (sin redibujar letras ni isotipo) para que cualquier póster
+    // de fondo pueda mostrarse detrás sin un rectángulo opaco.
+    image.addEventListener("load", () => {
+      try {
+        const source = document.createElement("canvas");
+        source.width = image.naturalWidth;
+        source.height = image.naturalHeight;
+        if (!source.width || !source.height) return;
+        const context = source.getContext("2d", { willReadFrequently:true });
+        if (!context) return;
+        context.drawImage(image, 0, 0);
+        const pixels = context.getImageData(0, 0, source.width, source.height);
+        const data = pixels.data;
+        const w = source.width, h = source.height;
+        function luminance(x,y) {
+          const i = (y*w+x)*4;
+          return data[i]*0.2126 + data[i+1]*0.7152 + data[i+2]*0.0722;
+        }
+        const samples=[];
+        const sampleSize=Math.min(12, Math.floor(Math.min(w,h)/8));
+        const corners=[[0,0],[w-sampleSize,0],[0,h-sampleSize],[w-sampleSize,h-sampleSize]];
+        for (const [sx,sy] of corners) {
+          for (let y=sy;y<sy+sampleSize;y+=2)
+            for (let x=sx;x<sx+sampleSize;x+=2) samples.push(luminance(x,y));
+        }
+        samples.sort((a,b)=>a-b);
+        const background=samples[Math.floor(samples.length/2)] ?? 255;
+        const brightBackground=background>=128;
+        let left=w,top=h,right=0,bottom=0,visible=0;
+        for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+          const i=(y*w+x)*4;
+          const lum=data[i]*.2126 + data[i+1]*.7152 + data[i+2]*.0722;
+          const difference=brightBackground?background-lum:lum-background;
+          const alpha=Math.max(0,Math.min(255,Math.round((difference-12)*3.3)));
+          data[i]=255;data[i+1]=255;data[i+2]=255;data[i+3]=alpha;
+          if(alpha>40){
+            visible++;
+            if(x<left)left=x;
+            if(y<top)top=y;
+            if(x>right)right=x;
+            if(y>bottom)bottom=y;
+          }
+        }
+        // Evitar imágenes vacías si el recurso fuera sustituido por otro arte.
+        if(visible<150 || right<=left || bottom<=top)return;
+        context.putImageData(pixels,0,0);
+        const pad=Math.max(3,Math.round(Math.min(w,h)*.018));
+        const sx=Math.max(0,left-pad),sy=Math.max(0,top-pad);
+        const sw=Math.min(w-sx,right+pad-sx+1),sh=Math.min(h-sy,bottom+pad-sy+1);
+        const result=document.createElement("canvas");
+        result.width=sw;result.height=sh;
+        const target=result.getContext("2d");
+        if(!target)return;
+        target.drawImage(source,sx,sy,sw,sh,0,0,sw,sh);
+        image.classList.add("md-desktop-brand__transparent");
+        image.src=result.toDataURL("image/png");
+      } catch(error) {
+        console.warn("[Logo] No se pudo aislar el fondo; se conserva el arte original:",error);
+      }
+    }, { once:true });
+  }
+
   function createHeader() {
     const header = el("header", "md-desktop-header");
     const brand = el("div", "md-desktop-brand");
     const image = el("img", "");
+    prepareTransparentBrand(image);
     image.src = LOGO;
     image.alt = "Micro Dramas";
     brand.appendChild(image);

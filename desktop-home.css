@@ -815,3 +815,17 @@
     }
   }
 }
+
+
+/* El arte original es JPG (opaco). Cuando su máscara transparente está lista
+   el logotipo blanco queda sobre el propio banner, sin filtro ni fondo negro. */
+@media (min-width:601px) {
+  .md-desktop-brand img.md-desktop-brand__transparent,
+  .md-desktop-hero .md-desktop-brand img.md-desktop-brand__transparent {
+    filter:none!important;
+    mix-blend-mode:normal!important;
+    -webkit-mix-blend-mode:normal!important;
+    background:transparent!important;
+    object-fit:contain;
+  }
+}

@@ -137,6 +137,7 @@
   }
   function play(drama) {
     if(!playable(drama))return;
+    pushScreen("player");
     if(typeof reproducirDrama==="function")reproducirDrama(drama);
   }
   function openDetail(drama,card){
@@ -155,6 +156,13 @@
       if(rank===10)wrapper.classList.add("md-mobile-item--ten");
     }
     wrapper.appendChild(card);
+    // Crear la entrada ANTES de que app.js abra el detalle (fase capture).
+    // Así Atrás vuelve a este carrusel, no a la pestaña Inicio.
+    wrapper.addEventListener("click",event=>{
+      if(event.target.closest("button,a"))return;
+      if(!document.body.classList.contains("mobile-detail-open"))
+        pushScreen("detail");
+    },true);
     // Marcador en cada portada: Mi lista real por cuenta, incluso en próximos estrenos.
     const mark=btn("","md-mobile-item__save",async event=>{
       event.stopPropagation();
@@ -408,12 +416,22 @@
       if(selected)nav.style.setProperty("--active-index",String(index));
     });
   }
-  function navigate(tab){
+  function navigate(tab,options={}) {
     if(!["home","search","mylist","profile"].includes(tab))tab="home";
+    const change=state.tab!==tab;
+    if(change&&!options.fromHistory)rememberCurrentScreen();
     state.tab=tab;
-    state.search=tab==="search"?state.search:"";
+    // La búsqueda se conserva al cambiar de pestaña o volver desde un detalle.
     render();
+    if(options.fromHistory)return;
     window.scrollTo({top:0,behavior:"smooth"});
+    if(change&&historyActive){
+      const next=snapshotScreen("catalog");
+      next.scrollY=0;
+      next.rails=[];
+      try{history.pushState({...history.state,[NAV_KEY]:next},"",location.href);}
+      catch(error){console.warn("[Navegación móvil] No se pudo guardar la pestaña:",error);}
+    }else rememberCurrentScreen();
   }
   function createNav(){
     nav=el("nav","md-mobile-bottom-bar");
@@ -441,7 +459,7 @@
       const json=await res.json();
       if(!state.mounted)return;
       if(json?.authenticated&&json.user)state.user=json.user;
-      if(state.tab==="profile")render();
+      if(state.tab==="profile")renderKeepingPosition();
     }catch(error){console.warn("[Web móvil] Perfil:",error);}
   }
 
@@ -486,38 +504,179 @@
         JSON.stringify(old.progress)!==JSON.stringify(snapshot.progress)||
         JSON.stringify(old.notifications)!==JSON.stringify(snapshot.notifications);
       if(changed){
-        if(document.body.classList.contains("video-player-open"))rebuildPending=true;
-        else render();
+        if(overlayOpen())rebuildPending=true;
+        else renderKeepingPosition();
       }
     });
     bodyObserver=new MutationObserver(()=>{
-      if(rebuildPending&&!document.body.classList.contains("video-player-open")){
-        rebuildPending=false;render();
+      // También observa aperturas programáticas del detalle o del Motor E.
+      if(!historyRestoring && historyActive){
+        const layer=history.state?.[NAV_KEY]?.layer;
+        if(playerVisible()&&layer!=="player")pushScreen("player");
+        else if(detailVisible()&&!playerVisible()&&layer==="catalog")pushScreen("detail");
+        else if(layer==="player"&&!playerVisible()&&!detailVisible())history.back();
+        else if(layer==="detail"&&!detailVisible()&&!playerVisible())history.back();
+      }
+      if(rebuildPending&&!overlayOpen()){
+        rebuildPending=false;
+        renderKeepingPosition();
       }
     });
     bodyObserver.observe(document.body,{attributes:true,attributeFilter:["class"]});
     readUser();
     installBackNavigation();
   }
-  let backInstalled=false;
-  function installBackNavigation(){
-    if(backInstalled)return;
-    backInstalled=true;
-    const key="mdMobileCatalogV2";
-    try {
-      history.replaceState({...history.state,[key]:"base"},"",location.href);
-      history.pushState({...history.state,[key]:"catalog"},"",location.href);
-    }catch{}
-    window.addEventListener("popstate",()=>{
-      if(!media.matches||history.state?.[key]!=="base")return;
-      const portal=document.querySelector("#mega-videostream-portal-player.is-open");
-      if(portal)window.__microDramasMegaVideoStream?.stop?.();
-      else if(document.body.classList.contains("mobile-detail-open"))
-        window.cerrarDetalleMovil?.();
-      else navigate("home");
-      try{history.pushState({...history.state,[key]:"catalog"},"",location.href);}catch{}
+  /* Android Atrás usa el historial REAL de pantallas:
+     catálogo/pestaña -> detalle -> reproductor.
+     No se crean entradas falsas para enviar siempre a Inicio. */
+  const NAV_KEY="mdMobileNavigationV4";
+  let backInstalled=false,historyActive=false,historyRestoring=false;
+
+  function playerVisible() {
+    return Boolean(document.querySelector(
+      "#mega-videostream-portal-player.is-open, #md-player.is-open"
+    ));
+  }
+  function detailVisible() {
+    return Boolean(document.querySelector("#detalle-movil.is-open"));
+  }
+  function overlayOpen() {
+    return document.body.classList.contains("video-player-open")||
+      document.body.classList.contains("mobile-detail-open")||
+      playerVisible()||detailVisible();
+  }
+  function snapshotScreen(layer) {
+    return {
+      layer,
+      tab:state.tab,
+      search:state.search,
+      featuredIndex:state.featuredIndex,
+      scrollY:Math.max(0,Number(window.scrollY||window.pageYOffset)||0),
+      rails:Array.from(catalog.querySelectorAll(".md-mobile-section")).map(section=>({
+        id:section.id,
+        left:Number(section.querySelector(".md-mobile-rail")?.scrollLeft)||0
+      })),
+      detailScroll:Number(document.querySelector("#detalle-movil .mobile-detail__panel")?.scrollTop)||0
+    };
+  }
+  function restoreScreen(screen) {
+    if(!screen)return;
+    const restore=()=>{
+      if(!state.mounted||!media.matches)return;
+      if(Array.isArray(screen.rails)){
+        screen.rails.forEach(item=>{
+          const section=Array.from(catalog.querySelectorAll(".md-mobile-section"))
+            .find(node=>node.id===item.id);
+          const rail=section?.querySelector(".md-mobile-rail");
+          if(rail)rail.scrollLeft=Math.max(0,Number(item.left)||0);
+        });
+      }
+      if(detailVisible()){
+        const panel=document.querySelector("#detalle-movil .mobile-detail__panel");
+        if(panel)panel.scrollTop=Math.max(0,Number(screen.detailScroll)||0);
+      }
+      window.scrollTo({top:Math.max(0,Number(screen.scrollY)||0),left:0,behavior:"instant"});
+    };
+    window.requestAnimationFrame(()=>{
+      restore();
+      window.requestAnimationFrame(restore);
     });
   }
+  function renderKeepingPosition() {
+    if(!state.mounted)return;
+    const current=snapshotScreen(history.state?.[NAV_KEY]?.layer||"catalog");
+    render();
+    restoreScreen(current);
+  }
+  function rememberCurrentScreen() {
+    if(!historyActive)return;
+    const previous=history.state?.[NAV_KEY];
+    if(!previous)return;
+    try{
+      history.replaceState({...history.state,[NAV_KEY]:snapshotScreen(previous.layer)},"",location.href);
+    }catch(error){console.warn("[Navegación móvil] No se pudo registrar la posición:",error);}
+  }
+  function pushScreen(layer) {
+    if(!state.mounted||!media.matches||!historyActive||historyRestoring)return;
+    if(history.state?.[NAV_KEY]?.layer===layer)return;
+    rememberCurrentScreen();
+    try{
+      history.pushState({...history.state,[NAV_KEY]:snapshotScreen(layer)},"",location.href);
+    }catch(error){console.warn("[Navegación móvil] No se pudo abrir historial:",error);}
+  }
+  function closeMobileDetail() {
+    if(typeof window.cerrarDetalleMovil==="function"){
+      window.cerrarDetalleMovil();
+      return;
+    }
+    const detail=document.getElementById("detalle-movil");
+    if(detail){
+      detail.classList.remove("is-open");
+      detail.setAttribute("aria-hidden","true");
+    }
+    document.body.classList.remove("mobile-detail-open");
+  }
+  function closeActivePlayer() {
+    const player=window.__microDramasMegaVideoStream;
+    if(player?.stop)player.stop();
+    else if(typeof window.detenerReproductor==="function")window.detenerReproductor();
+    if(document.fullscreenElement)
+      document.exitFullscreen?.().catch(()=>{});
+  }
+  function installBackNavigation() {
+    if(backInstalled)return;
+    backInstalled=true;
+    try{
+      const previous=history.state&&typeof history.state==="object"?{...history.state}:{};
+      // Limpiar la marca obsoleta sin fabricar una entrada extra.
+      delete previous.mdMobileCatalogV2;
+      history.replaceState({...previous,[NAV_KEY]:snapshotScreen("catalog")},"",location.href);
+      historyActive=true;
+    }catch(error){
+      console.warn("[Navegación móvil] Historial no disponible:",error);
+      return;
+    }
+
+    // Los botones × hacen exactamente lo mismo que el gesto/botón Atrás.
+    // Capturar antes de que app.js/Motor E cierren sin actualizar history.
+    document.addEventListener("click",event=>{
+      if(!state.mounted||!media.matches)return;
+      const target=event.target;
+      const layer=history.state?.[NAV_KEY]?.layer;
+      const closePlayer=target.closest(
+        ".mega-videostream-portal__close, .mega-videostream-portal__backdrop, .md-player__close"
+      );
+      const closeDetail=target.closest(".mobile-detail__close, .mobile-detail__backdrop");
+      if((closePlayer&&layer==="player")||(closeDetail&&layer==="detail")){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        history.back();
+        return;
+      }
+      // El botón Ver pertenece a app.js y abre el Motor E directamente.
+      if(target.closest(".mobile-detail__play")&&detailVisible())pushScreen("player");
+    },true);
+
+    window.addEventListener("popstate",event=>{
+      if(!state.mounted||!media.matches)return;
+      const screen=event.state?.[NAV_KEY];
+      if(!screen)return; // Atrás desde la raíz: historial normal del navegador.
+      historyRestoring=true;
+      if(playerVisible())closeActivePlayer();
+      if(screen.layer==="catalog"&&detailVisible())closeMobileDetail();
+      const newTab=["home","search","mylist","profile"].includes(screen.tab)?screen.tab:"home";
+      const nextSearch=String(screen.search||"");
+      const needsRender=state.tab!==newTab||state.search!==nextSearch;
+      state.tab=newTab;
+      state.search=nextSearch;
+      if(Number.isSafeInteger(screen.featuredIndex))state.featuredIndex=screen.featuredIndex;
+      if(needsRender)render();
+      else heroUpdater?.();
+      restoreScreen(screen);
+      window.requestAnimationFrame(()=>{historyRestoring=false;});
+    });
+  }
+
   function unmount(){
     if(!state.mounted)return;
     state.mounted=false;

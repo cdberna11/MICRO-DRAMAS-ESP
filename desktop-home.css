@@ -816,16 +816,59 @@
   }
 }
 
-
-/* El arte original es JPG (opaco). Cuando su máscara transparente está lista
-   el logotipo blanco queda sobre el propio banner, sin filtro ni fondo negro. */
+/* Marca oficial del navegador de escritorio: icono APK + nombre a su lado.
+   El PNG se muestra intacto, sin máscara, filtros ni procesamiento canvas. */
 @media (min-width:601px) {
-  .md-desktop-brand img.md-desktop-brand__transparent,
-  .md-desktop-hero .md-desktop-brand img.md-desktop-brand__transparent {
+  .md-desktop-brand,
+  .md-desktop-hero .md-desktop-brand {
+    display:flex;
+    align-items:center;
+    flex:0 0 auto;
+    gap:clamp(10px,1.1vw,16px);
+    min-width:0;
+    max-width:calc(100% - 80px);
+    border:0;
+    background:transparent;
+  }
+  .md-desktop-brand img.md-desktop-brand__icon,
+  .md-desktop-hero .md-desktop-brand img.md-desktop-brand__icon {
+    width:clamp(48px,3.7vw,66px)!important;
+    height:clamp(48px,3.7vw,66px)!important;
+    max-width:66px!important;
+    max-height:none!important;
+    min-width:0;
+    display:block;
+    object-fit:contain;
+    object-position:center;
+    background:transparent!important;
     filter:none!important;
     mix-blend-mode:normal!important;
     -webkit-mix-blend-mode:normal!important;
-    background:transparent!important;
-    object-fit:contain;
+    box-shadow:none;
+    border:0;
+  }
+  .md-desktop-brand__name {
+    display:block;
+    color:#fff;
+    background:none;
+    font-size:clamp(18px,1.5vw,26px);
+    line-height:1.12;
+    font-weight:900;
+    letter-spacing:-.45px;
+    white-space:nowrap;
+    text-shadow:0 2px 12px rgba(0,0,0,.7);
+  }
+}
+@media (min-width:601px) and (max-width:980px) {
+  .md-desktop-brand img.md-desktop-brand__icon,
+  .md-desktop-hero .md-desktop-brand img.md-desktop-brand__icon {
+    width:46px!important;
+    height:46px!important;
+    max-width:46px!important;
+    max-height:46px!important;
+  }
+  .md-desktop-brand__name {
+    font-size:clamp(13px,1.7vw,18px);
+    letter-spacing:-.2px;
   }
 }

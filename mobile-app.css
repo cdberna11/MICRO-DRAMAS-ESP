@@ -310,3 +310,16 @@
   .md-mobile-item__save.is-saved svg{fill:rgba(229,9,20,.55);}
   .md-mobile-item__save:disabled{opacity:.55;cursor:wait;}
 }
+
+/* Compatibilidad con el detalle móvil original y su reproductor MEGA.
+   La barra nueva nunca tapa el modal ni su botón de cerrar. */
+@media (max-width:600px) {
+  .catalog-user-menu {display:none!important;}
+  body.mobile-detail-open .md-mobile-bottom-bar,
+  body.video-player-open .md-mobile-bottom-bar,
+  body.mobile-detail-open .md-mobile-notices,
+  body.video-player-open .md-mobile-notices {
+    display:none!important;
+  }
+  .md-mobile-header__logo {background:transparent;}
+}

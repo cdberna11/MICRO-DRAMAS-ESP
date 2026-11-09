@@ -307,6 +307,32 @@
       if(state.tab==="profile")render();
     }catch(error){console.warn("[Web móvil] Perfil:",error);}
   }
+
+  // Se conserva la renovación de sesión que ya existía en la web móvil.
+  // Importante para no perder la autenticación durante reproducciones largas.
+  let keepAliveInstalled=false;
+  function installSessionKeepAlive(){
+    if(keepAliveInstalled)return;
+    keepAliveInstalled=true;
+    let last=Date.now(),running=false;
+    async function renew(){
+      if(!media.matches||document.visibilityState!=="visible"||running||
+        Date.now()-last<20*60*1000)return;
+      running=true;
+      try{
+        const response=await fetch("/api/auth/me",{
+          credentials:"same-origin",cache:"no-store",
+          headers:{Accept:"application/json"}
+        });
+        if(response.ok)last=Date.now();
+      }catch(error){console.warn("[Web móvil] Renovación de sesión:",error);}
+      finally{running=false;}
+    }
+    window.setInterval(renew,20*60*1000);
+    window.addEventListener("pageshow",renew);
+    document.addEventListener("visibilitychange",renew);
+  }
+
   function mount(){
     if(state.mounted||!media.matches||!data().length)return;
     state.mounted=true;
@@ -314,6 +340,7 @@
     const suggested=publishedDramas.filter(recent);
     state.featured=(suggested.length?suggested:publishedDramas).sort(ranking)[0]||null;
     createNav();
+    installSessionKeepAlive();
     render();
     unsubscribe=api?.subscribe?.(snapshot=>{
       const old=state.mediaState;

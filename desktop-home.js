@@ -457,11 +457,17 @@
     });
   }
   function resetFiltering() {
+    myListMode = false;
     chosenCategory = null;
     searchTerm = "";
     if (search) search.value = "";
     updateCategoryState();
     rebuildRows();
+    if (dock) {
+      dock.querySelectorAll("[data-dock-key]").forEach(node => {
+        node.classList.toggle("is-active", node.dataset.dockKey === "home");
+      });
+    }
   }
   function updateCategoryState() {
     if (!menu) return;

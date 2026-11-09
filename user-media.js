@@ -119,8 +119,9 @@
     if(!state.ready||!session||session!==active||!session.played)return;
     const video=session.video;
     const seconds=Number(video.currentTime);
-    const duration=Number(video.duration);
-    if(!Number.isFinite(seconds)||seconds<0||!Number.isFinite(duration)||duration<=0)return;
+    const duration=Number.isFinite(video.duration) && video.duration>0
+      ? Number(video.duration) : Number(session.durationReader?.());
+    if(session.resuming || !Number.isFinite(seconds)||seconds<0||!Number.isFinite(duration)||duration<=0)return;
     const now=Date.now();
     if(!force&&now-session.lastSave<15000)return;
     session.lastSave=now;
@@ -151,12 +152,12 @@
       notify();
     }).catch(error=>console.warn("[Progreso] Sin conexión:",error));
   }
-  function onPlaybackOpen(drama, video, validSeek) {
+  function onPlaybackOpen(drama, video, validSeek, durationReader) {
     if(!drama||!video||typeof validSeek!=="function")return;
     if(active)onPlaybackClose(active.drama,active.video);
     const session={
-      id:Number(drama.id),drama,video,validSeek,listeners:[],
-      played:false,lastSave:0,resumeTried:false,createdAt:Date.now()
+      id:Number(drama.id),drama,video,validSeek,durationReader,listeners:[],
+      played:false,lastSave:0,resumeTried:false,resuming:false,createdAt:Date.now()
     };
     active=session;
     function listen(type,fn) {
@@ -168,17 +169,19 @@
       if(!progress||progress.completed){
         session.resumeTried=true;return;
       }
-      const duration=Number(video.duration);
+      const duration=Number.isFinite(video.duration) && video.duration>0
+        ? Number(video.duration) : Number(session.durationReader?.());
       if(!Number.isFinite(duration)||duration<=0)return;
       const target=Number(progress.positionMs)/1000;
       if(!Number.isFinite(target)||target<5||target>=duration-5){
         session.resumeTried=true;return;
       }
       session.resumeTried=true;
-      // La búsqueda utiliza la implementación original de MP4Box/MEGA.
-      Promise.resolve(session.validSeek(Math.min(target,duration-.5))).catch(
-        error=>console.warn("[Continuar viendo] Seek no disponible:",error)
-      );
+      session.resuming=true;
+      // La búsqueda utiliza exclusivamente la implementación validada de MP4Box/MEGA.
+      Promise.resolve(session.validSeek(Math.min(target,duration-.5)))
+        .catch(error=>console.warn("[Continuar viendo] Seek no disponible:",error))
+        .finally(()=>{session.resuming=false;});
     }
     listen("playing",()=>{session.played=true;resumeIfReady();});
     listen("durationchange",()=>{if(!video.paused)resumeIfReady();});

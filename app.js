@@ -7969,6 +7969,15 @@ if (
         "video-player-open"
     );
 
+    // Perfil de usuario: solo comunica apertura y funciones de SEEK originales.
+    // El motor de reproducción no se reemplaza ni se modifica.
+    try {
+        window.MDUserMedia?.onPlaybackOpen?.(
+            drama, elementos.video, ejecutarSeekReal, obtenerDuracionVideo
+        );
+    } catch (error) {
+        console.warn("[PERFIL] No se pudo iniciar seguimiento:", error);
+    }
 
     registrarVista(
     drama
@@ -9628,6 +9637,15 @@ function manejarTecladoPlayer(
 ========================================================= */
 
 function detenerReproductor() {
+
+    // Guardar la última posición antes de desmontar el MediaSource.
+    try {
+        window.MDUserMedia?.onPlaybackClose?.(
+            playerState.drama, playerState.videoElement
+        );
+    } catch (error) {
+        console.warn("[PERFIL] No se pudo guardar el cierre:", error);
+    }
 
     playerState.stopped =
         true;

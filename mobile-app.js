@@ -575,7 +575,7 @@
         const panel=document.querySelector("#detalle-movil .mobile-detail__panel");
         if(panel)panel.scrollTop=Math.max(0,Number(screen.detailScroll)||0);
       }
-      window.scrollTo({top:Math.max(0,Number(screen.scrollY)||0),left:0,behavior:"instant"});
+      window.scrollTo({top:Math.max(0,Number(screen.scrollY)||0),left:0,behavior:"auto"});
     };
     window.requestAnimationFrame(()=>{
       restore();
@@ -624,7 +624,16 @@
       document.exitFullscreen?.().catch(()=>{});
   }
   function installBackNavigation() {
-    if(backInstalled)return;
+    if(backInstalled){
+      // Android puede cambiar a >600px en horizontal y volver a móvil.
+      if(!historyActive){
+        try {
+          history.replaceState({...history.state,[NAV_KEY]:snapshotScreen("catalog")},"",location.href);
+          historyActive=true;
+        }catch(error){console.warn("[Navegación móvil] Reanudación de historial:",error);}
+      }
+      return;
+    }
     backInstalled=true;
     try{
       const previous=history.state&&typeof history.state==="object"?{...history.state}:{};
@@ -680,6 +689,7 @@
   function unmount(){
     if(!state.mounted)return;
     state.mounted=false;
+    historyActive=false;
     if(heroTimer!==null)window.clearInterval(heroTimer);
     heroTimer=null;
     heroUpdater=null;

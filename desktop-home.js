@@ -95,7 +95,8 @@
   let myListKey = null;
   let myListIds = new Set();
   let authVersion = 0;
-  const MY_LIST_PREFIX = "microdramas:desktop:my-list:v1:user:";
+  let unsubscribeMedia = null;
+  let savedProgress = [];
 
 
   function isSaved(drama) { return myListIds.has(Number(drama.id)); }
@@ -122,55 +123,56 @@
       heroButton.textContent = active ? "✓ En Mi lista" : "+ Mi lista";
     }
   }
-  function toggleMyList(drama) {
-    if (!myListReady || !myListKey) return;
-    const id = Number(drama.id);
-    if (!Number.isSafeInteger(id) || id <= 0) return;
-    const already = myListIds.has(id);
-    if (already) myListIds.delete(id); else myListIds.add(id);
-    try {
-      localStorage.setItem(myListKey, JSON.stringify([...myListIds]));
-    } catch (error) {
-      if (already) myListIds.add(id); else myListIds.delete(id);
-      console.warn("[Mi lista] Error guardando favoritos:", error);
-      window.alert("No se pudo guardar Mi lista: habilita el almacenamiento local de este navegador.");
-    }
-    if (myListMode) rebuildRows();
-    else refreshSaveAppearance();
+
+  async function toggleMyList(drama) {
+    if (!window.MDUserMedia || !myListReady) return;
+    await window.MDUserMedia.toggleSaved(drama.id);
   }
   async function loadUserMyList() {
-    const version = ++authVersion;
-    myListReady = false;
-    myListKey = null;
-    myListIds.clear();
-    refreshSaveAppearance();
+    const generation = ++authVersion;
+    if (unsubscribeMedia) unsubscribeMedia();
+    const api = window.MDUserMedia;
+    if (!api) {
+      myListReady = false;
+      refreshSaveAppearance();
+      return;
+    }
+    unsubscribeMedia = api.subscribe(data => {
+      if (!mounted || generation !== authVersion) return;
+      const wasReady = myListReady;
+      const previousIds = [...myListIds].sort((a,b)=>a-b).join(",");
+      const previousProgress = JSON.stringify(savedProgress);
+      myListReady = Boolean(data.ready);
+      myListIds = new Set((data.watchlist || []).map(Number));
+      savedProgress = data.progress || [];
+      if (wasReady !== myListReady ||
+          previousIds !== [...myListIds].sort((a,b)=>a-b).join(",") ||
+          previousProgress !== JSON.stringify(savedProgress)) {
+        if (!document.body.classList.contains("video-player-open")) rebuildRows();
+        else refreshSaveAppearance();
+      } else {
+        refreshSaveAppearance();
+      }
+    });
     try {
-      const res = await fetch("/api/auth/me", { credentials: "same-origin", cache: "no-store" });
-      if (!res.ok) throw Error("No hay sesión activa");
+      const res = await fetch("/api/auth/me", { credentials:"same-origin", cache:"no-store" });
+      if (!res.ok) return;
       const data = await res.json();
-      if (!data.authenticated || data.user?.id == null) throw Error("Usuario no identificado");
-      const key = MY_LIST_PREFIX + String(data.user.id);
-      const saved = JSON.parse(localStorage.getItem(key) || "[]");
-      if (!mounted || version !== authVersion) return;
-      myListKey = key;
-      myListIds = new Set((Array.isArray(saved) ? saved : []).map(Number).filter(id => Number.isSafeInteger(id) && id > 0));
-      myListReady = true;
+      if (!mounted || generation !== authVersion || !data?.authenticated) return;
       const avatar = dock?.querySelector(".md-desktop-dock__avatar img");
       if (avatar) {
-        const file = /^avatar-[1-8]\.png$/.test(data.user.avatar || "") ? data.user.avatar : "avatar-1.png";
+        const file = /^avatar-[1-8]\.png$/.test(data.user?.avatar || "")
+          ? data.user.avatar : "avatar-1.png";
         avatar.src = "/assets/" + file;
         avatar.alt = "Avatar de " + String(data.user.displayName || "usuario");
         avatar.parentElement.title = String(data.user.displayName || "Usuario");
       }
-      if (myListMode) rebuildRows(); else refreshSaveAppearance();
     } catch (error) {
-      if (!mounted || version !== authVersion) return;
-      console.warn("[Mi lista] No se pudo cargar la sesión o los datos locales:", error);
-      myListReady = false;
-      myListKey = null;
-      if (myListMode) rebuildRows(); else refreshSaveAppearance();
+      console.warn("[Mi lista] No se pudo leer el avatar:", error);
     }
   }
+
+
   function addExistingCard(drama, destination, rank) {
     crearTarjetaDrama(drama);
     const original = catalog.lastElementChild;
@@ -257,16 +259,45 @@
   }
 
 
+
   function createEmptyContinue() {
     const section = el("section", "md-desktop-section md-desktop-continue");
     section.id = "md-continuar";
     section.appendChild(el("h2", "md-desktop-section__solo-title", "Continuar viendo"));
     const empty = el("div", "md-desktop-continue__empty");
     empty.innerHTML = svg("clock");
-    empty.appendChild(el("span", "", "Los microdramas pendientes aparecerán aquí cuando esté disponible el historial de reproducción."));
+    empty.appendChild(el("span", "",
+      myListReady ? "Cuando dejes un microdrama sin terminar, podrás retomarlo aquí desde el mismo momento."
+        : "Conectando tu historial de reproducción..."));
     section.appendChild(empty);
     content.appendChild(section);
   }
+  function createContinueWatching(available) {
+    const progress = savedProgress.filter(p =>
+      !p.completed && Number(p.durationMs)>0 &&
+      Number(p.positionMs)>=5000 && Number(p.positionMs)<Number(p.durationMs)-4000
+    ).sort((a,b)=>String(b.updatedAt||"").localeCompare(String(a.updatedAt||"")));
+    const byId = new Map(available.map(drama=>[Number(drama.id),drama]));
+    const list = progress.map(p=>byId.get(Number(p.dramaId))).filter(Boolean);
+    if (!list.length) { createEmptyContinue(); return; }
+    const section = createRow("Continuar viendo", list, "md-continuar", false);
+    if (!section) return;
+    const progressById = new Map(progress.map(p=>[Number(p.dramaId),p]));
+    section.querySelectorAll(".md-desktop-item").forEach(wrapper => {
+      const id = Number(wrapper.querySelector(".drama-card")?.dataset.dramaId);
+      const item = progressById.get(id);
+      if (!item) return;
+      const percent = Math.min(100,Math.max(0,100*item.positionMs/item.durationMs));
+      const bar = el("div","md-desktop-item__progress");
+      const fill = el("span","md-desktop-item__progress-fill");
+      fill.style.width = percent.toFixed(2)+"%";
+      bar.appendChild(fill);
+      bar.setAttribute("aria-label",percent.toFixed(0)+"% reproducido");
+      const card=wrapper.querySelector(".drama-card");
+      if (card) card.insertAdjacentElement("afterend",bar);
+    });
+  }
+
 
   function rebuildRows() {
     if (!mounted || !content) return;
@@ -312,7 +343,7 @@
     }
 
     if (stage) stage.hidden = false;
-    createEmptyContinue();
+    createContinueWatching(available);
     createRow("Próximos estrenos", upcoming, "md-proximos", false);
     createRow("Estrenos", premieres, "md-estrenos", false);
     createRow("Top 10", top, "md-top10", true);
@@ -539,7 +570,7 @@
     function iconButton(icon, label, key, action) {
       const b = button("", "md-desktop-dock__item", action);
       b.innerHTML = svg(icon);
-      b.title = label;
+      b.dataset.tooltip = label;
       b.setAttribute("aria-label", label);
       b.dataset.dockKey = key;
       dock.appendChild(b);
@@ -553,7 +584,7 @@
     const searchWrap = el("div", "md-desktop-dock__search");
     const searchButton = button("", "md-desktop-dock__item", () => search.focus());
     searchButton.innerHTML = svg("search");
-    searchButton.title = "Buscar";
+    searchButton.dataset.tooltip = "Buscar";
     searchButton.dataset.dockKey = "search";
     searchButton.setAttribute("aria-label", "Buscar microdramas");
     searchWrap.appendChild(searchButton);
@@ -645,6 +676,9 @@
     myListReady = false;
     myListKey = null;
     authVersion++;
+    unsubscribeMedia?.();
+    unsubscribeMedia = null;
+    savedProgress = [];
     catalog.classList.remove("md-desktop-home");
     catalog.replaceChildren();
     // En móvil se restaura exactamente el renderizado del app.js.
@@ -665,14 +699,6 @@
       unmount();
     }
   });
-  window.addEventListener("storage", event => {
-    if (!mounted || !myListReady || event.key !== myListKey) return;
-    try {
-      const ids = JSON.parse(event.newValue || "[]");
-      myListIds = new Set((Array.isArray(ids) ? ids : []).map(Number).filter(Number.isSafeInteger));
-      if (myListMode) rebuildRows(); else refreshSaveAppearance();
-    } catch (error) {
-      console.warn("[Mi lista] Otra pestaña contiene datos inválidos:", error);
-    }
-  });
+  // El estado se actualiza mediante MDUserMedia.subscribe() y D1.
+
 })();

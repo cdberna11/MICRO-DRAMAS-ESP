@@ -83,6 +83,17 @@
       if(rank===10)wrapper.classList.add("md-mobile-item--ten");
     }
     wrapper.appendChild(card);
+    // Marcador en cada portada: Mi lista real por cuenta, incluso en próximos estrenos.
+    const mark=btn("","md-mobile-item__save",async event=>{
+      event.stopPropagation();
+      if(state.mediaState.ready)await api?.toggleSaved?.(drama.id);
+    });
+    mark.innerHTML=svg("list");
+    mark.setAttribute("aria-label",(hasSaved(drama.id)?"Quitar de Mi lista: ":"Añadir a Mi lista: ")+drama.title);
+    mark.setAttribute("aria-pressed",String(Boolean(hasSaved(drama.id))));
+    mark.classList.toggle("is-saved",Boolean(hasSaved(drama.id)));
+    mark.disabled=!state.mediaState.ready;
+    wrapper.appendChild(mark);
     if(progress){
       const track=el("div","md-mobile-progress");
       const fill=el("span","md-mobile-progress__fill");
@@ -253,10 +264,11 @@
     else if(state.tab==="mylist")myList();
     else if(state.tab==="profile")profile();
     else home();
-    nav?.querySelectorAll("[data-tab]").forEach(button=>{
+    nav?.querySelectorAll("[data-tab]").forEach((button,index)=>{
       const selected=button.dataset.tab===state.tab;
       button.classList.toggle("is-active",selected);
       button.setAttribute("aria-current",selected?"page":"false");
+      if(selected)nav.style.setProperty("--active-index",String(index));
     });
   }
   function navigate(tab){

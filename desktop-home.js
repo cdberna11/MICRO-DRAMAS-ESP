@@ -20,7 +20,9 @@
     award: '<path d="M8 3h8v7a4 4 0 0 1-8 0zM8 5H4v3a4 4 0 0 0 4 4m8-7h4v3a4 4 0 0 1-4 4M12 14v4m-4 3h8"/>',
     chevron: '<path d="m9 5 7 7-7 7"/>',
     close: '<path d="M5 5 19 19M19 5 5 19"/>',
-    menu: '<path d="M4 7h16M4 12h16M4 17h16"/>'
+    menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+    bookmark: '<path d="M6 4h12v17l-6-4-6 4z"/>',
+    logout: '<path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M14 7l5 5-5 5M9 12h10"/>'
   };
   function svg(name) {
     return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (icons[name] || icons.grid) + '</svg>';
@@ -88,14 +90,95 @@
   let featured = [];
   let featuredIndex = 0;
   let slideInterval = null;
+  let myListMode = false;
+  let myListReady = false;
+  let myListKey = null;
+  let myListIds = new Set();
+  let authVersion = 0;
+  const MY_LIST_PREFIX = "microdramas:desktop:my-list:v1:user:";
 
+
+  function isSaved(drama) { return myListIds.has(Number(drama.id)); }
+  function setSaveAppearance(node, drama) {
+    const active = isSaved(drama);
+    node.disabled = !myListReady;
+    node.classList.toggle("is-saved", active);
+    node.setAttribute("aria-pressed", String(active));
+    node.setAttribute("aria-label", (active ? "Quitar de Mi lista: " : "Añadir a Mi lista: ") + (drama.title || "microdrama"));
+    node.title = !myListReady ? "Cargando Mi lista" : active ? "Quitar de Mi lista" : "Añadir a Mi lista";
+  }
+  function refreshSaveAppearance() {
+    if (!mounted) return;
+    catalog.querySelectorAll(".md-desktop-item__save").forEach(node => {
+      setSaveAppearance(node, { id: node.dataset.dramaId, title: node.dataset.dramaTitle });
+    });
+    const heroButton = stage?.querySelector(".md-desktop-hero__save");
+    if (heroButton && featured.length) {
+      const drama = featured[featuredIndex % featured.length];
+      const active = isSaved(drama);
+      heroButton.disabled = !myListReady;
+      heroButton.classList.toggle("is-saved", active);
+      heroButton.setAttribute("aria-pressed", String(active));
+      heroButton.textContent = active ? "✓ En Mi lista" : "+ Mi lista";
+    }
+  }
+  function toggleMyList(drama) {
+    if (!myListReady || !myListKey) return;
+    const id = Number(drama.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return;
+    const already = myListIds.has(id);
+    if (already) myListIds.delete(id); else myListIds.add(id);
+    try {
+      localStorage.setItem(myListKey, JSON.stringify([...myListIds]));
+    } catch (error) {
+      if (already) myListIds.add(id); else myListIds.delete(id);
+      console.warn("[Mi lista] Error guardando favoritos:", error);
+      window.alert("No se pudo guardar Mi lista: habilita el almacenamiento local de este navegador.");
+    }
+    if (myListMode) rebuildRows();
+    else refreshSaveAppearance();
+  }
+  async function loadUserMyList() {
+    const version = ++authVersion;
+    myListReady = false;
+    myListKey = null;
+    myListIds.clear();
+    refreshSaveAppearance();
+    try {
+      const res = await fetch("/api/auth/me", { credentials: "same-origin", cache: "no-store" });
+      if (!res.ok) throw Error("No hay sesión activa");
+      const data = await res.json();
+      if (!data.authenticated || data.user?.id == null) throw Error("Usuario no identificado");
+      const key = MY_LIST_PREFIX + String(data.user.id);
+      const saved = JSON.parse(localStorage.getItem(key) || "[]");
+      if (!mounted || version !== authVersion) return;
+      myListKey = key;
+      myListIds = new Set((Array.isArray(saved) ? saved : []).map(Number).filter(id => Number.isSafeInteger(id) && id > 0));
+      myListReady = true;
+      const avatar = dock?.querySelector(".md-desktop-dock__avatar img");
+      if (avatar) {
+        const file = /^avatar-[1-8]\.png$/.test(data.user.avatar || "") ? data.user.avatar : "avatar-1.png";
+        avatar.src = "/assets/" + file;
+        avatar.alt = "Avatar de " + String(data.user.displayName || "usuario");
+        avatar.parentElement.title = String(data.user.displayName || "Usuario");
+      }
+      if (myListMode) rebuildRows(); else refreshSaveAppearance();
+    } catch (error) {
+      if (!mounted || version !== authVersion) return;
+      console.warn("[Mi lista] No se pudo cargar la sesión o los datos locales:", error);
+      myListReady = false;
+      myListKey = null;
+      if (myListMode) rebuildRows(); else refreshSaveAppearance();
+    }
+  }
   function addExistingCard(drama, destination, rank) {
-    // La tarjeta y el botón VER son originales: se conservan TODOS sus listeners.
     crearTarjetaDrama(drama);
     const original = catalog.lastElementChild;
-    if (!original || !original.classList.contains("drama-card")) return;
+    if (!original?.classList.contains("drama-card")) return;
     const wrapper = el("div", "md-desktop-item");
     original.dataset.dramaId = String(drama.id);
+    const image = original.querySelector(".drama-card__cover");
+    if (image) image.draggable = false;
     if (rank) {
       wrapper.classList.add("md-desktop-item--ranked");
       wrapper.appendChild(el("span", "md-rank-number", String(rank)));
@@ -103,33 +186,76 @@
     const ribbon = original.querySelector(".drama-card__new");
     if (ribbon) ribbon.textContent = "ESTRENO";
     wrapper.appendChild(original);
+    const save = button("", "md-desktop-item__save", () => toggleMyList(drama));
+    save.innerHTML = svg("bookmark");
+    save.dataset.dramaId = String(drama.id);
+    save.dataset.dramaTitle = String(drama.title || "Microdrama");
+    setSaveAppearance(save, drama);
+    wrapper.appendChild(save);
     wrapper.appendChild(el("p", "md-desktop-item__title", drama.title || "Microdrama"));
     destination.appendChild(wrapper);
   }
 
+
+
+  function makeDraggable(rail) {
+    let active = null, origin = 0, initialScroll = 0, dragged = false, swallowClick = false;
+    rail.addEventListener("pointerdown", e => {
+      if (e.pointerType !== "mouse" || e.button !== 0 || e.target.closest("button,a,input")) return;
+      active = e.pointerId;
+      origin = e.clientX;
+      initialScroll = rail.scrollLeft;
+      dragged = false;
+      swallowClick = false;
+    });
+    rail.addEventListener("pointermove", e => {
+      if (active !== e.pointerId) return;
+      const delta = e.clientX - origin;
+      if (!dragged && Math.abs(delta) > 6) {
+        dragged = true;
+        swallowClick = true;
+        rail.classList.add("is-dragging");
+        try { rail.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+      if (dragged) {
+        rail.scrollLeft = initialScroll - delta;
+        e.preventDefault();
+      }
+    });
+    function release(e) {
+      if (active !== e.pointerId) return;
+      active = null;
+      dragged = false;
+      rail.classList.remove("is-dragging");
+      if (rail.hasPointerCapture?.(e.pointerId)) rail.releasePointerCapture(e.pointerId);
+      window.setTimeout(() => { swallowClick = false; }, 0);
+    }
+    rail.addEventListener("pointerup", release);
+    rail.addEventListener("pointercancel", release);
+    rail.addEventListener("lostpointercapture", () => rail.classList.remove("is-dragging"));
+    rail.addEventListener("dragstart", e => e.preventDefault());
+    rail.addEventListener("click", e => {
+      if (!swallowClick) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }, true);
+  }
   function createRow(title, list, id, ranked) {
     if (!list.length) return null;
     const section = el("section", "md-desktop-section" + (ranked ? " md-desktop-section--ranked" : ""));
     section.id = id;
     const heading = el("div", "md-desktop-section__heading");
     heading.appendChild(el("h2", "", title));
-    const arrows = el("div", "md-desktop-section__arrows");
-    const previous = button("", "md-scroll-arrow", () => rail.scrollBy({ left: -rail.clientWidth * .8, behavior: "smooth" }));
-    previous.innerHTML = svg("chevron");
-    previous.setAttribute("aria-label", "Desplazar " + title + " a la izquierda");
-    previous.classList.add("md-scroll-arrow--back");
-    const next = button("", "md-scroll-arrow", () => rail.scrollBy({ left: rail.clientWidth * .8, behavior: "smooth" }));
-    next.innerHTML = svg("chevron");
-    next.setAttribute("aria-label", "Desplazar " + title + " a la derecha");
-    arrows.append(previous, next);
-    heading.appendChild(arrows);
     section.appendChild(heading);
     const rail = el("div", "md-desktop-row");
+    rail.setAttribute("aria-label", "Carrusel de " + title + ". Arrastra horizontalmente con el mouse para recorrerlo.");
     list.forEach((drama, i) => addExistingCard(drama, rail, ranked ? i + 1 : 0));
+    makeDraggable(rail);
     section.appendChild(rail);
     content.appendChild(section);
     return section;
   }
+
 
   function createEmptyContinue() {
     const section = el("section", "md-desktop-section md-desktop-continue");
@@ -151,6 +277,15 @@
     const premieres = available.filter(isRecent)
       .sort((a, b) => publishedTime(b) - publishedTime(a) || Number(b.id) - Number(a.id));
     const top = [...available].sort(orderedByViews).slice(0, 10);
+    if (myListMode) {
+      if (stage) stage.hidden = true;
+      const savedDramas = all.filter(isSaved);
+      if (savedDramas.length) createRow("Mi lista", savedDramas, "md-mi-lista", false);
+      else content.appendChild(el("p", "md-desktop-message",
+        myListReady ? "Tu lista está vacía. Usa el marcador de las tarjetas para guardar microdramas."
+          : "No se pudo cargar Mi lista. Verifica tu sesión y el almacenamiento del navegador."));
+      return;
+    }
 
     if (searchTerm) {
       const normalize = str => String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -162,7 +297,7 @@
       );
       createRow("Resultados para «" + searchTerm + "»", matches, "md-resultados", false);
       if (!matches.length) content.appendChild(el("p", "md-desktop-message", "No se encontraron microdramas con ese nombre."));
-      stage.hidden = true;
+      if (stage) stage.hidden = true;
       return;
     }
 
@@ -172,11 +307,11 @@
       const matches = available.filter(drama => ids.has(Number(drama.id)));
       createRow(category?.name || "Categoría", matches, "md-categoria-activa", false);
       if (!matches.length) content.appendChild(el("p", "md-desktop-message", "Esta categoría todavía no tiene microdramas publicados."));
-      stage.hidden = true;
+      if (stage) stage.hidden = true;
       return;
     }
 
-    stage.hidden = false;
+    if (stage) stage.hidden = false;
     createEmptyContinue();
     createRow("Próximos estrenos", upcoming, "md-proximos", false);
     createRow("Estrenos", premieres, "md-estrenos", false);
@@ -191,6 +326,7 @@
     }
   }
 
+
   function createHeader() {
     const header = el("header", "md-desktop-header");
     const brand = el("div", "md-desktop-brand");
@@ -199,25 +335,9 @@
     image.alt = "Micro Dramas";
     brand.appendChild(image);
     header.appendChild(brand);
-    const tagline = el("span", "md-desktop-header__tagline", "Tu universo de historias");
-    header.appendChild(tagline);
-    const form = el("label", "md-desktop-search");
-    form.innerHTML = svg("search");
-    search = el("input", "");
-    search.type = "search";
-    search.placeholder = "Buscar microdramas...";
-    search.autocomplete = "off";
-    search.setAttribute("aria-label", "Buscar microdramas en el catálogo");
-    search.addEventListener("input", () => {
-      searchTerm = search.value.trim();
-      chosenCategory = null;
-      updateCategoryState();
-      rebuildRows();
-    });
-    form.appendChild(search);
-    header.appendChild(form);
     catalog.appendChild(header);
   }
+
 
   function featuredAnchor(drama) {
     const bin = catalog.querySelector(".md-desktop-anchors");
@@ -254,6 +374,7 @@
     play.onclick = () => featuredAnchor(drama)?.querySelector(".drama-card__play")?.click();
     const detail = stage.querySelector(".md-desktop-hero__detail");
     detail.onclick = () => featuredAnchor(drama)?.querySelector(".drama-card__cover")?.click();
+    refreshSaveAppearance();
     const indicators = stage.querySelector(".md-desktop-hero__dots");
     indicators.replaceChildren();
     featured.forEach((_, index) => {
@@ -293,6 +414,11 @@
     actions.appendChild(play);
     const detail = button("Más información", "md-desktop-hero__detail");
     actions.appendChild(detail);
+    const saveHero = button("+ Mi lista", "md-desktop-hero__save", () => {
+      const drama = featured[featuredIndex % featured.length];
+      if (drama) toggleMyList(drama);
+    });
+    actions.appendChild(saveHero);
     information.appendChild(actions);
     stage.appendChild(information);
     const controls = el("div", "md-desktop-hero__controls");
@@ -392,32 +518,91 @@
     document.body.appendChild(menu);
     updateCategoryState();
   }
+
   function createDock() {
     dock = el("nav", "md-desktop-dock");
     dock.setAttribute("aria-label", "Navegación de escritorio");
-    const navigation = [
-      ["home", "Inicio", () => { resetFiltering(); window.scrollTo({ top: 0, behavior: "smooth" }); }],
-      ["search", "Buscar", () => { resetFiltering(); search?.focus(); }],
-      ["grid", "Categorías", openMenu],
-      ["clock", "Continuar viendo", () => scrollToSection("md-continuar")],
-      ["calendar", "Próximos estrenos", () => scrollToSection("md-proximos")],
-      ["play", "Estrenos", () => scrollToSection("md-estrenos")],
-      ["award", "Top 10", () => scrollToSection("md-top10")]
-    ];
-    navigation.forEach(([icon, title, handler], index) => {
-      const item = button("", "md-desktop-dock__item" + (index === 0 ? " is-active" : ""), handler);
-      item.innerHTML = svg(icon);
-      item.setAttribute("aria-label", title);
-      item.title = title;
-      dock.appendChild(item);
+    const avatar = el("div", "md-desktop-dock__avatar");
+    avatar.title = "Avatar del usuario";
+    const image = el("img", "");
+    image.src = "/assets/avatar-1.png";
+    image.alt = "Avatar del usuario";
+    avatar.appendChild(image);
+    dock.appendChild(avatar);
+    dock.appendChild(el("div", "md-desktop-dock__separator"));
+    function iconButton(icon, label, key, action) {
+      const b = button("", "md-desktop-dock__item", action);
+      b.innerHTML = svg(icon);
+      b.title = label;
+      b.setAttribute("aria-label", label);
+      b.dataset.dockKey = key;
+      dock.appendChild(b);
+      return b;
+    }
+    iconButton("home", "Inicio", "home", () => {
+      resetFiltering();
+      window.scrollTo({ top:0, behavior:"smooth" });
+    });
+
+    const searchWrap = el("div", "md-desktop-dock__search");
+    const searchButton = button("", "md-desktop-dock__item", () => search.focus());
+    searchButton.innerHTML = svg("search");
+    searchButton.title = "Buscar";
+    searchButton.dataset.dockKey = "search";
+    searchButton.setAttribute("aria-label", "Buscar microdramas");
+    searchWrap.appendChild(searchButton);
+    search = el("input", "md-desktop-dock__search-input");
+    search.type = "search";
+    search.autocomplete = "off";
+    search.placeholder = "Buscar microdramas...";
+    search.setAttribute("aria-label", "Buscar microdramas en el catálogo");
+    search.addEventListener("input", () => {
+      searchTerm = search.value.trim();
+      chosenCategory = null;
+      myListMode = false;
+      rebuildRows();
+      selectDock(searchTerm ? "search" : "home");
+    });
+    search.addEventListener("keydown", e => {
+      if (e.key === "Escape") { search.blur(); searchButton.focus(); }
+    });
+    searchWrap.appendChild(search);
+    dock.appendChild(searchWrap);
+
+    iconButton("calendar", "Próximos estrenos", "upcoming", () => {
+      scrollToSection("md-proximos");
+      selectDock("upcoming");
+    });
+    iconButton("play", "Estrenos", "premieres", () => {
+      scrollToSection("md-estrenos");
+      selectDock("premieres");
+    });
+    iconButton("bookmark", "Mi lista", "mylist", () => {
+      myListMode = true;
+      chosenCategory = null;
+      searchTerm = "";
+      search.value = "";
+      rebuildRows();
+      selectDock("mylist");
+      window.scrollTo({ top:0, behavior:"smooth" });
+    });
+
+    dock.appendChild(el("div", "md-desktop-dock__separator"));
+    iconButton("logout", "Cerrar sesión", "logout", () => {
+      window.location.href = "/api/session/logout";
     });
     document.body.appendChild(dock);
-    dock.addEventListener("click", event => {
-      const clicked = event.target.closest(".md-desktop-dock__item");
-      if (!clicked) return;
-      dock.querySelectorAll(".md-desktop-dock__item").forEach(node => node.classList.toggle("is-active", node === clicked));
+    selectDock("home");
+  }
+  function selectDock(key) {
+    dock?.querySelectorAll("[data-dock-key]").forEach(node => {
+      const selected = node.dataset.dockKey === key;
+      node.classList.toggle("is-active", selected);
+      if (selected) node.setAttribute("aria-current", "page");
+      else node.removeAttribute("aria-current");
     });
   }
+
 
   function mount() {
     if (!media.matches || mounted || !dramas().length) return;
@@ -427,7 +612,6 @@
     catalog.replaceChildren();
     catalog.classList.add("md-desktop-home");
     createDock();
-    createMenu();
     createHeader();
     const anchors = el("div", "md-desktop-anchors");
     anchors.setAttribute("aria-hidden", "true");
@@ -436,6 +620,7 @@
     content = el("div", "md-desktop-content");
     catalog.appendChild(content);
     rebuildRows();
+    loadUserMyList();
   }
   function unmount() {
     if (!mounted) return;
@@ -450,6 +635,10 @@
     stage = null;
     content = null;
     search = null;
+    myListMode = false;
+    myListReady = false;
+    myListKey = null;
+    authVersion++;
     catalog.classList.remove("md-desktop-home");
     catalog.replaceChildren();
     // En móvil se restaura exactamente el renderizado del app.js.
@@ -470,7 +659,14 @@
       unmount();
     }
   });
-  document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && menu?.classList.contains("is-open")) closeMenu();
+  window.addEventListener("storage", event => {
+    if (!mounted || !myListReady || event.key !== myListKey) return;
+    try {
+      const ids = JSON.parse(event.newValue || "[]");
+      myListIds = new Set((Array.isArray(ids) ? ids : []).map(Number).filter(Number.isSafeInteger));
+      if (myListMode) rebuildRows(); else refreshSaveAppearance();
+    } catch (error) {
+      console.warn("[Mi lista] Otra pestaña contiene datos inválidos:", error);
+    }
   });
 })();

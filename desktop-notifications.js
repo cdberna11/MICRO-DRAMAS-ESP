@@ -22,6 +22,9 @@
   }
   function open() {
     if(!trigger||!panel)return;
+    const bounds=trigger.getBoundingClientRect();
+    panel.style.top=Math.round(bounds.bottom+12)+"px";
+    panel.style.right=Math.round(Math.max(12,window.innerWidth-bounds.right))+"px";
     panel.hidden=false;
     trigger.setAttribute("aria-expanded","true");
     render();
@@ -90,11 +93,19 @@
       list.appendChild(row);
     });
   }
+  function remove() {
+    close();
+    trigger?.remove();
+    panel?.remove();
+    trigger=null;
+    panel=null;
+  }
   function mount() {
     if(!media.matches)return;
     const header=catalog.querySelector(".md-desktop-header");
     if(!header)return;
     if(trigger&&header.contains(trigger))return;
+    if(trigger||panel)remove();
     trigger=el("button","md-desktop-notice-button");
     trigger.type="button";
     trigger.setAttribute("aria-label","Abrir notificaciones");
@@ -122,7 +133,9 @@
     heading.appendChild(dismiss);
     panel.appendChild(heading);
     panel.appendChild(el("div","md-notice-list"));
-    header.append(trigger,panel);
+    header.appendChild(trigger);
+    // El panel no debe quedar recortado por el overflow del arte del banner.
+    document.body.appendChild(panel);
     render();
   }
   const observer=new MutationObserver(mount);
@@ -131,10 +144,11 @@
   if(media.matches)mount();
   media.addEventListener("change",()=>{
     if(media.matches)mount();
-    else close();
+    else remove();
   });
   document.addEventListener("pointerdown",event=>{
     if(panel&&!panel.hidden&&!panel.contains(event.target)&&!trigger?.contains(event.target))close();
   });
   document.addEventListener("keydown",event=>{if(event.key==="Escape")close();});
+  window.addEventListener("scroll",close,{passive:true});
 })();

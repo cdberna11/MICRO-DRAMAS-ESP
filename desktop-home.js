@@ -79,6 +79,25 @@
       (Number(b.period_views) || 0) - (Number(a.period_views) || 0) ||
       Number(b.id) - Number(a.id);
   }
+  function isPublishedPlayable(drama) {
+    return String(drama.status || "").toLowerCase() === "published" &&
+      typeof drama.video_url === "string" && drama.video_url.trim().length > 0;
+  }
+  function publicationAge(drama) {
+    const published = publishedTime(drama);
+    if (published > 0) return Date.now() - published;
+    const created = drama.created_at && String(drama.created_at).trim().replace(" ", "T");
+    const date = created && Date.parse(/[zZ]$|[+-]\d\d:\d\d$/.test(created) ? created : created + "Z");
+    return Number.isFinite(date) && date > 0 ? Date.now() - date : -1;
+  }
+  function pickRandomDistinct(list, count) {
+    const shuffled = [...list];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, count);
+  }
   let mounted = false;
   let dock = null;
   let menu = null;
@@ -90,6 +109,8 @@
   let featured = [];
   let featuredIndex = 0;
   let slideInterval = null;
+  let recommendations = [];
+  let olderRecommendations = [];
   let myListMode = false;
   let myListReady = false;
   let myListKey = null;
@@ -183,6 +204,8 @@
     if (image) image.draggable = false;
     if (rank) {
       wrapper.classList.add("md-desktop-item--ranked");
+      wrapper.dataset.rank = String(rank);
+      if (rank === 10) wrapper.classList.add("md-desktop-item--rank-10");
       wrapper.appendChild(el("span", "md-rank-number", String(rank)));
     }
     const ribbon = original.querySelector(".drama-card__new");
@@ -299,6 +322,11 @@
   }
 
 
+  function setHeroCompact(compact) {
+    if (!stage) return;
+    stage.hidden = false;
+    stage.classList.toggle("is-collapsed", Boolean(compact));
+  }
   function rebuildRows() {
     if (!mounted || !content) return;
     content.replaceChildren();
@@ -309,7 +337,7 @@
       .sort((a, b) => publishedTime(b) - publishedTime(a) || Number(b.id) - Number(a.id));
     const top = [...available].sort(orderedByViews).slice(0, 10);
     if (myListMode) {
-      if (stage) stage.hidden = true;
+      setHeroCompact(true);
       const savedDramas = all.filter(isSaved);
       if (savedDramas.length) createRow("Mi lista", savedDramas, "md-mi-lista", false);
       else content.appendChild(el("p", "md-desktop-message",
@@ -328,7 +356,7 @@
       );
       createRow("Resultados para «" + searchTerm + "»", matches, "md-resultados", false);
       if (!matches.length) content.appendChild(el("p", "md-desktop-message", "No se encontraron microdramas con ese nombre."));
-      if (stage) stage.hidden = true;
+      setHeroCompact(true);
       return;
     }
 
@@ -338,15 +366,16 @@
       const matches = available.filter(drama => ids.has(Number(drama.id)));
       createRow(category?.name || "Categoría", matches, "md-categoria-activa", false);
       if (!matches.length) content.appendChild(el("p", "md-desktop-message", "Esta categoría todavía no tiene microdramas publicados."));
-      if (stage) stage.hidden = true;
+      setHeroCompact(true);
       return;
     }
 
-    if (stage) stage.hidden = false;
+    setHeroCompact(false);
     createContinueWatching(available);
     createRow("Próximos estrenos", upcoming, "md-proximos", false);
     createRow("Estrenos", premieres, "md-estrenos", false);
     createRow("Top 10", top, "md-top10", true);
+    createRow("Sugerencias para ti", recommendations, "md-sugerencias", false);
     categories().forEach(category => {
       const ids = new Set((category.drama_ids || []).map(Number));
       const sectionDramas = available.filter(drama => ids.has(Number(drama.id)));
@@ -366,7 +395,7 @@
     image.alt = "Micro Dramas";
     brand.appendChild(image);
     header.appendChild(brand);
-    catalog.appendChild(header);
+    return header;
   }
 
 
@@ -385,7 +414,7 @@
   }
 
   function showFeatured() {
-    if (!mounted || !stage || stage.hidden || !featured.length) return;
+    if (!mounted || !stage || stage.hidden || stage.classList.contains("is-collapsed") || !featured.length) return;
     const drama = featured[featuredIndex % featured.length];
     const cover = stage.querySelector(".md-desktop-hero__image");
     cover.src = safeCover(drama);
@@ -419,12 +448,41 @@
   }
 
   function createHero() {
-    const published = dramas().filter(drama => !isDraft(drama));
-    const recents = [...published].filter(isRecent).sort((a, b) => publishedTime(b) - publishedTime(a));
+    // Sugerencias variadas: estrenos, populares, próximos y dos clásicos al azar.
+    // Se eligen una sola vez al entrar/refrescar la página para evitar cambios
+    // al guardar en Mi lista o al actualizar el progreso en D1.
+    const published = dramas().filter(isPublishedPlayable);
+    const upcoming = dramas().filter(isDraft);
+    const recents = [...published].filter(isRecent)
+      .sort((a, b) => publishedTime(b) - publishedTime(a));
     const popular = [...published].sort(orderedByViews);
     const newest = [...published].sort((a, b) => publishedTime(b) - publishedTime(a));
-    featured = unique([...recents.slice(0, 2), ...popular.slice(0, 2), ...newest.slice(0, 1),
-      ...dramas().filter(isDraft).slice(0, 2)]).slice(0, 7);
+    const core = unique([
+      ...recents.slice(0, 2),
+      ...popular.slice(0, 2),
+      ...upcoming.slice(0, 2),
+      ...newest.slice(0, 1)
+    ]);
+    const oldCandidates = published.filter(drama => publicationAge(drama) >= 7 * 86400000);
+    const coreIds = new Set(core.map(drama => Number(drama.id)));
+    olderRecommendations = pickRandomDistinct(
+      oldCandidates.filter(drama => !coreIds.has(Number(drama.id))), 2
+    );
+    if (olderRecommendations.length < 2) {
+      const chosenIds = new Set(olderRecommendations.map(drama => Number(drama.id)));
+      olderRecommendations.push(...pickRandomDistinct(
+        oldCandidates.filter(drama => !chosenIds.has(Number(drama.id))),
+        2 - olderRecommendations.length
+      ));
+    }
+    featured = unique([...core, ...olderRecommendations]).slice(0, 10);
+    recommendations = unique([
+      ...olderRecommendations,
+      ...popular.slice(0, 4),
+      ...recents.slice(0, 2),
+      ...newest.slice(0, 5)
+    ]).slice(0, 12);
+
     if (!featured.length) return;
     stage = el("section", "md-desktop-hero");
     stage.id = "md-destacados";
@@ -434,6 +492,8 @@
     image.alt = "";
     stage.appendChild(image);
     stage.appendChild(el("div", "md-desktop-hero__veil"));
+    // Marca y campana forman parte del mismo banner, sin franja independiente.
+    stage.appendChild(createHeader());
     const information = el("div", "md-desktop-hero__info");
     information.appendChild(el("p", "md-desktop-hero__eyebrow"));
     information.appendChild(el("h1", "md-desktop-hero__title"));
@@ -473,7 +533,9 @@
     showFeatured();
     if (slideInterval) window.clearInterval(slideInterval);
     slideInterval = window.setInterval(() => {
-      if (media.matches && mounted && !document.hidden && !stage.hidden && !document.body.classList.contains("video-player-open")) {
+      if (media.matches && mounted && !document.hidden && !stage.hidden &&
+          !stage.classList.contains("is-collapsed") &&
+          !document.body.classList.contains("video-player-open")) {
         featuredIndex = (featuredIndex + 1) % featured.length;
         showFeatured();
       }
@@ -649,11 +711,11 @@
     catalog.replaceChildren();
     catalog.classList.add("md-desktop-home");
     createDock();
-    createHeader();
     const anchors = el("div", "md-desktop-anchors");
     anchors.setAttribute("aria-hidden", "true");
     catalog.appendChild(anchors);
     createHero();
+    if (!stage) catalog.appendChild(createHeader());
     content = el("div", "md-desktop-content");
     catalog.appendChild(content);
     rebuildRows();
@@ -664,6 +726,8 @@
     mounted = false;
     if (slideInterval) window.clearInterval(slideInterval);
     slideInterval = null;
+    recommendations = [];
+    olderRecommendations = [];
     closeMenu();
     dock?.remove();
     menu?.remove();

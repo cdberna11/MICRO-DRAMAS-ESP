@@ -55,8 +55,80 @@
   function ranking(a,b) {
     return Number(b.views||0)-Number(a.views||0)||Number(b.period_views||0)-Number(a.period_views||0)||Number(b.id)-Number(a.id);
   }
-  const state={mounted:false,tab:"home",featured:null,mediaState:api?.snapshot?.()||{ready:false,progress:[],watchlist:[],notifications:[],unreadCount:0},user:null,search:"",noticesOpen:false};
+  // La selección se genera una sola vez al entrar/cargar la página.
+  // Dos títulos antiguos se reservan antes que los populares para evitar
+  // que el ranking consuma todas las opciones de sugeridos.
+  function chooseRandomDistinct(items,count) {
+    const shuffled=[...items];
+    for(let i=shuffled.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
+    }
+    return shuffled.slice(0,count);
+  }
+  function buildFeaturedSelection() {
+    const all=data(),available=all.filter(playable);
+    const now=Date.now();
+    const old=available.filter(drama=>{
+      const timestamp=dateTime(drama.published_at)||dateTime(drama.created_at);
+      return timestamp>0&&now-timestamp>=7*86400000;
+    });
+    const oldChosen=chooseRandomDistinct(old,2);
+    const selected=new Set(oldChosen.map(drama=>Number(drama.id)));
+    function takeGroup(items,type,count) {
+      const output=[];
+      for(const drama of items){
+        const id=Number(drama.id);
+        if(!Number.isSafeInteger(id)||selected.has(id))continue;
+        selected.add(id);
+        output.push({drama,type});
+        if(output.length>=count)break;
+      }
+      return output;
+    }
+    const recently=takeGroup(
+      available.filter(recent).sort((a,b)=>dateTime(b.published_at)-dateTime(a.published_at)||Number(b.id)-Number(a.id)),
+      "recent",2
+    );
+    const upcoming=takeGroup(
+      all.filter(draft).sort((a,b)=>dateTime(b.created_at)-dateTime(a.created_at)||Number(b.id)-Number(a.id)),
+      "upcoming",2
+    );
+    const popular=takeGroup([...available].sort(ranking),"popular",2);
+    const suggested=oldChosen.map(drama=>({drama,type:"suggested"}));
+    const selectedItems=[...recently,...upcoming,...popular,...suggested];
+    // Catálogo pequeño: mantener una portada válida sin duplicar títulos.
+    if(!selectedItems.length&&available.length)
+      selectedItems.push({drama:[...available].sort(ranking)[0],type:"popular"});
+    state.featuredItems=selectedItems;
+    state.featuredIndex=0;
+  }
+  const labels={
+    recent:"RECIÉN AGREGADO",
+    upcoming:"PRÓXIMAMENTE",
+    popular:"DESTACADOS",
+    suggested:"SUGERIDOS"
+  };
+  function setFeaturedIndex(index) {
+    const count=state.featuredItems.length;
+    if(!count)return;
+    state.featuredIndex=(index+count)%count;
+    heroUpdater?.();
+  }
+  function startFeaturedRotation() {
+    if(heroTimer!==null)window.clearInterval(heroTimer);
+    heroTimer=null;
+    if(state.featuredItems.length<2)return;
+    heroTimer=window.setInterval(()=>{
+      if(!state.mounted||state.tab!=="home"||document.visibilityState!=="visible"||
+         document.body.classList.contains("video-player-open")||
+         document.body.classList.contains("mobile-detail-open"))return;
+      setFeaturedIndex(state.featuredIndex+1);
+    },8500);
+  }
+  const state={mounted:false,tab:"home",featuredItems:[],featuredIndex:0,mediaState:api?.snapshot?.()||{ready:false,progress:[],watchlist:[],notifications:[],unreadCount:0},user:null,search:"",noticesOpen:false};
   let nav=null,unsubscribe=null,bodyObserver=null,rebuildPending=false;
+  let heroUpdater=null,heroTimer=null;
   const hasSaved=id=>state.mediaState.watchlist?.some(x=>Number(x)===Number(id));
   function safeCover(drama){return String(drama?.cover_url||"").trim()||coverFallback;}
   function closeNotices() {
@@ -115,39 +187,103 @@
     section.appendChild(rail);
     catalog.appendChild(section);
   }
-  function hero(drama){
-    if(!drama)return;
+  function hero(){
+    if(!state.featuredItems.length)return;
     const section=el("section","md-mobile-hero");
+    section.setAttribute("aria-label","Microdramas sugeridos");
+    section.setAttribute("aria-roledescription","carrusel");
     const picture=el("img","md-mobile-hero__cover");
-    picture.src=safeCover(drama);
-    picture.alt="Portada de "+(drama.title||"microdrama");
     picture.loading="eager";
     section.appendChild(picture);
     section.appendChild(el("div","md-mobile-hero__shade"));
     const body=el("div","md-mobile-hero__content");
-    body.appendChild(el("div","md-mobile-hero__label",recent(drama)?"RECIÉN AGREGADO":"DESTACADO"));
-    body.appendChild(el("h1","md-mobile-hero__title",drama.title));
-    const catList=categories().filter(cat=>(cat.drama_ids||[]).map(Number).includes(Number(drama.id))).map(cat=>cat.name).slice(0,3);
-    if(catList.length)body.appendChild(el("p","md-mobile-hero__categories",catList.join("  •  ")));
+    const badge=el("div","md-mobile-hero__label");
+    const title=el("h1","md-mobile-hero__title");
+    const categoryText=el("p","md-mobile-hero__categories");
+    body.append(badge,title,categoryText);
     const actions=el("div","md-mobile-hero__actions");
-    const playButton=btn("Reproducir","md-mobile-hero__play",()=>play(drama));
-    playButton.insertAdjacentHTML("afterbegin",svg("play"));
-    const listButton=btn(hasSaved(drama.id)?"✓ Mi lista":"+ Mi lista","md-mobile-hero__list",async()=>{
-      if(!api||!state.mediaState.ready)return;
-      await api.toggleSaved(drama.id);
+    const playButton=btn("Reproducir","md-mobile-hero__play",()=>{
+      const current=state.featuredItems[state.featuredIndex];
+      if(current&&current.type!=="upcoming")play(current.drama);
     });
-    listButton.disabled=!state.mediaState.ready;
+    playButton.insertAdjacentHTML("afterbegin",svg("play"));
+    const listButton=btn("+ Mi lista","md-mobile-hero__list",async()=>{
+      const current=state.featuredItems[state.featuredIndex];
+      if(current&&api&&state.mediaState.ready)await api.toggleSaved(current.drama.id);
+    });
     actions.append(playButton,listButton);
     body.appendChild(actions);
     section.appendChild(body);
+
+    const dots=el("div","md-mobile-hero__dots");
+    const dotButtons=state.featuredItems.map((item,index)=>{
+      const dot=btn("","md-mobile-hero__dot",()=>setFeaturedIndex(index));
+      dot.setAttribute("aria-label","Mostrar sugerencia "+(index+1)+": "+item.drama.title);
+      dots.appendChild(dot);
+      return dot;
+    });
+    if(dotButtons.length>1)section.appendChild(dots);
     catalog.appendChild(section);
+
+    // Cambiar solo el póster: no reconstruir las filas mientras se exploran.
+    heroUpdater=()=>{
+      if(!state.mounted||state.tab!=="home")return;
+      const current=state.featuredItems[state.featuredIndex];
+      if(!current)return;
+      const drama=current.drama;
+      picture.src=safeCover(drama);
+      picture.alt="Portada de "+(drama.title||"microdrama");
+      badge.textContent=labels[current.type]||"DESTACADOS";
+      badge.dataset.kind=current.type;
+      title.textContent=drama.title||"Microdrama";
+      const catNames=categories().filter(cat=>(cat.drama_ids||[]).map(Number).includes(Number(drama.id)))
+        .map(cat=>cat.name).slice(0,3);
+      categoryText.textContent=catNames.join("  •  ");
+      categoryText.hidden=!catNames.length;
+      const coming=current.type==="upcoming"||draft(drama);
+      playButton.hidden=coming;
+      playButton.disabled=coming;
+      listButton.disabled=!state.mediaState.ready;
+      listButton.textContent=hasSaved(drama.id)?"✓ Mi lista":"+ Mi lista";
+      listButton.setAttribute("aria-label",
+        (hasSaved(drama.id)?"Quitar de Mi lista: ":"Añadir a Mi lista: ")+drama.title);
+      dotButtons.forEach((dot,index)=>{
+        dot.classList.toggle("is-active",index===state.featuredIndex);
+        dot.setAttribute("aria-current",index===state.featuredIndex?"true":"false");
+      });
+    };
+    let startX=0,startY=0;
+    section.addEventListener("touchstart",event=>{
+      if(event.target.closest("button"))return;
+      const touch=event.touches?.[0];
+      if(!touch)return;
+      startX=touch.clientX;startY=touch.clientY;
+    },{passive:true});
+    section.addEventListener("touchend",event=>{
+      if(!startX||state.featuredItems.length<2)return;
+      const touch=event.changedTouches?.[0];
+      if(!touch)return;
+      const dx=touch.clientX-startX,dy=touch.clientY-startY;
+      startX=0;startY=0;
+      if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.25)
+        setFeaturedIndex(state.featuredIndex+(dx<0?1:-1));
+    },{passive:true});
+    heroUpdater();
   }
+
   function header(title="Inicio"){
     const head=el("header","md-mobile-header");
     const brand=el("div","md-mobile-header__brand");
     const icon=el("img","md-mobile-header__logo");
     icon.src=logo;icon.alt="";icon.draggable=false;
-    brand.append(icon,el("strong","",title));
+    if(title==="MICRODRAMAS EN ESPAÑOL"){
+      const name=el("strong","md-mobile-header__brand-name");
+      name.setAttribute("aria-label","MICRODRAMAS EN ESPAÑOL");
+      name.append(el("span","","MICRODRAMAS"),el("span","","EN ESPAÑOL"));
+      brand.append(icon,name);
+    } else {
+      brand.append(icon,el("strong","",title));
+    }
     head.appendChild(brand);
     const bell=btn("","md-mobile-bell",()=>toggleNotices(bell));
     bell.innerHTML=svg("bell");
@@ -191,13 +327,13 @@
     document.body.appendChild(panel);
   }
   function home(){
-    header("Inicio");
+    header("MICRODRAMAS EN ESPAÑOL");
     const all=data();
     const available=all.filter(published);
     const upcoming=all.filter(draft);
     const fresh=available.filter(recent).sort((a,b)=>dateTime(b.published_at)-dateTime(a.published_at));
     const top=available.filter(playable).sort(ranking).slice(0,10);
-    hero(state.featured);
+    hero();
     const progress=(state.mediaState.progress||[]).filter(p=>
       !p.completed&&Number(p.positionMs)>=5000&&Number(p.durationMs)>Number(p.positionMs)+4000
     ).sort((a,b)=>String(b.updatedAt||"").localeCompare(String(a.updatedAt||"")));
@@ -258,6 +394,7 @@
   function render(){
     if(!state.mounted||!media.matches)return;
     closeNotices();
+    heroUpdater=null;
     catalog.replaceChildren();
     catalog.classList.add("md-mobile-app");
     if(state.tab==="search")search();
@@ -336,10 +473,9 @@
   function mount(){
     if(state.mounted||!media.matches||!data().length)return;
     state.mounted=true;
-    const publishedDramas=data().filter(playable);
-    const suggested=publishedDramas.filter(recent);
-    state.featured=(suggested.length?suggested:publishedDramas).sort(ranking)[0]||null;
+    buildFeaturedSelection();
     createNav();
+    startFeaturedRotation();
     installSessionKeepAlive();
     render();
     unsubscribe=api?.subscribe?.(snapshot=>{
@@ -385,6 +521,11 @@
   function unmount(){
     if(!state.mounted)return;
     state.mounted=false;
+    if(heroTimer!==null)window.clearInterval(heroTimer);
+    heroTimer=null;
+    heroUpdater=null;
+    state.featuredItems=[];
+    state.featuredIndex=0;
     closeNotices();
     unsubscribe?.();unsubscribe=null;
     bodyObserver?.disconnect();bodyObserver=null;

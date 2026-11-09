@@ -282,6 +282,12 @@
     async function stop() {
         activeRun++;
 
+        // Este es el reproductor MEGA realmente activo; guardar ANTES de
+        // pausar, destruir el streaming o eliminar src/duration del <video>.
+        try { window.MDUserMedia?.onPlaybackClose?.(); } catch (error) {
+            console.warn('[Continuar viendo] No se pudo cerrar seguimiento:', error);
+        }
+
         try { videoStream?.destroy?.(); } catch (error) { log('Destroy:', error); }
         videoStream = null;
         megaFile = null;
@@ -350,6 +356,48 @@
             const adapter = makeFileAdapter(megaFile, token);
             log('Creando VideoStream(adapter, HTMLMediaElement, opts={})…');
             videoStream = new VS(adapter, v, {});
+
+            // Se conecta el seguimiento al HTMLVideoElement de MOTOR E,
+            // conservando los controles nativos de play, pausa y seek.
+            const seekForResume = (seconds) => new Promise((resolve, reject) => {
+                if (token !== activeRun) return reject(new Error('Reproducción cancelada.'));
+                const target = Number(seconds);
+                if (!Number.isFinite(target) || target < 0)
+                    return reject(new Error('Posición no válida.'));
+                let done = false;
+                let timer = null;
+                const cleanup = () => {
+                    v.removeEventListener('seeked', onSeeked);
+                    v.removeEventListener('timeupdate', onSeeked);
+                    v.removeEventListener('error', onError);
+                    clearTimeout(timer);
+                };
+                const finish = error => {
+                    if (done) return;
+                    done = true;
+                    cleanup();
+                    error ? reject(error) : resolve();
+                };
+                const onError = () => finish(new Error('Error del reproductor al recuperar posición.'));
+                const onSeeked = () => {
+                    if (token !== activeRun) return finish(new Error('Reproducción cancelada.'));
+                    if (Math.abs(Number(v.currentTime) - target) <= 8)
+                        finish();
+                };
+                v.addEventListener('seeked', onSeeked);
+                v.addEventListener('timeupdate', onSeeked);
+                v.addEventListener('error', onError);
+                timer = setTimeout(() => finish(new Error('El salto tardó demasiado.')), 45000);
+                try {
+                    v.currentTime = target;
+                    onSeeked();
+                } catch (error) { finish(error); }
+            });
+            try {
+                window.MDUserMedia?.onPlaybackOpen?.(drama, v, seekForResume, () => v.duration);
+            } catch (error) {
+                console.warn('[Continuar viendo] No se pudo iniciar seguimiento:', error);
+            }
 
             v.load();
             log(`VideoStream creado correctamente. Capa de reproducción: ${mediaSourceMode}. No se usa Blob ni iframe.`);

@@ -110,112 +110,198 @@
   function getProgress(id) {
     return state.progress.find(p=>Number(p.dramaId)===Number(id))||null;
   }
-  function detachPlayback(session){
-    for(const [name,handler] of session.listeners)
-      session.video.removeEventListener(name,handler);
-    session.listeners=[];
+  function detachPlayback(session) {
+    for (const [name, handler] of session.listeners) {
+      session.video.removeEventListener(name, handler);
+    }
+    session.listeners = [];
   }
-  function saveProgress(session,ended=false,force=false){
-    if(!state.ready||!session||session!==active||!session.played)return;
-    const video=session.video;
-    const seconds=Number(video.currentTime);
-    const duration=Number.isFinite(video.duration) && video.duration>0
-      ? Number(video.duration) : Number(session.durationReader?.());
-    if(session.resuming || !Number.isFinite(seconds)||seconds<0||!Number.isFinite(duration)||duration<=0)return;
-    const now=Date.now();
-    if(!force&&now-session.lastSave<15000)return;
-    session.lastSave=now;
-    const completed=ended||video.ended;
-    const payload={
-      dramaId:session.id,
-      positionMs:Math.round(Math.min(seconds,duration)*1000),
-      durationMs:Math.round(duration*1000),
-      eventMs:now,
+
+  function finiteDuration(session) {
+    const videoDuration = Number(session.video.duration);
+    if (Number.isFinite(videoDuration) && videoDuration > 0) return videoDuration;
+    const mp4Duration = Number(session.durationReader?.());
+    return Number.isFinite(mp4Duration) && mp4Duration > 0 ? mp4Duration : 0;
+  }
+
+  function previousPosition(session) {
+    const item = getProgress(session.id);
+    if (!item || item.completed) return 0;
+    const seconds = Number(item.positionMs) / 1000;
+    const duration = finiteDuration(session);
+    if (!Number.isFinite(seconds) || seconds < 5 || duration <= 0 ||
+        seconds >= duration - 5) return 0;
+    return Math.min(seconds, duration - 0.5);
+  }
+
+  function saveProgress(session, ended = false, force = false) {
+    // Nunca se sobrescribe una reanudación pendiente con un comienzo en 0:00.
+    if (!session || !state.ready || !session.played || !session.resumeDecided ||
+        session.resuming || session.restoreFailed) return;
+    const duration = finiteDuration(session);
+    if (duration <= 0) return;
+    const current = Number(session.video.currentTime);
+    const seconds = Number.isFinite(current) && current >= 0 ?
+      current : session.lastValidTime;
+    if (!Number.isFinite(seconds) || seconds < 0) return;
+
+    // No registrar microsegundos iniciales como progreso válido.
+    const completed = Boolean(ended || session.video.ended);
+    if (seconds < 2 && !completed) return;
+    const now = Date.now();
+    if (!force && now - session.lastSave < 10000) return;
+    const eventMs = Math.max(now, (session.lastEventMs || 0) + 1);
+    session.lastEventMs = eventMs;
+    session.lastSave = now;
+    session.lastValidTime = seconds;
+    const payload = {
+      dramaId: session.id,
+      positionMs: Math.round(Math.min(seconds, duration) * 1000),
+      durationMs: Math.round(duration * 1000),
+      eventMs,
       completed
     };
-    if(payload.durationMs<=0)return;
-    // El guardado no altera el estado ni los controles del reproductor.
-    fetch("/api/user/progress",{
-      method:"PUT",credentials:"same-origin",keepalive:force,
-      headers:{"Content-Type":"application/json",Accept:"application/json"},
-      body:JSON.stringify(payload)
-    }).then(async res=>{
-      if(!res.ok)return;
-      const data=await res.json().catch(()=>({}));
-      if(!data.success)return;
-      const previous=getProgress(session.id);
-      const isNewer=!previous||!previous.clientEventMs||payload.eventMs>=previous.clientEventMs;
-      if(!isNewer)return;
-      const next={dramaId:session.id,positionMs:payload.positionMs,durationMs:payload.durationMs,
-        completed:Boolean(data.completed),updatedAt:new Date(now).toISOString(),clientEventMs:payload.eventMs};
-      state.progress=[next,...state.progress.filter(p=>Number(p.dramaId)!==session.id)];
+    if (!Number.isSafeInteger(payload.positionMs) ||
+        !Number.isSafeInteger(payload.durationMs) ||
+        payload.durationMs <= 0) return;
+
+    // El cierre y la salida de página usan keepalive, sin desmontar los controles.
+    fetch("/api/user/progress", {
+      method: "PUT",
+      credentials: "same-origin",
+      cache: "no-store",
+      keepalive: force,
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(async response => {
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || "D1 rechazó el progreso");
+      const previous = getProgress(session.id);
+      if (previous?.clientEventMs && payload.eventMs < previous.clientEventMs) return;
+      const next = {
+        dramaId: session.id,
+        positionMs: payload.positionMs,
+        durationMs: payload.durationMs,
+        completed: Boolean(data.completed),
+        updatedAt: new Date(payload.eventMs).toISOString(),
+        clientEventMs: payload.eventMs
+      };
+      state.progress = [next, ...state.progress.filter(item => Number(item.dramaId) !== session.id)];
       notify();
-    }).catch(error=>console.warn("[Progreso] Sin conexión:",error));
+    }).catch(error => {
+      console.warn("[Continuar viendo] No se confirmó el progreso en Cloudflare D1:", error);
+    });
   }
+
   function onPlaybackOpen(drama, video, validSeek, durationReader) {
-    if(!drama||!video||typeof validSeek!=="function")return;
-    if(active)onPlaybackClose(active.drama,active.video);
-    const session={
-      id:Number(drama.id),drama,video,validSeek,durationReader,listeners:[],
-      played:false,lastSave:0,resumeTried:false,resuming:false,createdAt:Date.now()
+    if (!drama || !video || typeof validSeek !== "function") return;
+    if (active) onPlaybackClose(active.drama, active.video);
+    const session = {
+      id: Number(drama.id), drama, video, validSeek, durationReader,
+      listeners: [], played: false, resumeDecided: false,
+      resuming: false, restoreFailed: false, lastSave: 0,
+      lastEventMs: 0, lastValidTime: 0
     };
-    active=session;
-    function listen(type,fn) {
-      video.addEventListener(type,fn);session.listeners.push([type,fn]);
+    active = session;
+
+    function listen(type, handler) {
+      video.addEventListener(type, handler);
+      session.listeners.push([type, handler]);
     }
-    function resumeIfReady() {
-      if(active!==session||session.resumeTried||!state.ready)return;
-      const progress=getProgress(session.id);
-      if(!progress||progress.completed){
-        session.resumeTried=true;return;
-      }
-      const duration=Number.isFinite(video.duration) && video.duration>0
-        ? Number(video.duration) : Number(session.durationReader?.());
-      if(!Number.isFinite(duration)||duration<=0)return;
-      const target=Number(progress.positionMs)/1000;
-      if(!Number.isFinite(target)||target<5||target>=duration-5){
-        session.resumeTried=true;return;
-      }
-      session.resumeTried=true;
-      session.resuming=true;
-      // La búsqueda utiliza exclusivamente la implementación validada de MP4Box/MEGA.
-      Promise.resolve(session.validSeek(Math.min(target,duration-.5)))
-        .catch(error=>console.warn("[Continuar viendo] Seek no disponible:",error))
-        .finally(()=>{session.resuming=false;});
+
+    function attemptResume() {
+      if (active !== session || !state.ready || !session.played ||
+          session.resumeDecided || session.resuming) return;
+      const progress = getProgress(session.id);
+      const duration = finiteDuration(session);
+      if (progress && !progress.completed && duration <= 0) return;
+
+      const target = previousPosition(session);
+      session.resumeDecided = true;
+      if (!target) return;
+
+      session.resuming = true;
+      console.info("[Continuar viendo] Recuperando posición:", target.toFixed(1), "s");
+      // Usa el mismo SEEK remoto/local del reproductor MEGA ya validado.
+      Promise.resolve().then(() => session.validSeek(target)).then(() => {
+        if (active !== session) return;
+        const actual = Number(video.currentTime);
+        if (!Number.isFinite(actual) || Math.abs(actual - target) > 8) {
+          session.restoreFailed = true;
+          console.warn("[Continuar viendo] No se pudo confirmar el salto a", target);
+          return;
+        }
+        session.lastValidTime = actual;
+        session.lastSave = Date.now();
+        console.info("[Continuar viendo] Reanudado en", actual.toFixed(1), "s");
+      }).catch(error => {
+        if (active === session) session.restoreFailed = true;
+        console.warn("[Continuar viendo] Error reanudando:", error);
+      }).finally(() => {
+        session.resuming = false;
+      });
     }
-    listen("playing",()=>{session.played=true;resumeIfReady();});
-    listen("durationchange",()=>{if(!video.paused)resumeIfReady();});
-    listen("loadedmetadata",()=>{if(!video.paused)resumeIfReady();});
-    listen("timeupdate",()=>{
-      if(!video.paused){session.played=true;resumeIfReady();saveProgress(session,false,false);}
+
+    listen("playing", () => {
+      session.played = true;
+      attemptResume();
     });
-    listen("pause",()=>saveProgress(session,false,true));
-    listen("ended",()=>saveProgress(session,true,true));
-    // El estado de D1 puede terminar de cargar después que el video.
-    ready.then(()=>{
-      if(active===session&&session.played)resumeIfReady();
+    listen("loadedmetadata", attemptResume);
+    listen("durationchange", attemptResume);
+    listen("timeupdate", () => {
+      if (active !== session) return;
+      if (!video.paused) session.played = true;
+      attemptResume();
+      if (!session.resuming && session.resumeDecided) {
+        const current = Number(video.currentTime);
+        if (Number.isFinite(current) && current >= 0) session.lastValidTime = current;
+        if (!video.paused) saveProgress(session);
+      }
+    });
+    listen("seeked", () => {
+      if (session.resuming) return;
+      const current = Number(video.currentTime);
+      if (Number.isFinite(current) && current >= 0) session.lastValidTime = current;
+      saveProgress(session, false, true);
+    });
+    listen("pause", () => saveProgress(session, false, true));
+    listen("ended", () => saveProgress(session, true, true));
+
+    // Si la API D1 todavía está cargando, se difiere el guardado y la
+    // restauración hasta conocer la posición anterior.
+    ready.then(() => { if (active === session) attemptResume(); });
+    if (!state.ready) refresh().then(() => {
+      if (active === session) attemptResume();
     });
   }
-  function onPlaybackClose(drama,video) {
-    if(!active)return;
-    const session=active;
-    // Forzar el último guardado antes que detenerReproductor() borre src/duración.
-    saveProgress(session,session.video.ended,true);
-    active=null;
+
+  function onPlaybackClose() {
+    if (!active) return;
+    const session = active;
+    // Capture antes de que app.js revoque MediaSource y reinicie la duración.
+    saveProgress(session, session.video.ended, true);
+    active = null;
     detachPlayback(session);
   }
-  window.addEventListener("pagehide",()=>{
-    if(active)saveProgress(active,active.video.ended,true);
+
+  window.addEventListener("pagehide", () => {
+    if (active) saveProgress(active, active.video.ended, true);
   });
-  window.addEventListener("focus",()=>{
-    if(Date.now()-lastFocusRefresh>90000){
-      lastFocusRefresh=Date.now();refresh();
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden" && active)
+      saveProgress(active, active.video.ended, true);
+  });
+  window.addEventListener("focus", () => {
+    if (Date.now() - lastFocusRefresh > 90000) {
+      lastFocusRefresh = Date.now();
+      if (!active) refresh();
     }
   });
-  let lastFocusRefresh=Date.now();
-  window.setInterval(()=>{
-    if(document.visibilityState==="visible"&&!active)refresh();
-  },180000);
+  let lastFocusRefresh = Date.now();
+  window.setInterval(() => {
+    if (document.visibilityState === "visible" && !active) refresh();
+  }, 180000);
   window.MDUserMedia={
     ready,subscribe,snapshot,refresh,toggleSaved,markRead,getProgress,
     onPlaybackOpen,onPlaybackClose

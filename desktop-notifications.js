@@ -42,7 +42,7 @@
     list.replaceChildren();
     const notices=state.notifications||[];
     if(!state.ready) {
-      list.appendChild(el("p","md-notice-empty","Conectando avisos de tu cuenta..."));
+      list.appendChild(el("p","md-notice-empty",state.error ? "No se pudieron cargar los avisos. Recarga la página para reintentarlo." : "Conectando avisos de tu cuenta..."));
       return;
     }
     if(!notices.length) {
@@ -69,7 +69,7 @@
       action.addEventListener("click",async()=>{
         if(!item.read)await api.markRead([item.key]);
         if(item.type==="upcoming") {
-          await api.toggleSaved(item.dramaId);
+          if (!state.watchlist.includes(item.dramaId)) await api.toggleSaved(item.dramaId);
         } else {
           const drama=findDrama(item.dramaId);
           if(drama&&typeof reproducirDrama==="function") {

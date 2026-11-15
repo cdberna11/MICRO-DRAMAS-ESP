@@ -1,3 +1,5 @@
+import {coverStorageMode, storeCoverR2, coverJson} from "../../lib/cover-storage.js";
+
 /* =========================================================
    API ADMINISTRATIVA DE PORTADAS
    MICRO-DRAMAS-ESP
@@ -171,6 +173,18 @@ async function obtenerArchivoExistente(
 export async function onRequestPost(context) {
 
     try {
+
+        // R2 se activa sólo mediante COVERS_STORAGE_BACKEND=r2.
+        // Mientras esté ausente, el proceso actual de GitHub permanece intacto.
+        // Si R2 falla, NO volver a GitHub silenciosamente.
+        if (coverStorageMode(context.env) === "r2") {
+            try {
+                return await storeCoverR2(context);
+            } catch (error) {
+                console.error("Error al almacenar portada en R2:", error);
+                return coverJson({success:false,error:"No se pudo almacenar la portada en Cloudflare R2."},500);
+            }
+        }
 
         const token =
             context.env.GITHUB_TOKEN;

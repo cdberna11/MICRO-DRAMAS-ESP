@@ -97,7 +97,7 @@
             "cover-upload-help";
 
         ayuda.textContent =
-            "La imagen se guardará automáticamente en la carpeta de su plataforma.";
+            "La imagen se guardará en el almacenamiento activo, dentro de su plataforma.";
 
         boton.insertAdjacentElement(
             "afterend",
@@ -704,7 +704,7 @@
             "Subiendo...";
 
         mostrarMensaje(
-            "Subiendo la portada a GitHub...",
+            "Subiendo portada al almacenamiento configurado...",
             "info"
         );
 

@@ -31,6 +31,28 @@
             return;
         }
 
+        // Un solo panel informa del destino realmente activo.
+        // R2 no usa token GitHub; GitHub sigue apareciendo hasta activar el switch.
+        try {
+            const response = await fetch("/api/admin/cover-storage",{
+                credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json"}
+            });
+            const storage = await response.json().catch(()=>({}));
+            if (response.ok && storage?.success && storage.backend === "r2") {
+                contenedor.classList.remove("github-status--connected","github-status--error","github-status--warning");
+                contenedor.classList.add(storage.ready?"github-status--connected":"github-status--error");
+                titulo.textContent=storage.ready?"Cloudflare R2: Conectado":"Cloudflare R2: No disponible";
+                detalle.textContent=storage.message || "Estado de almacenamiento sin información.";
+                tituloToken.textContent=storage.ready?"R2: Portadas externas":"R2: Revisar conexión";
+                expiracion.textContent=storage.ready
+                    ?"Destino activo: Cloudflare R2 · sin token GitHub"
+                    :"La carga se bloqueará hasta corregir el binding R2.";
+                return;
+            }
+        }catch(error){
+            console.warn("Estado R2 no disponible; comprobando GitHub:",error);
+        }
+
         try {
 
             const respuesta =

@@ -6,7 +6,12 @@ import {validCoverKey,coverMime} from "../../lib/cover-storage.js";
 async function getCover(context,headOnly) {
   const parts = context.params.path;
   if (!Array.isArray(parts) || parts.length!==2) return new Response("Ruta no válida",{status:400});
-  const key = "portadas/"+parts.join("/");
+  // El inventario histórico incluye una portada cuyo nombre contiene
+  // un espacio, codificado como %20 en la URL. Se conserva el nombre real.
+  let decoded;
+  try { decoded = parts.map(item => decodeURIComponent(item)); }
+  catch { return new Response("Ruta codificada no válida",{status:400}); }
+  const key = "portadas/"+decoded.join("/");
   if (!validCoverKey(key)) return new Response("Ruta no válida",{status:400});
   const bucket=context.env.COVERS_BUCKET;
   if (!bucket) return new Response("Almacenamiento R2 no configurado",{status:503,headers:{"Cache-Control":"no-store"}});

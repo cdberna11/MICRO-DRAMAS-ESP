@@ -24,7 +24,7 @@ export function validCoverKey(key) {
   const segments = key.split("/");
   return segments.length === 3 && segments[0] === "portadas" &&
     /^[a-z0-9][a-z0-9-]{0,79}$/.test(segments[1]) &&
-    /^[A-Za-z0-9][A-Za-z0-9._-]{0,175}\.(?:jpg|jpeg|png|webp|gif)$/i.test(segments[2]);
+    /^[A-Za-z0-9][A-Za-z0-9._ -]{0,175}\.(?:jpg|jpeg|png|webp|gif)$/i.test(segments[2]);
 }
 
 export function coverMime(key) {

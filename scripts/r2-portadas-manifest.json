@@ -1,0 +1,480 @@
+{
+  "schema": 1,
+  "sourceRepository": "cdberna11/MICRO-DRAMAS-ESP",
+  "sourceBranch": "main",
+  "description": "Inventario de portadas de dramas; no incluye avatares ni generica",
+  "count": 94,
+  "bytes": 15663588,
+  "files": [
+    {
+      "path": "portadas/dramabox/adios-al-pasado-no-estara-ciego-por-el-amor.jpg",
+      "size": 95298,
+      "blobSha": "ce4e7b1f9af3ff5c49baf3c2471c5b80e5475e58"
+    },
+    {
+      "path": "portadas/dramabox/camino_mortal.jpg",
+      "size": 47731,
+      "blobSha": "4a9e9bce6dff50e06035a36bc5368710e368b83f"
+    },
+    {
+      "path": "portadas/dramabox/cuando-el-amor-traiciona-a-la-sangre.jpg",
+      "size": 96623,
+      "blobSha": "9623f51e08928fa88227d3bb4dbfa821d1a7e67a"
+    },
+    {
+      "path": "portadas/dramabox/el_inmortal_deciende.jpg",
+      "size": 33187,
+      "blobSha": "d34062cca9a1856003ec1c26a25cdba5266f007f"
+    },
+    {
+      "path": "portadas/dramabox/el-trono-del-hijo-olvidado.jpg",
+      "size": 53885,
+      "blobSha": "d6b27f5944b673be1dd969d6b5be938714827b1b"
+    },
+    {
+      "path": "portadas/dramabox/eres-mi-condena-irremediable.jpg",
+      "size": 80137,
+      "blobSha": "e9299e36a3ce6543da01488401d88c05d0cd3c7e"
+    },
+    {
+      "path": "portadas/dramabox/la_chica_que_eligio_luchar.jpg",
+      "size": 37817,
+      "blobSha": "e0443c277871d801f25978734e77486a89bc635f"
+    },
+    {
+      "path": "portadas/dramabox/magante_oculto.jpg",
+      "size": 48826,
+      "blobSha": "0f9197eae75b150ba831b5790129d59744e12322"
+    },
+    {
+      "path": "portadas/dramabox/me-oyes-mama-ahora-vamos-a-hacernos-ricos.jpg",
+      "size": 81586,
+      "blobSha": "8bad7ab5d36090f0e6b7d67a4b4f0bf78f12ff65"
+    },
+    {
+      "path": "portadas/dramabox/nuestro_camino_se_cruzo.jpg",
+      "size": 28042,
+      "blobSha": "b6f06d1c162db62bb5f3d164c7a2f561872e6412"
+    },
+    {
+      "path": "portadas/dramabox/pequena-pero-poderosa-mi-tia-abluela-de-ocho-anos.jpg",
+      "size": 22235,
+      "blobSha": "24f025a849e6e1a744b4ac9787e13a67d291ee7b"
+    },
+    {
+      "path": "portadas/dramabox/por-ti-contra-el-mundo.jpg",
+      "size": 60769,
+      "blobSha": "8b0860b009b6fa533e6a09ad16df2555b79864c6"
+    },
+    {
+      "path": "portadas/dramabox/siete-anos-de-dolor.jpg",
+      "size": 79933,
+      "blobSha": "46d961785b7c99d0979a619477377ef35d6d4af5"
+    },
+    {
+      "path": "portadas/dramabox/tres-vidas-para-cobrar-venganza.jpg",
+      "size": 87105,
+      "blobSha": "6cfeece750e79f7ae7da8ca0c61045cf51260b6b"
+    },
+    {
+      "path": "portadas/dramawave/de-granjero-a-regente.jpg",
+      "size": 75152,
+      "blobSha": "963baa7e51185c30a57a0bb8e5e56320eeb6fabd"
+    },
+    {
+      "path": "portadas/dramawave/deje-al-mentiroso-y-me-case-con-mi-protector.jpg",
+      "size": 557915,
+      "blobSha": "33e16277ac8878d9c2feb586734cc994679e0e3b"
+    },
+    {
+      "path": "portadas/dramawave/demasiado-perezosa-para-el-drama.jpg",
+      "size": 120192,
+      "blobSha": "a22eaa69096db35633171d3632f67670b5366cce"
+    },
+    {
+      "path": "portadas/dramawave/el-ascenso-del-fenix-al-trono.jpg",
+      "size": 65134,
+      "blobSha": "3d99eda1fcdc820234ba95f65f9eec3ade5f057a"
+    },
+    {
+      "path": "portadas/dramawave/el-ascenso-del-heroe-marginado.jpg",
+      "size": 82712,
+      "blobSha": "36b91cf1f642ebc78372e710187a2f7d0c5a22d5"
+    },
+    {
+      "path": "portadas/dramawave/el-corazon-del-tirano.jpg",
+      "size": 72540,
+      "blobSha": "e9325a1b3601b122290447ae7be91c77b81e05e9"
+    },
+    {
+      "path": "portadas/dramawave/heroe_cuenta_regresiva.jpg",
+      "size": 52452,
+      "blobSha": "4f39314ce7804b63a940c114c2dabbff70cb4c12"
+    },
+    {
+      "path": "portadas/dramawave/la-heredera-busca-venganza.jpg",
+      "size": 73516,
+      "blobSha": "496cf28f4ebbc3c8f8a324186f4cf08d853d96ad"
+    },
+    {
+      "path": "portadas/dramawave/la-heredera-descarada-esta-de-vuelta.jpg",
+      "size": 94450,
+      "blobSha": "452c734086525e874638a1e5aa0ec7e297cb65da"
+    },
+    {
+      "path": "portadas/dramawave/la-princesa-perseguida.jpg",
+      "size": 83324,
+      "blobSha": "e643921146b27f39c8b1671c8f4d8c4c09951361"
+    },
+    {
+      "path": "portadas/dramawave/la-sanadora-encantadora.jpg",
+      "size": 82688,
+      "blobSha": "6a943e140ae420ddacabf568455fdee8a00340fc"
+    },
+    {
+      "path": "portadas/dramawave/legado-del-monte-song.jpg",
+      "size": 55706,
+      "blobSha": "62e99dddd4cbb3b72516e935669e2a1c97d8af69"
+    },
+    {
+      "path": "portadas/dramawave/mil_millones_segundos.jpg",
+      "size": 80850,
+      "blobSha": "3cbf500ced34b6adb638dc31f68e260a3b524138"
+    },
+    {
+      "path": "portadas/dramawave/reescribiendo-el-destino-de-la-princesa-heredera.jpg",
+      "size": 79486,
+      "blobSha": "da19edc04eb066f38870e2211126e3a0d3ff0a40"
+    },
+    {
+      "path": "portadas/flickreel/contrato_de_amor.jpg",
+      "size": 27956,
+      "blobSha": "436f69052e4b9e1156d1a7319a53b7ac53fca77b"
+    },
+    {
+      "path": "portadas/flickreel/el-proximo-solsticio.jpg",
+      "size": 420006,
+      "blobSha": "7f87b956329cfacc24c0b975d53b46f6da320f8e"
+    },
+    {
+      "path": "portadas/flickreel/la_bisabuela_I.jpg",
+      "size": 43050,
+      "blobSha": "75105b8858f9e4ac0ce459f603fa1b9590b89fa0"
+    },
+    {
+      "path": "portadas/flickreel/la_bisabuela_II.jpg",
+      "size": 332350,
+      "blobSha": "0e039ac170459fd47f57b5656d40adaff013412d"
+    },
+    {
+      "path": "portadas/flickreel/mi_esposo_mudo.jpg",
+      "size": 409886,
+      "blobSha": "fdb50d3ac55a884ccc7013f16632a166362ce5e2"
+    },
+    {
+      "path": "portadas/flickreel/regente_de_dia.jpg",
+      "size": 439911,
+      "blobSha": "50d036b8e4b3fd2d3b88fdcb2adffb3274a09bcd"
+    },
+    {
+      "path": "portadas/flickreel/rindete_a_mi_abrazo.jpg",
+      "size": 44108,
+      "blobSha": "1d4d05126d2912cca181e92ce6792eeaaca8c9f1"
+    },
+    {
+      "path": "portadas/goodshort/4_HERMANAS_PIDEN_PERDON.jpg",
+      "size": 449616,
+      "blobSha": "81aace3ba3467d3e9d833049d0828ae53c32fc79"
+    },
+    {
+      "path": "portadas/goodshort/espejo_magico_pasado.jpg",
+      "size": 450178,
+      "blobSha": "88cd493739f40e83923c02ca05255ec70a850e07"
+    },
+    {
+      "path": "portadas/goodshort/esposa_que volvio_amar.jpg",
+      "size": 412216,
+      "blobSha": "998823903c4b0e3188ccc1eda6ae725d7f4d70ac"
+    },
+    {
+      "path": "portadas/goodshort/la_madre_agente_elite.jpg",
+      "size": 381330,
+      "blobSha": "f788ae3bc9ddcd1ef2940864e0252c3212e3840e"
+    },
+    {
+      "path": "portadas/goodshort/mi_papa_chaebol.jpg",
+      "size": 364234,
+      "blobSha": "60ef5617d405764b811e3a689b226099bfbb43b3"
+    },
+    {
+      "path": "portadas/goodshort/no_me_quiero_divorciar.jpg",
+      "size": 310930,
+      "blobSha": "d4e7e4c2f76547b207132f5968a1984968218332"
+    },
+    {
+      "path": "portadas/goodshort/que_le_paso_madrastra.jpg",
+      "size": 392223,
+      "blobSha": "ad78e8d80c2c04d98271b70fa808ecec6a28202a"
+    },
+    {
+      "path": "portadas/goodshort/ya_caistes_amor.jpg",
+      "size": 458598,
+      "blobSha": "8a14723fd2551c8a5f1ace048034deb92eaeba98"
+    },
+    {
+      "path": "portadas/goodshort/yo_era_el_peon_juego.jpg",
+      "size": 39675,
+      "blobSha": "b57719c5e25e92b0b9134c6e45323cc5c94b5a68"
+    },
+    {
+      "path": "portadas/melolo/800-pesos-por-un-mundo-arcano.jpg",
+      "size": 75083,
+      "blobSha": "dec996ba9b4ac6c61bced4dded7b5ace888d71f1"
+    },
+    {
+      "path": "portadas/melolo/contra-el-destinosofia-salazar-renace-y-descubre-que-sus-hijos-estaban-destinados-a-un-futuro-gris-decide-ayudarlos-impulsa-a-su-hijo-a-recuperar-lo-perdido-y-anima-a-su-hija-a-vencer-la-inseguridad.jpg",
+      "size": 47621,
+      "blobSha": "5b81d027218bb1102d483a26f460481aee239e0d"
+    },
+    {
+      "path": "portadas/melolo/cuanto-mas-solo-mas-fuerte.jpg",
+      "size": 59088,
+      "blobSha": "4de046220c414a6fc132fc45c0b01b1693ac77e9"
+    },
+    {
+      "path": "portadas/melolo/destierro-y-cuatro-bellezas.jpg",
+      "size": 63189,
+      "blobSha": "b5d7d6cc7057878b6e68337235c4022a8aa3b4f2"
+    },
+    {
+      "path": "portadas/melolo/diosa_de_la_guerra.jpg",
+      "size": 71162,
+      "blobSha": "1a24dd67b3a368a65ae837a836c04bdd38a102f2"
+    },
+    {
+      "path": "portadas/melolo/el_vidente_soberana.jpg",
+      "size": 84466,
+      "blobSha": "9723e34426ee6b7f8d917c782a538d4ffdff7671"
+    },
+    {
+      "path": "portadas/melolo/el-ascenso-del-falso-eunuco.jpg",
+      "size": 62698,
+      "blobSha": "920a6d7ea0aa459349feee6e807b0605f4088c93"
+    },
+    {
+      "path": "portadas/melolo/el-tesoro-bajo-tierra.jpg",
+      "size": 69035,
+      "blobSha": "a36d27ea94a9639f99fe03d00341e377ad74fc74"
+    },
+    {
+      "path": "portadas/melolo/hueso-mortal.jpg",
+      "size": 66848,
+      "blobSha": "864b3d2ae7f37a1a5cc478c53dfa3bfd28b92371"
+    },
+    {
+      "path": "portadas/melolo/la_heredera_estudiar.jpg",
+      "size": 108437,
+      "blobSha": "95f9a9267e006fb9c8b018c5d017caf303840886"
+    },
+    {
+      "path": "portadas/melolo/la-reina-y-el-bandido.jpg",
+      "size": 46044,
+      "blobSha": "bcafb461692f92354a39482937a335179ad2955f"
+    },
+    {
+      "path": "portadas/melolo/menu-imposible.jpg",
+      "size": 65468,
+      "blobSha": "33aef2d6eb6a8526fca3d54110f57db75ce94405"
+    },
+    {
+      "path": "portadas/melolo/mi_vago_padre.jpg",
+      "size": 59796,
+      "blobSha": "ec9e61638dc76650fcb119cf418bbfb75cfee430"
+    },
+    {
+      "path": "portadas/melolo/reset_del_destino.jpg",
+      "size": 72800,
+      "blobSha": "6420af8e76883080382bab4906fe4c4c84f79723"
+    },
+    {
+      "path": "portadas/netshort/a-princesa-del-intercambio.jpg",
+      "size": 290900,
+      "blobSha": "4796643965a6c7d0fd8f93a4aae4b57f772dc0c9"
+    },
+    {
+      "path": "portadas/netshort/besos-y-mentiras.jpg",
+      "size": 142335,
+      "blobSha": "10f3b93a4cd0dd5f3830ba83a25fa948422cb755"
+    },
+    {
+      "path": "portadas/netshort/camino-de-gloria-celestial.jpg",
+      "size": 307651,
+      "blobSha": "3f6ca7c4c776216c1d8567b9a062bebe1739c929"
+    },
+    {
+      "path": "portadas/netshort/de-la-traicion-al-trono.jpg",
+      "size": 179862,
+      "blobSha": "088b35f131da05daf022178183328f864058007e"
+    },
+    {
+      "path": "portadas/netshort/dejando-tu-mundo-atras.webp",
+      "size": 27960,
+      "blobSha": "b16957541ae8aec4788a6001314ba4c2fcc1e859"
+    },
+    {
+      "path": "portadas/netshort/el_despedido_emperatriz.jpg",
+      "size": 317299,
+      "blobSha": "1b5153320da4234676b223ae978b5c2bfa6ecf78"
+    },
+    {
+      "path": "portadas/netshort/el-despedido-que-enamoro-a-la-emperatriz.jpg",
+      "size": 317299,
+      "blobSha": "1b5153320da4234676b223ae978b5c2bfa6ecf78"
+    },
+    {
+      "path": "portadas/netshort/el-mundo-al-filo-del-cuchillo.jpg",
+      "size": 289534,
+      "blobSha": "f143a03c52da1c03ea2085408cc0644141dc6e0b"
+    },
+    {
+      "path": "portadas/netshort/el-primer-dia-fui-la-falsa-heredera.jpg",
+      "size": 187710,
+      "blobSha": "ef8b4921db924bd023e9c2699173f60b58e59f78"
+    },
+    {
+      "path": "portadas/netshort/el-principe-de-la-mafia-regresa.jpg",
+      "size": 34834,
+      "blobSha": "bcdc104d5caba9d7f77bc43cf8ba3adf38e6e914"
+    },
+    {
+      "path": "portadas/netshort/en-realidad-soy-un-super-rico-heredero-doblado-esp.jpg",
+      "size": 32944,
+      "blobSha": "f15f9f00be74024eb03a1d44a887d0f161e888d9"
+    },
+    {
+      "path": "portadas/netshort/entre-dos-principes.jpg",
+      "size": 41987,
+      "blobSha": "2cb7a486eb2b3029a192be4eff2a3b2a67255d16"
+    },
+    {
+      "path": "portadas/netshort/intolerable.jpg",
+      "size": 252308,
+      "blobSha": "b5884841fce15e73bf6b5aee9018ab687594c5c0"
+    },
+    {
+      "path": "portadas/netshort/la_emperatriz_madrastra.jpg",
+      "size": 783615,
+      "blobSha": "d579bcf62ff7e96a5cbbfa6139114c8b413a3a95"
+    },
+    {
+      "path": "portadas/netshort/la_profesia_tinaja.jpg",
+      "size": 273090,
+      "blobSha": "4d50588004bf159197fc38f7fe3afeefe3cc63a0"
+    },
+    {
+      "path": "portadas/netshort/la-jugada-del-consorte-II.jpg",
+      "size": 292583,
+      "blobSha": "eda22b57caeb4161237a4e5562978d497f3701ed"
+    },
+    {
+      "path": "portadas/netshort/la-jugada-del-consorte.jpg",
+      "size": 206972,
+      "blobSha": "055f358a790966756eab2a4974734e7aa5f6d5a7"
+    },
+    {
+      "path": "portadas/netshort/la-princesa-rebelde.jpg",
+      "size": 228786,
+      "blobSha": "848eae16901a69af84d476c987ec6bead27143e0"
+    },
+    {
+      "path": "portadas/netshort/la-profesia-de-la-tinaja.jpg",
+      "size": 273090,
+      "blobSha": "4d50588004bf159197fc38f7fe3afeefe3cc63a0"
+    },
+    {
+      "path": "portadas/netshort/la-reina.jpg",
+      "size": 53226,
+      "blobSha": "2cea26bc8cd8747e69e80208a230c0c338f7678b"
+    },
+    {
+      "path": "portadas/netshort/leyenda_hijo_bastardo.jpg",
+      "size": 283031,
+      "blobSha": "116d8d785ca2d80938da10d878207dcb756f5fb0"
+    },
+    {
+      "path": "portadas/netshort/lo-hice-y-me-encadene.jpg",
+      "size": 29138,
+      "blobSha": "a7e0a6e54c867cfc993c7d367233a4ce9cfd85b9"
+    },
+    {
+      "path": "portadas/netshort/marido_manual_instrucciones.jpg",
+      "size": 149607,
+      "blobSha": "10b5468e5d96fe295b9c17d7d8758fe35507a8b8"
+    },
+    {
+      "path": "portadas/netshort/mi-esposa-es-una-bandida.jpg",
+      "size": 220156,
+      "blobSha": "59ea6687517adb10edb4f0bdf0066782849c2c66"
+    },
+    {
+      "path": "portadas/netshort/no_soy_su_esposa.jpg",
+      "size": 144883,
+      "blobSha": "a0c67cd80e9d9e23303ef5a5d01a6d1bc33b062d"
+    },
+    {
+      "path": "portadas/netshort/no_subestimes_a_mi_padre.jpg",
+      "size": 46445,
+      "blobSha": "ebd4deb1506eb2a552d568e301be725f6beb8dae"
+    },
+    {
+      "path": "portadas/netshort/no-soy-su-esposa-legitima.jpg",
+      "size": 144883,
+      "blobSha": "a0c67cd80e9d9e23303ef5a5d01a6d1bc33b062d"
+    },
+    {
+      "path": "portadas/netshort/novio_equivocado_amor.jpg",
+      "size": 220619,
+      "blobSha": "e1360a45c13d652c0ec7dd866de78358d169796d"
+    },
+    {
+      "path": "portadas/netshort/ojo-de-riqueza.jpg",
+      "size": 182334,
+      "blobSha": "dadee43f126ca92aab82c05d283a19d459a55e95"
+    },
+    {
+      "path": "portadas/netshort/relampago-matrimonial.jpg",
+      "size": 178475,
+      "blobSha": "374e5abffc552a24f22477f4f85951ae6663edd5"
+    },
+    {
+      "path": "portadas/netshort/renaer_de_una_emperatriz.jpg",
+      "size": 324402,
+      "blobSha": "4e5c0af83fe31838ad45e5d0d6518c71737c96cc"
+    },
+    {
+      "path": "portadas/reelshort/avatar-aang-el-ultimo-maestro-del-aire.jpg",
+      "size": 44829,
+      "blobSha": "c9f74d60af6a891cb7237c9d39d127783a91aeb7"
+    },
+    {
+      "path": "portadas/reelshort/demon-slayer-kimetsu-no-yaiba-el-castillo-infinito.jpg",
+      "size": 535082,
+      "blobSha": "113b2df117518446c2501c1fcbc12a33d20db6df"
+    },
+    {
+      "path": "portadas/reelshort/diez-anos-de-mentiras-ahora-mando-yo.jpg",
+      "size": 27306,
+      "blobSha": "c87e51923b08a76d9acd8bb9bc60001b9dc32c94"
+    },
+    {
+      "path": "portadas/reelshort/diosa_guerra_esposa.jpg",
+      "size": 134458,
+      "blobSha": "1cb2fcc9dc65035b32dea88a690b7ccd4f989438"
+    },
+    {
+      "path": "portadas/reelshort/entre-dos-mundos-panecillo-por-esposa.jpg",
+      "size": 106662,
+      "blobSha": "bdf76bb3e21009558013295da286a3573122e036"
+    }
+  ]
+}

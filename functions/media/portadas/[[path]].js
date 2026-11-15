@@ -1,7 +1,7 @@
 /* GET/HEAD público para imágenes de R2. No publica el bucket ni permite listar/borrar.
  * URL: /media/portadas/{plataforma}/{archivo}.ext
  */
-import {validCoverKey,coverMime} from "../../../lib/cover-storage.js";
+import {validCoverKey,coverMime} from "../../lib/cover-storage.js";
 
 async function getCover(context,headOnly) {
   const parts = context.params.path;

@@ -86,10 +86,23 @@ function Test-RemoteCovers {
    [long]$length=0
    $lengthHeader=[string]$res.Headers['Content-Length']
    $hasLength=[long]::TryParse($lengthHeader,[ref]$length)
-   $verified=([int]$res.StatusCode -eq 200 -and $hasLength -and $length -eq [long]$item.size)
-   $results+=[pscustomobject]@{
-    key=$key;url=$uri;expected=[long]$item.size;actual=$length;
-    ok=$verified;reason=if($verified){'OK'}else{'Respuesta HTTP o tamaño diferente'}
+   $headOK=([int]$res.StatusCode -eq 200 -and $hasLength -and $length -eq [long]$item.size)
+   # HEAD confirma presencia/tamaño; GET + SHA256 confirma bytes idénticos.
+   $full=Join-Path $root ($key.Replace('/','\'))
+   $temp=Join-Path $folder ("verificar-"+[string]$item.blobSha+".tmp")
+   try {
+    Invoke-WebRequest -Uri $uri -Method Get -UseBasicParsing -OutFile $temp -TimeoutSec 60 | Out-Null
+    $downloadSize=[long](Get-Item -LiteralPath $temp).Length
+    $expectedSha=(Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash
+    $downloadSha=(Get-FileHash -LiteralPath $temp -Algorithm SHA256).Hash
+    $verified=($headOK -and $downloadSize -eq [long]$item.size -and $downloadSha -eq $expectedSha)
+    $results+=[pscustomobject]@{
+     key=$key;url=$uri;expected=[long]$item.size;actual=$downloadSize;
+     sha256=$downloadSha;ok=$verified;
+     reason=if($verified){'OK'}else{'HTTP, tamaño o SHA256 diferente'}
+    }
+   } finally {
+    Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue
    }
   } catch {
    $results+=[pscustomobject]@{
@@ -97,7 +110,7 @@ function Test-RemoteCovers {
    }
   }
  }
- return ,$results
+ return $results
 }
 $results=@(Test-RemoteCovers)
 $report=Join-Path $folder 'r2-verificacion.json'
@@ -115,7 +128,7 @@ if($Modo -eq 'Verificar'){
 # El SQL sólo se genera con 100% de verificación y se deja pendiente de revisión.
 $lines=New-Object System.Collections.Generic.List[string]
 $lines.Add('-- NO EJECUTAR SIN UN RESPALDO VERIFICADO DE CLOUDFLARE D1')
-$lines.Add('-- Todas las portadas del inventario respondieron HTTP HEAD=200 con tamaño correcto.')
+$lines.Add('-- Todas las portadas tienen HTTP HEAD=200, tamaño correcto y SHA256 igual al archivo local.')
 $lines.Add('-- Solo actualiza rutas exactas antiguas. No borra filas ni archivos.')
 $lines.Add("SELECT id,slug,cover_url FROM dramas WHERE cover_url LIKE '/portadas/%';")
 foreach($item in $items){

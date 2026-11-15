@@ -30,7 +30,7 @@ El modo Plan comprueba 94 archivos de GitHub por tamaño y SHA del blob; Subir s
     .\scripts\migrar-portadas-r2.ps1 -Modo Verificar
     .\scripts\migrar-portadas-r2.ps1 -Modo GenerarSQL
 
-El script consulta por HTTP HEAD todas las rutas públicas /media/portadas/ y comprueba el Content-Length.
+El script consulta por HTTP HEAD las rutas públicas /media/portadas/, comprueba el Content-Length y descarga cada archivo para comparar su SHA256 con el original local.
 Con cualquier fallo se niega a generar el SQL. El reporte y el SQL propuesto se guardan en la carpeta temporal microdramas-r2-migracion.
 
 Antes de ejecutar el SQL generado:

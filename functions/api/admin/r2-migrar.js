@@ -73,12 +73,12 @@ async function sourceBytes(context,file) {
   const buffer=new Uint8Array(await resp.arrayBuffer());
   if(buffer.byteLength!==file.size)throw new Error("Tamaño de origen diferente al inventario");
   const mime=coverMime(file.path);
-  if(fileMime(buffer)!==mime)
-    throw new Error("El contenido de origen no coincide con el formato de imagen esperado");
+  const detectedMime=fileMime(buffer);
+  if(!detectedMime)throw new Error("El archivo original no contiene una imagen JPG, PNG, WEBP o GIF reconocible");
   const digest=await digests(buffer);
   if(digest.git!==file.blobSha.toLowerCase())
     throw new Error("El checksum del origen no coincide con GitHub");
-  return {buffer,digest,mime};
+  return {buffer,digest,mime:detectedMime};
 }
 async function transfer(context,file) {
   const bucket=context.env.COVERS_BUCKET;

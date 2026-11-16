@@ -1,5 +1,27 @@
 # Portadas en R2 — Guía de activación y migración (sin afectar producción)
 
+## Alternativa sin repositorio local: migración desde el panel Cloudflare (RECOMENDADA)
+
+Para este proyecto NO es necesario clonar GitHub ni usar PowerShell. Se incluye una herramienta protegida en:
+
+**https://micro-dramas-esp.pages.dev/admin/r2-migracion.html**
+
+1. Asegura que el bucket privado `microdramas-portadas` está vinculado a la producción de Pages como `COVERS_BUCKET`.
+2. Abre la dirección anterior tras iniciar sesión de administrador de escritorio.
+3. Confirma que el panel indica "Bucket R2 conectado".
+4. Pulsa **Copiar portadas a R2** y escribe `MIGRAR PORTADAS A R2`.
+5. La API lee los archivos estáticos de la versión desplegada de Cloudflare Pages usando el binding interno `ASSETS`, valida el SHA de Git original, los copia a R2 por lotes de tres y verifica cada archivo.
+6. Después, pulsa **Verificar todas las copias**. Debe indicar **94 de 94 verificadas**.
+7. **Detente y comparte el resultado**. No se ha actualizado D1, ni se ha activado la subida administrativa a R2, ni se han retirado las portadas antiguas de GitHub. La actualización de rutas D1 se hará únicamente tras auditar las referencias reales y probar la web y la APK.
+
+La operación es idempotente: al ejecutarla de nuevo verifica y reutiliza las copias correctas que ya existan. Si detecta un objeto distinto o una portada de origen inesperada, se detiene y no lo sobrescribe.
+
+**Seguridad:** solo el administrador autenticado puede llamar a la API, la copia POST requiere mismo origen y una confirmación explícita; no acepta URLs arbitrarias ni escribe en D1.
+
+---
+
+
+
 Estado: código listo, R2 no activo hasta configurarlo en Cloudflare. NO borrar archivos ni cambiar D1 antes de pruebas.
 
 ## 1. Configurar Cloudflare

@@ -13,6 +13,27 @@ export function coverStorageMode(env) {
   return String(env?.COVERS_STORAGE_BACKEND || "").toLowerCase() === "r2" ? "r2" : "github";
 }
 
+/* En producción la migración puede activar R2 desde D1, sin tocar
+ * variables del panel Cloudflare. Una variable explícita tiene prioridad
+ * para permitir reversión de emergencia. Si D1 falla, NO subir a GitHub
+ * silenciosamente después de activar R2.
+ */
+export async function activeCoverBackend(env) {
+  const override=String(env?.COVERS_STORAGE_BACKEND||"").trim().toLowerCase();
+  if(override==="r2"||override==="github")return override;
+  if(!env?.DB)throw new Error("No está conectado D1 para determinar el almacenamiento de portadas.");
+  try {
+    const setting=await env.DB.prepare(
+      "SELECT backend FROM md_cover_storage_control WHERE id=1"
+    ).first();
+    return setting?.backend==="r2"?"r2":"github";
+  }catch(error){
+    if(/no such table:\s*md_cover_storage_control/i.test(String(error?.message||error)))
+      return "github";
+    throw error;
+  }
+}
+
 export function coverSegment(value, maxLength = 80) {
   const text = String(value ?? "").trim().normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "").toLowerCase()

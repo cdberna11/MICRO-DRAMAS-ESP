@@ -1,12 +1,12 @@
 /* Consulta protegida por middleware /api/admin/*.
  * Devuelve el almacén activo, sin publicar secretos ni claves.
  */
-import {coverStorageMode,coverJson} from "../../lib/cover-storage.js";
+import {activeCoverBackend,coverJson} from "../../lib/cover-storage.js";
 export async function onRequestGet(context){
-  const backend=coverStorageMode(context.env);
+  const backend=await activeCoverBackend(context.env);
   if (backend !== "r2")
     return coverJson({success:true,backend:"github",ready:Boolean(context.env.GITHUB_TOKEN),
-      message:"GitHub sigue activo hasta configurar COVERS_STORAGE_BACKEND=r2."});
+      message:"GitHub sigue activo hasta completar el cambio controlado de D1 a R2."});
   if (!context.env.COVERS_BUCKET)
     return coverJson({success:true,backend:"r2",ready:false,
       message:"Falta el binding R2 COVERS_BUCKET. No se cargarán portadas."});

@@ -1,4 +1,4 @@
-import {coverStorageMode, storeCoverR2, coverJson} from "../../lib/cover-storage.js";
+import {activeCoverBackend, storeCoverR2, coverJson} from "../../lib/cover-storage.js";
 
 /* =========================================================
    API ADMINISTRATIVA DE PORTADAS
@@ -177,7 +177,7 @@ export async function onRequestPost(context) {
         // R2 se activa sólo mediante COVERS_STORAGE_BACKEND=r2.
         // Mientras esté ausente, el proceso actual de GitHub permanece intacto.
         // Si R2 falla, NO volver a GitHub silenciosamente.
-        if (coverStorageMode(context.env) === "r2") {
+        if ((await activeCoverBackend(context.env)) === "r2") {
             try {
                 return await storeCoverR2(context);
             } catch (error) {

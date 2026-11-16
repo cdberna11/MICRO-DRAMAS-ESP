@@ -24,6 +24,34 @@ La operación es idempotente: al ejecutarla de nuevo verifica y reutiliza las co
 
 Estado: código listo, R2 no activo hasta configurarlo en Cloudflare. NO borrar archivos ni cambiar D1 antes de pruebas.
 
+## 6. Corte final de D1 y de futuras subidas sin computadora local (NOVIEMBRE 2026)
+
+La pantalla protegida `/admin/r2-migracion.html` contiene ahora cuatro etapas. La copia de 94 portadas a R2 se completó y el usuario informó **94 de 94 verificadas**; el código de GitHub no equivale por sí solo a comprobar la migración de rutas D1.
+
+1. **Auditar D1:** pulsa *Auditar D1*. El endpoint `/api/admin/r2-cutover?mode=audit` clasifica cada `dramas.cover_url` como ruta antigua, R2, externa, genérica o sin imagen. **No modifica D1**.
+2. **Descargar respaldo:** pulsa *Descargar respaldo D1* y guarda el JSON de IDs y URLs originales en un lugar seguro. Debe hacerse **antes** del corte.
+3. **Reverificar R2:** pulsa *Verificar todas las copias* hasta obtener 94/94. Esto verifica bytes y SHA de Git sobre R2.
+4. **Actualizar rutas D1 → R2:** con cero rutas sin resolver, pulsa el botón correspondiente y escribe `MIGRAR RUTAS D1 A R2`. La API verifica los contenidos de cada portada R2 por SHA-1 de blob Git, guarda `original_url`/ `r2_url` en `md_r2_cover_backups` y actualiza D1 en transacciones de máximo cuatro registros por lote. Si algo falla, conserva el estado existente y permite revisar / reanudar. El reproductor, las cuentas y las categorías no se modifican.
+5. **Activar R2 para subir portadas:** cuando la auditoría indique cero rutas antiguas y cero sin resolver, presiona *Activar subidas futuras en R2* y confirma con `ACTIVAR SUBIDAS R2`. La API comprueba los objetos R2 usados por D1 y guarda `backend=r2` en la tabla D1 `md_cover_storage_control`. **No es necesario definir manualmente COVERS_STORAGE_BACKEND**, salvo si se desea un override de emergencia. La API anterior `/api/admin/upload-cover` detectará el nuevo destino y devolverá `/media/portadas/...-HASH.ext`.
+6. **Validar tres clientes:** crear un borrador de prueba con portada recién subida, confirmar el campo `cover_url` y comprobar portadas viejas/nuevas en web escritorio, web móvil y APK.
+7. **Eliminar duplicados:** cuando todo esté aprobado y verificado, crear commit GitHub eliminando *solo las 94 portadas históricas* bajo `portadas/{plataforma}/`. Conservar avatares, logo y carpeta generica. El manifiesto se conserva para auditoría. Los commits anteriores de GitHub no se reescriben.
+
+### Recuperación / reversión
+
+El respaldo JSON descargado antes del corte es externo a D1. La tabla `md_r2_cover_backups` dentro de D1 conserva, por cada ID migrado, la URL original y su equivalente en R2. Las actualizaciones verifican que el valor antiguo coincida exactamente para evitar sobrescribir ediciones concurrentes. Los archivos originales permanecen en GitHub durante todas las pruebas.
+
+Si ocurre una incidencia, **no elimines las portadas de GitHub**. Una reversión supervisada puede recuperar las URL antiguas solo en filas que sigan apuntando a la URL R2 guardada, utilizando los respaldos y las herramientas D1 oficiales. No modifiques automáticamente microdramas nuevos cuya única portada haya sido creada en R2.
+
+### Condiciones de seguridad
+
+- La API `/api/admin/r2-cutover` está cubierta por el middleware de administradores y exige solicitud POST del mismo origen, cabecera de confirmación y frase de autorización.
+- No acepta URLs personalizadas que indiquen dónde copiar archivos; solo las claves del inventario de 94 portadas.
+- No actualiza rutas que estén fuera del inventario ni elimina portadas de GitHub/R2.
+- En un fallo de lectura de D1, no cambia silenciosamente el destino de nuevas subidas a GitHub.
+- Si una variable `COVERS_STORAGE_BACKEND` se define explícitamente en Cloudflare, tiene prioridad sobre el valor D1. Para el flujo automático recomendado debe permanecer sin definir.
+
+---
+
 ## 1. Configurar Cloudflare
 
 1. Verificar en la cuenta que Cloudflare R2 permite Standard Storage en Free y revisar requisitos de facturación.
@@ -65,8 +93,8 @@ Antes de ejecutar el SQL generado:
 
 ## 4. Cambiar carga administrativa a R2
 
-Cuando las pruebas de lectura estén superadas:
-- Cloudflare Pages → Settings → Variables and Secrets: COVERS_STORAGE_BACKEND = r2.
+El método recomendado ahora es activar R2 desde la **Etapa 3** del panel de migración. El valor D1 evita modificar manualmente las variables de Pages.
+- Opcional (solo intervención de emergencia): Cloudflare Pages → Settings → Variables and Secrets: COVERS_STORAGE_BACKEND = r2.
 - Redeploy. El indicador de admin debe mostrar Cloudflare R2: Conectado.
 - Probar alta de un microdrama en Borrador. La API /api/admin/upload-cover devuelve /media/portadas/.../slug-HASH.ext.
 - Guardar y comprobar cover_url en D1, panel admin, web escritorio, móvil y APK.

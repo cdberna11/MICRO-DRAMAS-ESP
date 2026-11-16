@@ -20,7 +20,12 @@ async function getCover(context,headOnly) {
   if (!obj) return new Response("Portada no encontrada",{status:404,headers:{"Cache-Control":"no-store"}});
   const versioned = /-[a-f0-9]{16}\.(jpg|jpeg|png|webp|gif)$/i.test(key);
   const headers=new Headers();
-  headers.set("Content-Type",coverMime(key));
+  // Algunas portadas históricas tienen una extensión diferente del
+  // formato real: priorizar el Content-Type verificado durante la copia.
+  const storedMime=String(obj.httpMetadata?.contentType||"").toLowerCase();
+  const safeMime=["image/jpeg","image/png","image/webp","image/gif"].includes(storedMime)
+    ? storedMime : coverMime(key);
+  headers.set("Content-Type",safeMime);
   headers.set("Content-Disposition","inline");
   headers.set("Content-Length",String(obj.size));
   headers.set("Cache-Control",versioned?"public, max-age=31536000, immutable":"public, max-age=3600");

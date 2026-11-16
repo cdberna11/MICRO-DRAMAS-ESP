@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Migrar portadas a R2 | Microdramas en Español</title>
+  <link rel="stylesheet" href="/admin/r2-migracion.css?v=1">
+</head>
+<body>
+  <main class="migration">
+    <header class="migration__header">
+      <a href="/admin/" class="migration__back">← Volver al panel administrativo</a>
+      <span class="migration__badge">Cloudflare R2 · migración segura</span>
+    </header>
+    <section class="migration__intro">
+      <h1>Migración de portadas a R2</h1>
+      <p>Sin descargar ni modificar archivos en una computadora. Las imágenes se copiarán desde los archivos actuales de Cloudflare Pages hacia el bucket <strong>microdramas-portadas</strong>.</p>
+      <p><strong>Esta operación no cambia Cloudflare D1 ni elimina ninguna portada de GitHub.</strong></p>
+    </section>
+    <section class="migration__panel">
+      <h2>Estado del almacenamiento</h2>
+      <p id="r2-status" class="migration__status" role="status" aria-live="polite">Comprobando permisos y bucket R2...</p>
+      <div class="migration__stats">
+        <div><span>Portadas previstas</span><strong id="r2-total">—</strong></div>
+        <div><span>Copia completada</span><strong id="r2-copied">0</strong></div>
+        <div><span>Verificadas en R2</span><strong id="r2-verified">0</strong></div>
+      </div>
+      <progress id="r2-progress" max="94" value="0" aria-label="Avance de migración"></progress>
+      <div class="migration__actions">
+        <button type="button" id="r2-copy" disabled>Copiar portadas a R2</button>
+        <button type="button" id="r2-verify" disabled class="secondary">Verificar todas las copias</button>
+      </div>
+      <p class="migration__hint">La copia avanza por lotes pequeños, se puede reanudar sin duplicar archivos y comprueba tamaño y contenido de cada imagen. No cierres esta pestaña durante una operación; si se interrumpe, puedes repetirla.</p>
+      <pre id="r2-log" class="migration__log" aria-live="polite"></pre>
+    </section>
+    <section class="migration__panel migration__final">
+      <h2>Siguiente etapa: cambio de rutas en D1</h2>
+      <p>Solo se realizará después de confirmar que las <strong>94 portadas</strong> están verificadas y que la web y la APK pueden leerlas. <strong>No se realiza desde esta pantalla.</strong></p>
+      <p>Mientras tanto, el panel administrativo continúa subiendo a GitHub. No cambies <code>COVERS_STORAGE_BACKEND</code> todavía.</p>
+    </section>
+  </main>
+  <script src="/admin/r2-migracion.js?v=1" defer></script>
+</body>
+</html>

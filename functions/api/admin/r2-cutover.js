@@ -115,12 +115,12 @@ async function checkR2(context,items){
   if(!bucket)throw new Error("No está conectado R2 COVERS_BUCKET.");
   const seen=new Set();
   for(const item of items){
-    if(seen.has(item.key))continue;
-    seen.add(item.key);
-    const object=await bucket.get(item.key);
-    if(!object)throw new Error("Falta la portada R2: "+item.key);
+    if(seen.has(item.path))continue;
+    seen.add(item.path);
+    const object=await bucket.get(item.path);
+    if(!object)throw new Error("Falta la portada R2: "+item.path);
     if(object.size!==item.size)
-      throw new Error("La portada R2 no tiene el tamaño original: "+item.key);
+      throw new Error("La portada R2 no tiene el tamaño original: "+item.path);
     const buffer=new Uint8Array(await object.arrayBuffer());
     const prefix=new TextEncoder().encode("blob "+buffer.byteLength+"\0");
     const joined=new Uint8Array(prefix.length+buffer.byteLength);
@@ -128,7 +128,7 @@ async function checkR2(context,items){
     const digest=await crypto.subtle.digest("SHA-1",joined);
     const sha=Array.from(new Uint8Array(digest),v=>v.toString(16).padStart(2,"0")).join("");
     if(sha!==item.blobSha.toLowerCase())
-      throw new Error("El contenido R2 no coincide con GitHub: "+item.key);
+      throw new Error("El contenido R2 no coincide con GitHub: "+item.path);
   }
 }
 async function backupTable(db){

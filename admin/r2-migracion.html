@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Migrar portadas a R2 | Microdramas en Español</title>
-  <link rel="stylesheet" href="/admin/r2-migracion.css?v=1">
+  <link rel="stylesheet" href="/admin/r2-migracion.css?v=2">
 </head>
 <body>
   <main class="migration">
@@ -34,12 +34,37 @@
       <p class="migration__hint">La copia avanza por lotes pequeños, se puede reanudar sin duplicar archivos y comprueba tamaño y contenido de cada imagen. No cierres esta pestaña durante una operación; si se interrumpe, puedes repetirla.</p>
       <pre id="r2-log" class="migration__log" aria-live="polite"></pre>
     </section>
+    <section class="migration__panel migration__final" id="r2-cutover-panel">
+      <h2>Etapa 2 · Actualizar rutas del catálogo en D1</h2>
+      <p>Esta etapa modifica únicamente <code>dramas.cover_url</code>. Antes de migrar, descarga el respaldo completo de las rutas y verifica las 94 imágenes de R2.</p>
+      <p id="r2-d1-status" class="migration__status" role="status" aria-live="polite">Consultando las rutas que utiliza D1...</p>
+      <div class="migration__stats">
+        <div><span>Rutas todavía en GitHub</span><strong id="r2-d1-legacy">—</strong></div>
+        <div><span>Rutas que ya usan R2</span><strong id="r2-d1-migrated">—</strong></div>
+        <div><span>Rutas para revisar</span><strong id="r2-d1-unresolved">—</strong></div>
+      </div>
+      <div class="migration__actions">
+        <button id="r2-d1-audit" type="button" class="secondary">Auditar D1</button>
+        <button id="r2-d1-backup" type="button" class="secondary" disabled>Descargar respaldo D1</button>
+        <button id="r2-d1-move" type="button" disabled>Actualizar rutas D1 → R2</button>
+      </div>
+      <p class="migration__hint">Los enlaces externos y la portada genérica no se modifican. Si hay alguna portada antigua fuera del inventario, el sistema bloqueará el cambio para evitar imágenes rotas.</p>
+      <pre id="r2-d1-log" class="migration__log" aria-live="polite"></pre>
+    </section>
     <section class="migration__panel migration__final">
-      <h2>Siguiente etapa: cambio de rutas en D1</h2>
-      <p>Solo se realizará después de confirmar que las <strong>94 portadas</strong> están verificadas y que la web y la APK pueden leerlas. <strong>No se realiza desde esta pantalla.</strong></p>
-      <p>Mientras tanto, el panel administrativo continúa subiendo a GitHub. No cambies <code>COVERS_STORAGE_BACKEND</code> todavía.</p>
+      <h2>Etapa 3 · Guardar portadas nuevas exclusivamente en R2</h2>
+      <p>Una vez cambiadas y comprobadas todas las referencias en D1, activa el destino de carga del panel administrativo. Esto no cambia el diseño del formulario y no toca la APK ni el reproductor.</p>
+      <p id="r2-activation-status" class="migration__status" role="status">El destino de subida sigue en GitHub hasta activar esta etapa.</p>
+      <div class="migration__actions">
+        <button id="r2-activate" type="button" disabled>Activar subidas futuras en R2</button>
+      </div>
+      <p class="migration__hint">Después de activar, prueba la subida de una portada de un borrador, confirma la nueva ruta <code>/media/portadas/...</code> y verifica cómo se ve en navegador de escritorio, móvil y APK.</p>
+    </section>
+    <section class="migration__panel migration__final">
+      <h2>Etapa 4 · Retirar portadas duplicadas de GitHub</h2>
+      <p><strong>La eliminación no está automatizada desde este panel.</strong> Se realizará mediante un commit específico en GitHub únicamente después de validar las imágenes reales en las tres plataformas. Se conservarán los logos, avatares y portada genérica.</p>
     </section>
   </main>
-  <script src="/admin/r2-migracion.js?v=1" defer></script>
+  <script src="/admin/r2-migracion.js?v=2" defer></script>
 </body>
 </html>

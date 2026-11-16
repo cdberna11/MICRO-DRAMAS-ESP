@@ -102,21 +102,39 @@
     busy=true;r2VerifiedThisVisit=false;verified=0;elements.verified.textContent="0";elements.progress.value=0;refreshButtons();
     try{
       let errors=0;
+      const publicSamples=[];
       for(let offset=0;offset<totalExpected;offset+=batchSize) {
         const result=await request(endpoint+"?mode=verify&offset="+offset+"&limit="+batchSize);
         verified+=result.files.filter(file=>file.ok).length;
         errors+=result.files.filter(file=>!file.ok).length;
         elements.verified.textContent=String(verified);
         elements.progress.value=offset+result.files.length;
-        for(const file of result.files)if(!file.ok)print("FALLA: "+file.path+" · "+file.reason);
+        for(const file of result.files){
+          if(!file.ok)print("FALLA: "+file.path+" · "+file.reason);
+          if(file.ok&&(offset===0||offset===45||offset>=90||file.path.includes(" ")))
+            publicSamples.push(file);
+        }
       }
       if(errors){
         status("Faltan "+errors+" portadas o sus checksums son diferentes. No cambiar rutas D1.");
         print("Verificadas "+verified+"/"+totalExpected+". Puedes volver a copiar y verificar.");
       }else{
+        // No es suficiente que R2 tenga los bytes: la URL pública que
+        // consumen la web y la APK también debe entregar una imagen real.
+        const unique=new Map(publicSamples.map(file=>[file.path,file]));
+        for(const file of unique.values()){
+          const url="/media/"+file.path.split("/").map(encodeURIComponent).join("/");
+          const response=await fetch(url,{method:"HEAD",credentials:"same-origin",cache:"no-store"});
+          const type=String(response.headers.get("Content-Type")||"").toLowerCase();
+          const length=Number(response.headers.get("Content-Length"));
+          if(!response.ok||!type.startsWith("image/")||length!==Number(file.size))
+            throw new Error("La ruta pública no responde correctamente: "+url+
+              " (HTTP "+response.status+", tipo "+type+", bytes "+length+").");
+          print("URL pública verificada: "+url);
+        }
         r2VerifiedThisVisit=true;
-        status("¡94 de 94 verificadas! Las copias R2 son idénticas a las originales.");
-        print("VERIFICACIÓN COMPLETA. No se han cambiado rutas D1 ni eliminado imágenes GitHub.");
+        status("¡94 de 94 verificadas en R2 y rutas públicas comprobadas! Listo para la auditoría D1.");
+        print("VERIFICACIÓN COMPLETA. Aún no se han cambiado rutas D1 ni eliminado imágenes GitHub.");
       }
     }catch(error) {
       status("No se pudo completar la verificación. D1 sigue intacto.");

@@ -27,7 +27,7 @@
 ========================================================= */
 
 const PORTADA_GENERICA =
-    "/portadas/generica/portada-generica.png";
+    "/media/portadas/generica/portada-generica.png";
 
 const MEGAJS_URL =
     "https://unpkg.com/megajs/dist/main.browser-es.mjs";

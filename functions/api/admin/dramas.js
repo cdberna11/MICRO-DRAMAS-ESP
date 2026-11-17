@@ -26,7 +26,7 @@ const DESCRIPCION_AUTOMATICA =
     "Drama doblado al español.";
 
 const PORTADA_GENERICA =
-    "/portadas/generica/portada-generica.png";
+    "/media/portadas/generica/portada-generica.png";
 
 
 /* =========================================================

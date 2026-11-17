@@ -69,7 +69,7 @@
 
         const portada = document.createElement("img");
         portada.className = "drama-cover";
-        portada.src = drama.cover_url || "/portadas/generica/portada-generica.png";
+        portada.src = drama.cover_url || "/media/portadas/generica/portada-generica.png";
         portada.alt = "";
         portada.loading = "lazy";
         portada.onerror = () => { portada.hidden = true; };

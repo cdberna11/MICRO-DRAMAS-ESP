@@ -8,7 +8,7 @@
   const catalog = document.getElementById("catalogo");
   if (!catalog) return;
 
-  const COVER_FALLBACK = "portadas/generica/portada-generica.png";
+  const COVER_FALLBACK = "media/portadas/generica/portada-generica.png";
   const LOGO = "assets/images/LOGO_APK-MICRO_DRAMA.png";
   const icons = {
     home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',

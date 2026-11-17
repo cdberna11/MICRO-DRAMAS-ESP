@@ -74,6 +74,32 @@ body.video-player-open {
     height: auto;
 }
 
+/* Respaldo visual de la cabecera del catálogo, usando el logo actual.
+   Las experiencias desktop-home y mobile-app mantienen sus cabeceras propias. */
+.site-header__brand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    max-width: 100%;
+    color: #fff;
+    font-size: clamp(12px, 2.4vw, 18px);
+    font-weight: 800;
+    letter-spacing: .01em;
+    white-space: nowrap;
+}
+.site-header__brand .site-logo {
+    width: 48px;
+    height: 48px;
+    max-width: none;
+    flex: 0 0 48px;
+    object-fit: contain;
+}
+@media (max-width: 360px) {
+    .site-header__brand { gap: 7px; font-size: 12px; }
+    .site-header__brand .site-logo { width: 38px; height: 38px; flex-basis: 38px; }
+}
+
 
 /* =========================================================
    ANTIGUO H1

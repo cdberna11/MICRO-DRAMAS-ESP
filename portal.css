@@ -15,8 +15,10 @@ button:disabled { cursor: wait; opacity: .65; }
 .portal-header { position: fixed; top: 0; left: 0; right: 0; z-index: 20; height: 88px; display: flex; align-items: center; padding: 0 0 0 clamp(28px, 10vw, 190px); border-bottom: 1px solid rgba(255,255,255,.06); background: linear-gradient(180deg, rgba(13,13,15,.98) 0%, rgba(13,13,15,.92) 58%, rgba(13,13,15,0) 100%); }
 body.login-mode .portal-header,
 body.profile-mode .portal-header { background: linear-gradient(180deg, rgba(13,13,15,.99) 0%, rgba(13,13,15,.94) 62%, rgba(13,13,15,0) 100%); border-bottom-color: rgba(255,255,255,.055); }
-.portal-brand { display: block; line-height: 0; }
-.portal-brand img { display: block; width: 150px; max-width: 28vw; height: auto; object-fit: contain; }
+.portal-brand { display: inline-flex; align-items: center; gap: 10px; max-width: calc(100vw - 44px); color: #fff; text-decoration: none; }
+.portal-brand__icon { display: block; width: 46px; height: 46px; flex: 0 0 46px; object-fit: contain; background: transparent; }
+.portal-brand__name { display: block; font-size: 18px; line-height: 1.15; font-weight: 800; letter-spacing: .01em; white-space: nowrap; }
+.portal-brand:focus-visible { outline: 2px solid #fff; outline-offset: 5px; border-radius: 5px; }
 
 .portal-screen { min-height: 100vh; min-height: 100dvh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 118px 20px 70px; }
 .portal-card { width: min(440px, 94vw); padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
@@ -110,7 +112,9 @@ body.pin-mode #pin-back-login { width: min(360px, 100%); margin: 10px auto 0; }
 [hidden] { display: none !important; }
 @media (max-width: 600px) {
     .portal-header { height: 72px; padding-left: 22px; }
-    .portal-brand img { width: 128px; max-width: 42vw; }
+    .portal-brand { gap: 8px; }
+    .portal-brand__icon { width: 42px; height: 42px; flex-basis: 42px; }
+    .portal-brand__name { font-size: clamp(12px, 3.5vw, 15px); letter-spacing: 0; }
     .portal-screen { padding: 100px 20px 40px; justify-content: flex-start; }
     .portal-card { width: min(440px, 100%); }
     .panel h1 { font-size: 28px; }
@@ -129,7 +133,8 @@ body.pin-mode #pin-back-login { width: min(360px, 100%); margin: 10px auto 0; }
 }
 @media (max-width: 360px) {
     .portal-header { height: 66px; }
-    .portal-brand img { width: 112px; }
+    .portal-brand__icon { width: 37px; height: 37px; flex-basis: 37px; }
+    .portal-brand__name { font-size: 12px; }
     .portal-screen { padding-top: 88px; }
     .avatar-options { gap: 6px; }
     .profile-avatar-button { width: 130px; height: 130px; }

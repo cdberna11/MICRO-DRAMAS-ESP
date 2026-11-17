@@ -60,11 +60,22 @@
       </div>
       <p class="migration__hint">Después de activar, prueba la subida de una portada de un borrador, confirma la nueva ruta <code>/media/portadas/...</code> y verifica cómo se ve en navegador de escritorio, móvil y APK.</p>
     </section>
+    <section class="migration__panel migration__final" id="r2-generic-panel">
+      <h2>Etapa 4 · Migrar portada genérica de respaldo</h2>
+      <p>Esta imagen se utiliza cuando un microdrama no tiene portada oficial. La copia a R2 se verificará byte a byte antes de retirar el original de GitHub.</p>
+      <p id="r2-generic-status" class="migration__status" role="status" aria-live="polite">Consultando la portada genérica...</p>
+      <div class="migration__actions">
+        <button type="button" id="r2-generic-copy" disabled>Copiar portada genérica a R2</button>
+        <button type="button" id="r2-generic-check" class="secondary">Verificar portada genérica</button>
+      </div>
+      <p class="migration__hint">La operación también actualizará en D1 cualquier portada que utilice la dirección genérica anterior. No elimina la imagen original de GitHub.</p>
+      <pre id="r2-generic-log" class="migration__log" aria-live="polite"></pre>
+    </section>
     <section class="migration__panel migration__final">
-      <h2>Etapa 4 · Retirar portadas duplicadas de GitHub</h2>
-      <p><strong>La eliminación no está automatizada desde este panel.</strong> Se realizará mediante un commit específico en GitHub únicamente después de validar las imágenes reales en las tres plataformas. Se conservarán los logos, avatares y portada genérica.</p>
+      <h2>Etapa 5 · Retirar recursos duplicados de GitHub</h2>
+      <p>Cuando la portada genérica aparezca como <strong>verificada en R2</strong> y tenga <strong>cero referencias antiguas en D1</strong>, cambiaremos las rutas de respaldo de la web y del administrador, y retiraremos la imagen original en un commit exclusivo. La carpeta de avatares seguirá intacta.</p>
     </section>
   </main>
-  <script src="/admin/r2-migracion.js?v=2" defer></script>
+  <script src="/admin/r2-migracion.js?v=20261116-generic" defer></script>
 </body>
 </html>

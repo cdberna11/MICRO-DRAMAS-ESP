@@ -17,6 +17,12 @@
   };
   let busy=false,connected=false,verified=0,copied=0;
   let auditState=null,backupDownloaded=false,r2VerifiedThisVisit=false;
+  const generic={
+    status:$("r2-generic-status"),copy:$("r2-generic-copy"),
+    check:$("r2-generic-check"),log:$("r2-generic-log"),
+    endpoint:"/api/admin/r2-generica",ready:false,oldReferences:null
+  };
+  const GENERIC_URL="/media/portadas/generica/portada-generica.png";
   function print(message) {
     const line=new Date().toLocaleTimeString("es-PA")+"  "+message;
     elements.log.textContent+=(elements.log.textContent?"\n":"")+line;
@@ -27,6 +33,9 @@
     elements.copy.disabled=busy||!connected;
     elements.verify.disabled=busy||!connected;
     refreshCutoverButtons();
+    generic.copy.disabled=busy||!connected||
+      (generic.ready&&generic.oldReferences===0);
+    generic.check.disabled=busy;
   }
   function refreshCutoverButtons(){
     const summary=auditState?.summary;
@@ -220,6 +229,70 @@
     }finally{busy=false;refreshButtons();}
   }
 
+  function genericLog(message){
+    generic.log.textContent+=(generic.log.textContent?"\n":"")+
+      new Date().toLocaleTimeString("es-PA")+" · "+message;
+    generic.log.scrollTop=generic.log.scrollHeight;
+  }
+  async function checkGenericStatus(){
+    try{
+      const data=await request(generic.endpoint);
+      generic.ready=false;
+      generic.oldReferences=Number(data.oldD1References);
+      if(data.verified){
+        // Además de comprobar la copia en R2, validar la ruta pública.
+        const response=await fetch(GENERIC_URL,{
+          method:"HEAD",credentials:"same-origin",cache:"no-store"
+        });
+        const mime=String(response.headers.get("Content-Type")||"").toLowerCase();
+        const length=Number(response.headers.get("Content-Length"));
+        if(!response.ok||mime!=="image/png"||length!==2362043)
+          throw Error("La URL pública todavía no entrega la imagen PNG correcta.");
+        generic.ready=true;
+        generic.status.textContent="Portada genérica verificada en R2 (2.36 MB), "+
+          generic.oldReferences+" referencias D1 antiguas. URL pública correcta.";
+      }else{
+        generic.status.textContent="Portada genérica aún no migrada a R2. "+
+          generic.oldReferences+" referencias D1 antiguas. "+(data.reason||"");
+      }
+      refreshButtons();
+      return generic.ready&&generic.oldReferences===0;
+    }catch(error){
+      generic.ready=false;
+      generic.status.textContent="No se pudo verificar la portada genérica: "+error.message;
+      genericLog("ERROR: "+error.message);
+      refreshButtons();
+      return false;
+    }
+  }
+  async function migrateGeneric(){
+    if(busy||generic.copy.disabled)return;
+    const typed=window.prompt("Se copiará a R2 la imagen genérica original, "+
+      "comprobando su SHA exacto y respaldando referencias antiguas de D1. "+
+      "No se eliminará nada de GitHub.\n\nEscribe exactamente:\nMIGRAR PORTADA GENERICA R2");
+    if(typed!=="MIGRAR PORTADA GENERICA R2"){
+      genericLog("Migración de portada genérica cancelada.");
+      return;
+    }
+    busy=true;refreshButtons();
+    try{
+      const result=await request(generic.endpoint,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","X-MD-R2-Generic":"copy"},
+        body:JSON.stringify({confirmation:typed})
+      });
+      genericLog(result.message+" Referencias D1 actualizadas: "+
+        result.updatedD1+"; pendientes: "+result.oldD1References+".");
+      if(!result.verified||result.oldD1References!==0)
+        throw Error("La copia o la actualización D1 aún no está completa.");
+    }catch(error){
+      genericLog("ERROR: "+error.message);
+    }finally{
+      busy=false;refreshButtons();
+      await checkGenericStatus();
+    }
+  }
+
   async function init() {
     try{
       const data=await request(endpoint+"?mode=status");
@@ -240,6 +313,9 @@
   d1.backup.addEventListener("click",exportBackup);
   d1.move.addEventListener("click",moveReferences);
   d1.activate.addEventListener("click",activateR2);
+  generic.copy.addEventListener("click",migrateGeneric);
+  generic.check.addEventListener("click",checkGenericStatus);
   init();
   auditD1();
+  checkGenericStatus();
 })();

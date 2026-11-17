@@ -15,16 +15,6 @@
     const API_UPLOAD =
         "/api/admin/upload-cover";
 
-    const PLATAFORMAS = [
-        "DramaBox",
-        "DramaWave",
-        "GoodShort",
-        "FlickReel",
-        "Melolo",
-        "NetShort",
-        "ReelShort"
-    ];
-
     let modal = null;
     let archivoSeleccionado = null;
 
@@ -268,63 +258,78 @@
     }
 
 
+    /*
+     * Se reutilizan las opciones del formulario principal. Así la ventana
+     * también admite plataformas añadidas con + NUEVA PLATAFORMA, sin
+     * mantener una segunda lista estática ni modificar las categorías D1.
+     */
     function cargarPlataformas() {
-
-        const selector =
-            modal.querySelector(
-                "#cover-upload-platform"
-            );
-
-        PLATAFORMAS.forEach(
-            plataforma => {
-
-                const opcion =
-                    document.createElement("option");
-
-                opcion.value = plataforma;
-                opcion.textContent = plataforma;
-
-                selector.appendChild(
-                    opcion
-                );
-            }
-        );
-
         const selectorPrincipal =
             document.getElementById("platform");
 
         if (selectorPrincipal) {
-
             selectorPrincipal.addEventListener(
                 "change",
                 sincronizarPlataforma
             );
         }
+
+        sincronizarPlataforma();
     }
 
 
     function sincronizarPlataforma() {
-
         const principal =
             document.getElementById("platform");
 
         const selector =
-            modal?.querySelector(
-                "#cover-upload-platform"
-            );
+            modal?.querySelector("#cover-upload-platform");
 
         if (!principal || !selector) {
             return;
         }
 
-        if (
-            PLATAFORMAS.includes(
-                principal.value
-            )
-        ) {
-            selector.value =
-                principal.value;
-        }
+        const nombres = new Set();
+        const opciones = [];
+
+        Array.from(principal.options).forEach(opcion => {
+            const valor = String(opcion.value || "").trim();
+
+            // Excluir placeholder, separadores y acciones del formulario.
+            if (
+                opcion.disabled ||
+                !valor ||
+                valor.startsWith("__") ||
+                nombres.has(valor.toLowerCase())
+            ) {
+                return;
+            }
+
+            nombres.add(valor.toLowerCase());
+            opciones.push({
+                valor,
+                texto: opcion.textContent.trim() || valor
+            });
+        });
+
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Seleccione una plataforma";
+        selector.replaceChildren(placeholder);
+
+        opciones.forEach(({valor, texto}) => {
+            const opcion = document.createElement("option");
+            opcion.value = valor;
+            opcion.textContent = texto;
+            selector.appendChild(opcion);
+        });
+
+        const actual = String(principal.value || "").trim();
+        selector.value = opciones.some(x => x.valor === actual)
+            ? actual
+            : "";
+
+        actualizarEstadoBoton();
     }
 
 
@@ -515,12 +520,9 @@
         mensaje.className =
             "cover-modal__message";
 
-        selector.value =
-            PLATAFORMAS.includes(
-                principal?.value
-            )
-                ? principal.value
-                : "";
+        // Actualiza las opciones al abrir para incluir las nuevas
+        // plataformas insertadas dinámicamente por admin.js.
+        sincronizarPlataforma();
 
         modal.hidden = false;
         document.body.classList.add(
@@ -774,14 +776,11 @@
                     "platform"
                 );
 
-            if (
-                principal &&
-                PLATAFORMAS.includes(
-                    selector.value
-                )
-            ) {
-                principal.value =
-                    selector.value;
+            // Conservar el nombre real (p. ej. Crunchyroll) en D1;
+            // «variados» identifica solo la carpeta R2, no la plataforma.
+            if (principal) {
+                principal.value = selector.value;
+                principal.dataset.previousValue = selector.value;
             }
 
             mostrarMensaje(

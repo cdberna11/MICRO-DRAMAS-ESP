@@ -9,6 +9,22 @@ const TYPE_BY_EXTENSION = Object.freeze({
 });
 const CACHE_IMMUTABLE = "public, max-age=31536000, immutable";
 
+/* Solo estas siete plataformas tienen carpeta propia en R2.
+ * El nombre de cualquier plataforma adicional se conserva en D1, pero
+ * su portada se guarda en portadas/variados/ para evitar carpetas nuevas.
+ */
+const OFFICIAL_COVER_FOLDERS = new Set([
+  "dramabox","dramawave","goodshort","flickreel",
+  "melolo","netshort","reelshort"
+]);
+
+export function coverStorageFolder(platform) {
+  const normalized = coverSegment(platform,80);
+  if (!normalized) return null;
+  return OFFICIAL_COVER_FOLDERS.has(normalized) ? normalized : "variados";
+}
+
+
 export function coverStorageMode(env) {
   return String(env?.COVERS_STORAGE_BACKEND || "").toLowerCase() === "r2" ? "r2" : "github";
 }
@@ -105,7 +121,8 @@ export async function storeCoverR2(context) {
   const ext = String(file.name).split(".").pop().toLowerCase();
   const expectedMime = TYPE_BY_EXTENSION[ext];
   const platformSlug = coverSegment(platform,80);
-  if (!expectedMime || !platformSlug ||
+  const folder = coverStorageFolder(platform);
+  if (!expectedMime || !platformSlug || !folder ||
       !/^[a-z0-9][a-z0-9-]{0,79}$/.test(platformSlug) ||
       String(file.type).toLowerCase() !== expectedMime) {
     return coverJson({success:false,error:"Formato o plataforma no admitidos. Utiliza JPG, PNG, WEBP o GIF."},400);
@@ -117,8 +134,11 @@ export async function storeCoverR2(context) {
   const digest = await crypto.subtle.digest("SHA-256",bytes);
   const checksum = [...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,"0")).join("");
   // Identificador por contenido: cambiar una portada no rompe la versión cacheada.
-  const filename = slug+"-"+checksum.slice(0,16)+"."+ext;
-  const key = "portadas/"+platformSlug+"/"+filename;
+  // En «variados» se antepone la plataforma para distinguir títulos de
+  // proveedores distintos sin cambiar el nombre registrado en D1.
+  const filename = (folder==="variados" ? platformSlug+"-" : "")+
+    slug+"-"+checksum.slice(0,16)+"."+ext;
+  const key = "portadas/"+folder+"/"+filename;
   if (!validCoverKey(key))
     return coverJson({success:false,error:"La ruta de la portada no es válida."},400);
 

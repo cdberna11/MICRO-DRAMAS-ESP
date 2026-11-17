@@ -5,7 +5,7 @@
 import {coverJson,fileMime} from "../../lib/cover-storage.js";
 const KEY="portadas/generica/portada-generica.png";
 const OLD="/"+KEY,NEW="/media/"+KEY,SIZE=2362043;
-const GIT_SHA="575987a7dfaa1e2b0c47161ab919f74da88c7b1";
+const GIT_SHA="575987a7dfaa1e2b0c47161ab9199f74da88c7b1";
 const OLD_VARIANTS=[OLD,KEY,"https://micro-dramas-esp.pages.dev"+OLD];
 const REQUIRED_CONFIRM="MIGRAR PORTADA GENERICA R2";
 
